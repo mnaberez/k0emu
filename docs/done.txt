@@ -1,2 +1,14 @@
     nop                         ;00
     not1 cy                     ;01
+    set1 cy                     ;20
+    clr1 cy                     ;21
+    br !0abcdh                  ;9b cd ab
+    xch a,c                     ;32
+    xch a,b                     ;33
+    xch a,x                     ;30
+    xch a,e                     ;34
+    xch a,d                     ;35
+    xch a,l                     ;36
+    xch a,!0abcdh               ;ce cd ab
+    xch a,0fe20h                ;83 20          saddr
+    xch a,0fffeh                ;93 fe          sfr

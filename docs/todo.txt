@@ -33,8 +33,6 @@ label0:
     sub a,#0abh                 ;1d ab
     sub a,0fe20h                ;1e 20          saddr
     sub a,[hl]                  ;1f
-    set1 cy                     ;20
-    clr1 cy                     ;21
     push psw                    ;22
     pop psw                     ;23
     ror a,1                     ;24
@@ -52,7 +50,6 @@ label0:
     addc a,#0abh                ;2d ab
     addc a,0fe20h               ;2e 20          saddr
     addc a,[hl]                 ;2f
-    xch a,x                     ;30
     xch a,[hl+b]                ;31 8b
     xch a,[hl+c]                ;31 8a
     add a,[hl+b]                ;31 0b
@@ -298,12 +295,6 @@ label126:
 label127:
     btclr [hl].7,$label127      ;31 f5 fd
 
-    xch a,c                     ;32
-    xch a,b                     ;33
-    xch a,e                     ;34
-    xch a,d                     ;35
-    xch a,l                     ;36
-    xch a,h                     ;37
     subc a,!0abcdh              ;38 cd ab
     subc a,[hl+0abh]            ;39 ab
     set1 0fe20h.3               ;3a 20          saddr
@@ -830,7 +821,6 @@ label127:
     incw ax                     ;80
     inc 0fe20h                  ;81 20          saddr
     incw bc                     ;82
-    xch a,0fe20h                ;83 20          saddr
     incw de                     ;84
     mov a,[de]                  ;85
     incw hl                     ;86
@@ -853,7 +843,6 @@ label3:
     decw ax                     ;90
     dec 0fe20h                  ;91 20          saddr
     decw bc                     ;92
-    xch a,0fffeh                ;93 fe          sfr
     decw de                     ;94
     mov [de],a                  ;95
     decw hl                     ;96
@@ -862,7 +851,6 @@ label3:
     movw 0fe20h,ax              ;99 20          saddrp
     movw sp,ax                  ;99 1c
     call !0abcdh                ;9a cd ab
-    br !0abcdh                  ;9b cd ab
 label10:
     bt 0fe20h.1,$label10        ;9c 20 fd       saddr
 label11:
@@ -927,7 +915,6 @@ label16:
 label17:
     bt psw.4,$label17           ;cc 1e fd
     callt [004ch]               ;cd
-    xch a,!0abcdh               ;ce cd ab
     callt [004eh]               ;cf
     callt [0050h]               ;d1
     movw bc,ax                  ;d2
