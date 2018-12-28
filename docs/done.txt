@@ -16,3 +16,28 @@
     sel rb1                     ;61 d8
     sel rb2                     ;61 f0
     sel rb3                     ;61 f8
+
+    mov x,#0abh                 ;a0 ab
+    mov a,#0abh                 ;a1 ab
+    mov c,#0abh                 ;a2 ab
+    mov b,#0abh                 ;a3 ab
+    mov e,#0abh                 ;a4 ab
+    mov d,#0abh                 ;a5 ab
+    mov l,#0abh                 ;a6 ab
+    mov h,#0abh                 ;a7 ab
+
+    mov a,x                     ;60
+    mov a,c                     ;62
+    mov a,b                     ;63
+    mov a,e                     ;64
+    mov a,d                     ;65
+    mov a,l                     ;66
+    mov a,h                     ;67
+
+    mov x,a                     ;70
+    mov c,a                     ;72
+    mov b,a                     ;73
+    mov e,a                     ;74
+    mov d,a                     ;75
+    mov l,a                     ;76
+    mov h,a                     ;77

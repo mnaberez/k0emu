@@ -29,7 +29,6 @@ class Processor(object):
             addr16p = _addr16p(self.memory[self.pc+1],
                                self.memory[self.pc+2])
             data = self.memory[addr16p]
-            self._op_movw(addr16p, data)
             # TODO finish me
 
         # set1 cy
@@ -88,12 +87,24 @@ class Processor(object):
                              self.memory[self.pc+2])
             self.pc = addr16
 
-        # mov r,#byte
+        # mov r,#byte                 ;a0..a7 xx
         elif opcode & 0b11111000 == 0b10100000:
             regnum = opcode & 0b00000111
             immbyte = self.memory[self.pc+1]
-            self._op_mov(regnum, immbyte)
+            self.write_gp_reg(regnum, immbyte)
             self.pc += 2
+
+        # mov a,x ... mov a,h           ;60..67 except 61
+        elif opcode in (0x60, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
+            reg = _reg(opcode)
+            value = self.read_gp_reg(reg)
+            self.write_gp_reg(Registers.A, value)
+
+        # mov x,a ... mov h,a           ;70..77 except 71
+        elif opcode in (0x70, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
+            reg = _reg(opcode)
+            value = self.read_gp_reg(Registers.A)
+            self.write_gp_reg(reg, value)
 
         elif opcode == 0x61:
             opcode2 = self.memory[self.pc+1]
@@ -107,12 +118,6 @@ class Processor(object):
                 raise NotImplementedError()
         else:
             raise NotImplementedError()
-
-    def _op_mov(self, regnum, data):
-        self.write_gp_reg(regnum, data)
-
-    def _op_movw(self, regpairnum, data):
-        pass
 
     def read_gp_reg(self, regnum):
         address = self.address_of_gp_reg(regnum)
@@ -153,6 +158,9 @@ def _addr16p(low, high):
     if addr16p & 1 != 0:
         raise Exception("addr16p must be an even address")
     return addr16p
+
+def _reg(opcode):
+    return opcode & 0b111
 
 class Registers(object):
     X = 0

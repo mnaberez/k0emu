@@ -344,7 +344,6 @@ label127:
     and a,#0abh                 ;5d ab
     and a,0fe20h                ;5e 20          saddr
     and a,[hl]                  ;5f
-    mov a,x                     ;60
 
     adjba                       ;61 80
     adjbs                       ;61 90
@@ -556,12 +555,6 @@ label127:
     cmp l,a                     ;61 46
     cmp h,a                     ;61 47
 
-    mov a,c                     ;62
-    mov a,b                     ;63
-    mov a,e                     ;64
-    mov a,d                     ;65
-    mov a,l                     ;66
-    mov a,h                     ;67
     or a,!0abcdh                ;68 cd ab
     or a,[hl+0abh]              ;69 ab
     set1 0fe20h.6               ;6a 20          saddr
@@ -573,7 +566,6 @@ label127:
     or a,#0abh                  ;6d ab
     or a,0fe20h                 ;6e 20          saddr
     or a,[hl]                   ;6f
-    mov x,a                     ;70
 
     mov1 cy,0fe20h.0            ;71 04 20       saddr
     mov1 cy,0fe20h.1            ;71 14 20       saddr
@@ -794,12 +786,6 @@ label127:
     halt                        ;71 10
     stop                        ;71 00
 
-    mov c,a                     ;72
-    mov b,a                     ;73
-    mov e,a                     ;74
-    mov d,a                     ;75
-    mov l,a                     ;76
-    mov h,a                     ;77
     xor a,!0abcdh               ;78 cd ab
     xor a,[hl+0abh]             ;79 ab
     set1 0fe20h.7               ;7a 20          saddr
@@ -854,14 +840,6 @@ label4:
     bnc $label4                 ;9d fe
     mov !0abcdh,a               ;9e cd ab
     retb                        ;9f
-    mov x,#0abh                 ;a0 ab
-    mov a,#0abh                 ;a1 ab
-    mov c,#0abh                 ;a2 ab
-    mov b,#0abh                 ;a3 ab
-    mov e,#0abh                 ;a4 ab
-    mov d,#0abh                 ;a5 ab
-    mov l,#0abh                 ;a6 ab
-    mov h,#0abh                 ;a7 ab
     addc 0fe20h,#0abh           ;a8 20 ab       saddr
     movw ax,0fffeh              ;a9 fe          sfrp
     mov a,[hl+c]                ;aa
