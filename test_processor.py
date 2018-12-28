@@ -3,6 +3,59 @@ import sys
 from processor import Processor, Registers, Flags
 
 class ProcessorTests(unittest.TestCase):
+
+    # register banks
+
+    def test_rb0_accesses_fef8_feff(self):
+        proc = Processor()
+        proc.rb = 0
+        proc.memory[0xFEF8] = 0
+        proc.write_gp_reg(0, 0xAA) # 0=X register
+        self.assertEqual(proc.memory[0xFEF8], 0xAA)
+        self.assertEqual(proc.read_gp_reg(0), 0xAA)
+        proc.memory[0xFEFF] = 0
+        proc.write_gp_reg(7, 0x55) # 7=H register
+        self.assertEqual(proc.memory[0xFEFF], 0x55)
+        self.assertEqual(proc.read_gp_reg(7), 0x55)
+
+    def test_rb1_accesses_fef0_fef7(self):
+        proc = Processor()
+        proc.rb = 1
+        proc.memory[0xFEF0] = 0
+        proc.write_gp_reg(0, 0xAA) # 0=X register
+        self.assertEqual(proc.memory[0xFEF0], 0xAA)
+        self.assertEqual(proc.read_gp_reg(0), 0xAA)
+        proc.memory[0xFEF7] = 0
+        proc.write_gp_reg(7, 0x55) # 7=H register
+        self.assertEqual(proc.memory[0xFEF7], 0x55)
+        self.assertEqual(proc.read_gp_reg(7), 0x55)
+
+    def test_rb2_accesses_fee8_feef(self):
+        proc = Processor()
+        proc.rb = 2
+        proc.memory[0xFEE8] = 0
+        proc.write_gp_reg(0, 0xAA) # 0=X register
+        self.assertEqual(proc.memory[0xFEE8], 0xAA)
+        self.assertEqual(proc.read_gp_reg(0), 0xAA)
+        proc.memory[0xFEEF] = 0
+        proc.write_gp_reg(7, 0x55) # 7=H register
+        self.assertEqual(proc.memory[0xFEEF], 0x55)
+        self.assertEqual(proc.read_gp_reg(7), 0x55)
+
+    def test_rb3_accesses_fee0_fee7(self):
+        proc = Processor()
+        proc.rb = 3
+        proc.memory[0xFEE0] = 0
+        proc.write_gp_reg(0, 0xAA) # 0=X register
+        self.assertEqual(proc.memory[0xFEE0], 0xAA)
+        self.assertEqual(proc.read_gp_reg(0), 0xAA)
+        proc.memory[0xFEE7] = 0
+        proc.write_gp_reg(7, 0x55) # 7=H register
+        self.assertEqual(proc.memory[0xFEE7], 0x55)
+        self.assertEqual(proc.read_gp_reg(7), 0x55)
+
+    # instructions
+
     # nop
     def test_00_nop(self):
         proc = Processor()
@@ -216,6 +269,46 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0000, code)
         proc.step()
         self.assertEqual(proc.pc, 0xABCD)
+
+    # sel rb0                     ;61 d0
+    def test_61_d0_sel_rb0(self):
+        proc = Processor()
+        code = [0x61, 0xD0] # sel rb0
+        proc.write_memory(0x0000, code)
+        proc.rb = 1
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.rb, 0)
+
+    # sel rb1                     ;61 d8
+    def test_61_d8_sel_rb1(self):
+        proc = Processor()
+        code = [0x61, 0xD8] # sel rb1
+        proc.write_memory(0x0000, code)
+        self.assertEqual(proc.rb, 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.rb, 1)
+
+    # sel rb2                     ;61 f0
+    def test_61_f0_sel_rb2(self):
+        proc = Processor()
+        code = [0x61, 0xF0] # sel rb2
+        proc.write_memory(0x0000, code)
+        self.assertEqual(proc.rb, 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.rb, 2)
+
+    # sel rb3                     ;61 f8
+    def test_61_f8_sel_rb3(self):
+        proc = Processor()
+        code = [0x61, 0xF8] # sel rb3
+        proc.write_memory(0x0000, code)
+        self.assertEqual(proc.rb, 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.rb, 3)
 
 
 def test_suite():

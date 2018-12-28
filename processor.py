@@ -95,12 +95,14 @@ class Processor(object):
             self._op_mov(regnum, immbyte)
             self.pc += 2
 
-        # sel rbn
-        elif opcode & 0b01100001:
+        elif opcode == 0x61:
             opcode2 = self.memory[self.pc+1]
-            if opcode2 & 0b1100111 == 0b1100000: # sel rbn
-                self.rb = opcode2 >> 3
-                self.pc += 1
+
+            # sel rbn
+            if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8): # sel rbn
+                banks_by_opcode2 = {0xD0: 0, 0xD8: 1, 0xF0: 2, 0xF8: 3}
+                self.rb = banks_by_opcode2[opcode2]
+                self.pc += 2
             else:
                 raise NotImplementedError()
         else:

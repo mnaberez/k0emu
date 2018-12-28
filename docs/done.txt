@@ -12,3 +12,7 @@
     xch a,!0abcdh               ;ce cd ab
     xch a,0fe20h                ;83 20          saddr
     xch a,0fffeh                ;93 fe          sfr
+    sel rb0                     ;61 d0
+    sel rb1                     ;61 d8
+    sel rb2                     ;61 f0
+    sel rb3                     ;61 f8
