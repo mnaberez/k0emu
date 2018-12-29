@@ -542,7 +542,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.memory[0xfe20], 0xab)
 
     # mov 0fffeh, #0abh           ;13 fe ab       sfr
-    def test_xx_mov_sfr_imm(self):
+    def test_13_mov_sfr_imm(self):
         proc = Processor()
         code = [0x13, 0xfe, 0xab]
         proc.write_memory(0x0000, code)
