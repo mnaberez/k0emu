@@ -41,3 +41,15 @@
     mov d,a                     ;75
     mov l,a                     ;76
     mov h,a                     ;77
+
+    mov a,!addr16               ;8e cd ab
+    mov !addr16,a               ;9e cd ab
+
+    mov a,0fe20h                ;f0 20          saddr
+    mov 0fe20h,a                ;f2 20          saddr
+
+    mov a,0fffeh                ;f4 ff          sfr
+    mov 0fffeh,a                ;f6 fe          sfr
+
+    mov 0fe20h,#0abh            ;11 20 ab       saddr
+    mov 0fffeh, #0abh           ;13 fe ab       sfr

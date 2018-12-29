@@ -330,6 +330,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.C, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
     # mov a,b                   ;63
@@ -340,6 +341,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.B, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
     # mov a,e                   ;64
@@ -350,6 +352,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.E, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
     # mov a,d                   ;65
@@ -360,6 +363,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.D, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
     # mov a,l                   ;66
@@ -370,6 +374,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.L, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
     # mov a,h                   ;67
@@ -380,6 +385,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.H, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
     # mov x,a                   ;70
@@ -390,6 +396,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.X), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x42)
 
     # mov c,a                   ;72
@@ -400,6 +407,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.C), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x42)
 
     # mov b,a                   ;73
@@ -410,6 +418,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.B), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x42)
 
     # mov e,a                   ;74
@@ -420,6 +429,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.E), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x42)
 
     # mov d,a                   ;75
@@ -430,6 +440,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.D), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x42)
 
     # mov l,a                   ;76
@@ -440,6 +451,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.L), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x42)
 
     # mov h,a                   ;77
@@ -450,7 +462,94 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.H), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
+
+    # mov a,!0abcdh               ;8e cd ab
+    def test_8e_mov_a_addr16(self):
+        proc = Processor()
+        code = [0x8e, 0xcd, 0xab]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xabcd] = 0x42
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
+    # mov !addr16,a               ;9e cd ab
+    def test_9e_mov_addr16_a(self):
+        proc = Processor()
+        code = [0x9e, 0xcd, 0xab]
+        proc.write_memory(0x0000, code)
+        self.assertEqual(proc.memory[0xabcd], 0)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x42)
+
+    # mov a,0fe20h                ;F0 20          saddr
+    def test_f0_mov_a_saddr(self):
+        proc = Processor()
+        code = [0xf0, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0x42
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
+    # mov 0fe20h,a                ;f2 20          saddr
+    def test_f2_mov_saddr_a(self):
+        proc = Processor()
+        code = [0xf2, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        self.assertEqual(proc.memory[0xfe20], 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0x42)
+
+    # mov a,0fffeh                ;f4 fe          sfr
+    def test_f4_mov_a_sfr(self):
+        proc = Processor()
+        code = [0xf4, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0x42
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
+    # mov 0fffeh,a                ;f6 fe          sfr
+    def test_f6_mov_sfr_a(self):
+        proc = Processor()
+        code = [0xf6, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        self.assertEqual(proc.memory[0xfffe], 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0x42)
+
+    # mov 0fe20h,#0abh            ;11 20 ab       saddr
+    def test_11_mov_saddr_imm(self):
+        proc = Processor()
+        code = [0x11, 0x20, 0xab]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0xab)
+
+    # mov 0fffeh, #0abh           ;13 fe ab       sfr
+    def test_xx_mov_sfr_imm(self):
+        proc = Processor()
+        code = [0x13, 0xfe, 0xab]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0xab)
 
 
 def test_suite():

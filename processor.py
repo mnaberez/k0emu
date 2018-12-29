@@ -24,13 +24,6 @@ class Processor(object):
                 self.psw |= bitweight
             self.pc += 1
 
-        # movw ax,0fe20h              ;02 CE AB       addr16p
-        elif opcode == 0x02:
-            addr16p = _addr16p(self.memory[self.pc+1],
-                               self.memory[self.pc+2])
-            data = self.memory[addr16p]
-            # TODO finish me
-
         # set1 cy
         elif opcode == 0x20:
             bitweight = Flags.CY
@@ -43,9 +36,8 @@ class Processor(object):
             self.psw &= ~bitweight
             self.pc += 1
 
-        # xch a,REG                    ;32...
-        elif opcode & 0b00110000 == 0b00110000:
-            # TODO handle xch a,a which is illegal
+        # xch a,REG                    ;32...37 except 31
+        elif opcode in (0x30, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37):
             other_reg = opcode & 0b111
             a_value = self.read_gp_reg(Registers.A)
             other_value = self.read_gp_reg(other_reg)
@@ -55,37 +47,35 @@ class Processor(object):
 
         # xch a,!abcd                 ;ce cd ab
         elif opcode == 0xce:
-            addr16 = _addr16(self.memory[self.pc+1],
-                             self.memory[self.pc+2])
+            address = self._decode_addr16()
             a_value = self.read_gp_reg(Registers.A)
-            other_value = self.memory[addr16]
+            other_value = self.memory[address]
             self.write_gp_reg(Registers.A, other_value)
-            self.memory[addr16] = a_value
+            self.memory[address] = a_value
             self.pc += 3
 
         # xch a,0fe20h                ;83 20          saddr
         elif opcode == 0x83:
-            saddr = _saddr(self.memory[self.pc+1])
+            address = self._decode_saddr()
             a_value = self.read_gp_reg(Registers.A)
-            other_value = self.memory[saddr]
+            other_value = self.memory[address]
             self.write_gp_reg(Registers.A, other_value)
-            self.memory[saddr] = a_value
+            self.memory[address] = a_value
             self.pc += 2
 
         # xch a,0fffeh                ;93 fe          sfr
         elif opcode == 0x93:
-            sfr = _sfr(self.memory[self.pc+1])
+            address = self._decode_sfr()
             a_value = self.read_gp_reg(Registers.A)
-            other_value = self.memory[sfr]
+            other_value = self.memory[address]
             self.write_gp_reg(Registers.A, other_value)
-            self.memory[sfr] = a_value
+            self.memory[address] = a_value
             self.pc += 2
 
         # br !0abcdh                  ;9b cd ab
         elif opcode == 0x9b:
-            addr16 = _addr16(self.memory[self.pc+1],
-                             self.memory[self.pc+2])
-            self.pc = addr16
+            address = self._decode_addr16()
+            self.pc = address
 
         # mov r,#byte                 ;a0..a7 xx
         elif opcode & 0b11111000 == 0b10100000:
@@ -99,12 +89,71 @@ class Processor(object):
             reg = _reg(opcode)
             value = self.read_gp_reg(reg)
             self.write_gp_reg(Registers.A, value)
+            self.pc += 1
 
         # mov x,a ... mov h,a           ;70..77 except 71
         elif opcode in (0x70, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
             reg = _reg(opcode)
             value = self.read_gp_reg(Registers.A)
             self.write_gp_reg(reg, value)
+            self.pc += 1
+
+        # mov a,!addr16                 ;8e
+        elif opcode == 0x8e:
+            address = self._decode_addr16()
+            value = self.memory[address]
+            self.write_gp_reg(Registers.A, value)
+            self.pc += 3
+
+        # mov !addr16,a               ;9e cd ab
+        elif opcode == 0x9e:
+            address = self._decode_addr16()
+            value = self.read_gp_reg(Registers.A)
+            self.memory[address] = value
+            self.pc += 3
+
+        # mov a,0fe20h                ;F0 20          saddr
+        elif opcode == 0xf0:
+            address = self._decode_saddr()
+            value = self.memory[address]
+            self.write_gp_reg(Registers.A, value)
+            self.pc += 2
+
+        # mov 0fe20h,a                ;f2 20          saddr
+        elif opcode == 0xf2:
+            address = self._decode_saddr()
+            value = self.read_gp_reg(Registers.A)
+            self.memory[address] = value
+            self.pc += 2
+
+        # mov a,0fffeh                ;f4 fe          sfr
+        elif opcode == 0xf4:
+            address = self._decode_sfr()
+            value = self.memory[address]
+            self.write_gp_reg(Registers.A, value)
+            self.memory[address] = value
+            self.pc += 2
+
+        # mov 0fffeh,a                ;f6 fe          sfr
+        elif opcode == 0xf6:
+            address = self._decode_sfr()
+            value = self.read_gp_reg(Registers.A)
+            self.memory[address] = value
+            self.pc += 2
+
+        # mov 0fe20h,#0abh            ;11 20 ab       saddr
+        elif opcode == 0x11:
+            address = self._decode_saddr()
+            value = self.memory[self.pc+2]
+            self.memory[address] = value
+            self.pc += 3
+
+        # mov 0fffeh, #0abh           ;13 fe ab       sfr
+        elif opcode == 0x13:
+            address = self._decode_sfr()
+            value = self.memory[self.pc+2]
+            self.memory[address] = value
+            self.pc += 3
 
         elif opcode == 0x61:
             opcode2 = self.memory[self.pc+1]
@@ -118,6 +167,15 @@ class Processor(object):
                 raise NotImplementedError()
         else:
             raise NotImplementedError()
+
+    def _decode_addr16(self):
+        return _addr16(self.memory[self.pc+1], self.memory[self.pc+2])
+
+    def _decode_sfr(self):
+        return _sfr(self.memory[self.pc+1])
+
+    def _decode_saddr(self):
+        return _saddr(self.memory[self.pc+1])
 
     def read_gp_reg(self, regnum):
         address = self.address_of_gp_reg(regnum)

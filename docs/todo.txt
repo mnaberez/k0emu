@@ -16,10 +16,8 @@ label0:
     add a,0fe20h                ;0e 20          saddr
     add a,[hl]                  ;0f
     movw ax,#0abcdh             ;10 cd ab
-    mov 0fe20h,#0abh            ;11 20 ab       saddr
     mov psw,#0abh               ;11 1e ab
     movw bc,#0abcdh             ;12 cd ab
-    mov 0fffeh, #0abh           ;13 fe ab       sfr
     movw de,#0abcdh             ;14 cd ab
     movw hl,#0abcdh             ;16 cd ab
     sub a,!0abcdh               ;18 cd ab
@@ -819,7 +817,6 @@ label9:
     bt psw.0,$label9            ;8c 1e fd
 label3:
     bc $label3                  ;8d fe
-    mov a,!0abcdh               ;8e cd ab
     reti                        ;8f
     decw ax                     ;90
     dec 0fe20h                  ;91 20          saddr
@@ -838,7 +835,6 @@ label11:
     bt psw.1,$label11           ;9c 1e fd
 label4:
     bnc $label4                 ;9d fe
-    mov !0abcdh,a               ;9e cd ab
     retb                        ;9f
     addc 0fe20h,#0abh           ;a8 20 ab       saddr
     movw ax,0fffeh              ;a9 fe          sfrp
@@ -926,15 +922,11 @@ label23:
     movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
     movw sp,#0abcdh             ;ee 1c cd ab
     callt [006eh]               ;ef
-    mov a,0fe20h                ;f0 20          saddr
     mov a,psw                   ;f0 1e
     callt [0070h]               ;f1
-    mov 0fe20h,a                ;f2 20          saddr
     mov psw,a                   ;f2 1e
     callt [0072h]               ;f3
-    mov a,0fffeh                ;f4 ff          sfr
     callt [0074h]               ;f5
-    mov 0fffeh,a                ;f6 fe          sfr
     callt [0076h]               ;f7
     xor 0fe20h,#0abh            ;f8 20 ab       saddr
     callt [0078h]               ;f9
