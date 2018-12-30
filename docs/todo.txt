@@ -499,24 +499,6 @@ label127:
     and a,l                     ;61 5e
     and a,h                     ;61 5f
 
-    or a,x                      ;61 68
-    or a,a                      ;61 61
-    or a,c                      ;61 6a
-    or a,b                      ;61 6b
-    or a,e                      ;61 6c
-    or a,d                      ;61 6d
-    or a,l                      ;61 6e
-    or a,h                      ;61 6f
-
-    or x,a                      ;61 60
-    or a,a                      ;61 61
-    or c,a                      ;61 62
-    or b,a                      ;61 63
-    or e,a                      ;61 64
-    or d,a                      ;61 65
-    or l,a                      ;61 66
-    or h,a                      ;61 67
-
     xor a,x                     ;61 78
     xor a,a                     ;61 71
     xor a,c                     ;61 7a
@@ -553,7 +535,6 @@ label127:
     cmp l,a                     ;61 46
     cmp h,a                     ;61 47
 
-    or a,!0abcdh                ;68 cd ab
     or a,[hl+0abh]              ;69 ab
     set1 0fe20h.6               ;6a 20          saddr
     set1 psw.6                  ;6a 1e
@@ -561,8 +542,6 @@ label127:
     clr1 psw.6                  ;6b 1e
     callf !0e00h                ;6c 00          6c = callf 0e00h-0effh
     callf !0effh                ;6c ff
-    or a,#0abh                  ;6d ab
-    or a,0fe20h                 ;6e 20          saddr
     or a,[hl]                   ;6f
 
     mov1 cy,0fe20h.0            ;71 04 20       saddr
@@ -910,7 +889,6 @@ label21:
     callt [0064h]               ;e5
     xchw ax,hl                  ;e6
     callt [0066h]               ;e7
-    or 0fe20h,#0abh             ;e8 20 ab
     callt [0068h]               ;e9
     cmpw ax,#0abcdh             ;ea cd ab
     callt [006ah]               ;eb

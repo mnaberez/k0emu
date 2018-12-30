@@ -58,6 +58,14 @@ class Processor(object):
                 f = self._opcode_0x13 # mov 0fffeh, #0abh           ;13 fe ab       sfr
             elif opcode == 0x61:
                 f = self._opcode_0x61
+            elif opcode == 0x6d:
+                f = self._opcode_0x6d # or a,#0abh                  ;6d ab
+            elif opcode == 0x6e:
+                f = self._opcode_0x6e # or a,0fe20h                 ;6e 20          saddr
+            elif opcode == 0xe8:
+                f = self._opcode_0xe8 # or 0fe20h,#0abh             ;e8 20 ab
+            elif opcode == 0x68:
+                f = self._opcode_0x68 # or a,!0abcdh                ;68 cd ab
 
             self._opcode_map[opcode] = f
 
@@ -192,12 +200,64 @@ class Processor(object):
         opcode2 = self._consume_byte()
 
         # sel rbn
-        if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8): # sel rbn
+        if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
             banks_by_opcode2 = {0xD0: 0, 0xD8: 1, 0xF0: 2, 0xF8: 3}
             self.write_rb(banks_by_opcode2[opcode2])
-            return
 
-        raise NotImplementedError()
+        # or a,reg (except: or a,reg=a)
+        elif opcode2 in (0x68, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f):
+            a = self.read_gp_reg(Registers.A)
+            reg = _reg(opcode2)
+            b = self.read_gp_reg(reg)
+            result = self._operation_or(a, b)
+            self.write_gp_reg(Registers.A, result)
+
+        # or reg,a (except: or reg=a,a)
+        elif opcode2 in (0x60, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
+            a = self.read_gp_reg(Registers.A)
+            reg = _reg(opcode2)
+            b = self.read_gp_reg(reg)
+            result = self._operation_or(a, b)
+            self.write_gp_reg(reg, result)
+
+        else:
+            raise NotImplementedError()
+
+    # or a,#0abh                  ;6d ab
+    def _opcode_0x6d(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        b = self._consume_byte()
+        result = self._operation_or(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # or a,0fe20h                 ;6e 20          saddr
+    def _opcode_0x6e(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._consume_saddr()
+        b = self.memory[address]
+        result = self._operation_or(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # or 0fe20h,#0abh             ;e8 20 ab      saddr
+    def _opcode_0xe8(self, opcode):
+        address = self._consume_saddr()
+        a = self.memory[address]
+        b = self._consume_byte()
+        result = self._operation_or(a, b)
+        self.memory[address] = result
+
+    # or a,!0abcdh                ;68 cd ab
+    def _opcode_0x68(self, opcode):
+        address = self._consume_addr16()
+        a = self.read_gp_reg(Registers.A)
+        b = self.memory[address]
+        result = self._operation_or(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    def _operation_or(self, a, b):
+        result = a | b
+        self._update_psw_z(result)
+        return result
 
     def _consume_byte(self):
         value = self.memory[self.pc]
@@ -246,6 +306,12 @@ class Processor(object):
         rbs1 = (value & 2) << 4
         self.psw &= ~(Flags.RBS0 + Flags.RBS1)
         self.psw |= rbs0 + rbs1
+
+    def _update_psw_z(self, value):
+        """Set the Z flag in PSW if value is zero, clear otherwise"""
+        self.psw &= ~Flags.Z
+        if value == 0:
+            self.psw |= Flags.Z
 
     def write_memory(self, address, data):
         for address, value in enumerate(data, address):

@@ -53,3 +53,26 @@
 
     mov 0fe20h,#0abh            ;11 20 ab       saddr
     mov 0fffeh, #0abh           ;13 fe ab       sfr
+
+    or a,#0abh                  ;6d ab
+    or a,0fe20h                 ;6e 20          saddr
+
+    or a,a                      ;61 61 illegal
+    or a,x                      ;61 68
+    or a,c                      ;61 6a
+    or a,b                      ;61 6b
+    or a,e                      ;61 6c
+    or a,d                      ;61 6d
+    or a,l                      ;61 6e
+    or a,h                      ;61 6f
+
+    or a,a                      ;61 61 illegal
+    or x,a                      ;61 60
+    or c,a                      ;61 62
+    or b,a                      ;61 63
+    or d,a                      ;61 65
+    or l,a                      ;61 66
+    or h,a                      ;61 67
+
+    or a,!0abcdh                ;68 cd ab
+    or 0fe20h,#0abh             ;e8 20 ab
