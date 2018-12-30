@@ -6,7 +6,6 @@ class Processor(object):
         self.memory = bytearray(0x10000)
         self.pc = 0
         self.psw = 0
-        self.rb = 0
         self._build_opcode_map()
 
     def step(self):
@@ -74,7 +73,6 @@ class Processor(object):
             self.psw &= ~bitweight
         else:
             self.psw |= bitweight
-
 
     # set1 cy
     def _opcode_0x20(self, opcode):
@@ -196,7 +194,7 @@ class Processor(object):
         # sel rbn
         if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8): # sel rbn
             banks_by_opcode2 = {0xD0: 0, 0xD8: 1, 0xF0: 2, 0xF8: 3}
-            self.rb = banks_by_opcode2[opcode2]
+            self.write_rb(banks_by_opcode2[opcode2])
             return
 
         raise NotImplementedError()
@@ -233,8 +231,21 @@ class Processor(object):
         # Bank 2 = FEE8 - FEEF
         # Bank 1 = FEF0 - FEF7
         # Bank 0 = FEF8 - FEFF
-        bank_addr = self.REGISTERS_BASE - (self.rb * 8)
+        bank_addr = self.REGISTERS_BASE - (self.read_rb() * 8)
         return bank_addr + regnum
+
+    def read_rb(self):
+        """Reads PSW and returns a register bank number 0..3"""
+        rbs0 = (self.psw & Flags.RBS0) >> 3
+        rbs1 = (self.psw & Flags.RBS1) >> 4
+        return rbs0 + rbs1
+
+    def write_rb(self, value):
+        """Writes a register bank number 0..3 to the PSW"""
+        rbs0 = (value & 1) << 3
+        rbs1 = (value & 2) << 4
+        self.psw &= ~(Flags.RBS0 + Flags.RBS1)
+        self.psw |= rbs0 + rbs1
 
     def write_memory(self, address, data):
         for address, value in enumerate(data, address):
