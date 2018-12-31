@@ -1043,6 +1043,32 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.H), 0xf0)
         self.assertEqual(proc.psw & Flags.Z, 0)
 
+    # call !0abcdh                ;9a cd ab
+    def test_9a_call(self):
+        proc = Processor()
+        code = [0x9a, 0xcd, 0xab]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0xabcd)
+
+    # ret                         ;af
+    def test_af_ret(self):
+        proc = Processor()
+        code = [0xaf]
+        proc.write_memory(0x0000, code)
+        proc.sp = 0xfe1d
+        proc.memory[0xfe1d] = 0xcd # stack: return address low
+        proc.memory[0xfe1e] = 0xab # stack: return address high
+        proc.step()
+        self.assertEqual(proc.sp, 0xfe1f)
+        self.assertEqual(proc.pc, 0xabcd)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

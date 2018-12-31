@@ -98,3 +98,6 @@
     and d,a                     ;61 55
     and l,a                     ;61 56
     and h,a                     ;61 57
+
+    call !0abcdh                ;9a cd ab
+    ret                         ;af

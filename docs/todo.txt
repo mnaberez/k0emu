@@ -787,7 +787,6 @@ label3:
     sub 0fe20h,#0abh            ;98 20 ab       saddr
     movw 0fe20h,ax              ;99 20          saddrp
     movw sp,ax                  ;99 1c
-    call !0abcdh                ;9a cd ab
 label10:
     bt 0fe20h.1,$label10        ;9c 20 fd       saddr
 label11:
@@ -806,7 +805,6 @@ label13:
 label5:
     bz $label5                  ;ad fe
     mov a,[hl+0abh]             ;ae ab
-    ret                         ;af
     pop ax                      ;b0
     push ax                     ;b1
     pop bc                      ;b2

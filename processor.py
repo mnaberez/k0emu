@@ -5,6 +5,7 @@ class Processor(object):
     def __init__(self):
         self.memory = bytearray(0x10000)
         self.pc = 0
+        self.sp = 0xfe1f
         self.psw = 0
         self._build_opcode_map()
 
@@ -74,6 +75,10 @@ class Processor(object):
                 f = self._opcode_0x58 # and a,!0abcdh               ;58 cd ab
             elif opcode == 0xd8:
                 f = self._opcode_0xd8 # and 0fe20h,#0abh            ;d8 20 ab       saddr
+            elif opcode == 0x9a:
+                f = self._opcode_0x9a # call !0abcdh                ;9a cd ab
+            elif opcode == 0xaf:
+                f = self._opcode_0xaf # ret                         ;af
 
             self._opcode_map[opcode] = f
 
@@ -308,6 +313,30 @@ class Processor(object):
         b = self._consume_byte()
         result = self._operation_and(a, b)
         self.memory[address] = result
+
+    # call !0abcdh                ;9a cd ab
+    def _opcode_0x9a(self, opcode):
+        address = self._consume_addr16()
+        self._push(self.pc >> 8)
+        self._push(self.pc & 0xFF)
+        self.pc = address
+
+    # ret                         ;af
+    def _opcode_0xaf(self, opcode):
+        address_low = self._pop()
+        address_high = self._pop()
+        self.pc = (address_high << 8) + address_low
+
+    def _push(self, value):
+        """Push a byte onto the stack"""
+        self.sp -= 1
+        self.memory[self.sp] = value
+
+    def _pop(self):
+        """Pop a byte off the stack"""
+        value = self.memory[self.sp]
+        self.sp += 1
+        return value
 
     def _operation_or(self, a, b):
         result = a | b
