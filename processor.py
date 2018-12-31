@@ -66,6 +66,14 @@ class Processor(object):
                 f = self._opcode_0xe8 # or 0fe20h,#0abh             ;e8 20 ab
             elif opcode == 0x68:
                 f = self._opcode_0x68 # or a,!0abcdh                ;68 cd ab
+            elif opcode == 0x5d:
+                f = self._opcode_0x5d # and a,#0abh                 ;5d ab
+            elif opcode == 0x5e:
+                f = self._opcode_0x5e # and a,0fe20h                ;5e 20          saddr
+            elif opcode == 0x58:
+                f = self._opcode_0x58 # and a,!0abcdh               ;58 cd ab
+            elif opcode == 0xd8:
+                f = self._opcode_0xd8 # and 0fe20h,#0abh            ;d8 20 ab       saddr
 
             self._opcode_map[opcode] = f
 
@@ -212,12 +220,28 @@ class Processor(object):
             result = self._operation_or(a, b)
             self.write_gp_reg(Registers.A, result)
 
-        # or reg,a (except: or reg=a,a)
-        elif opcode2 in (0x60, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
+        # or reg,a
+        elif opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
             a = self.read_gp_reg(Registers.A)
             reg = _reg(opcode2)
             b = self.read_gp_reg(reg)
             result = self._operation_or(a, b)
+            self.write_gp_reg(reg, result)
+
+        # and a,reg (except: and a,reg=a)
+        elif opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
+            a = self.read_gp_reg(Registers.A)
+            reg = _reg(opcode2)
+            b = self.read_gp_reg(reg)
+            result = self._operation_and(a, b)
+            self.write_gp_reg(Registers.A, result)
+
+        # and reg,a
+        elif opcode2 in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
+            a = self.read_gp_reg(Registers.A)
+            reg = _reg(opcode2)
+            b = self.read_gp_reg(reg)
+            result = self._operation_and(a, b)
             self.write_gp_reg(reg, result)
 
         else:
@@ -254,8 +278,44 @@ class Processor(object):
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # and a,#0abh                 ;5d ab
+    def _opcode_0x5d(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        b = self._consume_byte()
+        result = self._operation_and(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # and a,0fe20h                ;5e 20          saddr
+    def _opcode_0x5e(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._consume_saddr()
+        b = self.memory[address]
+        result = self._operation_and(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # and a,!0abcdh               ;58 cd ab
+    def _opcode_0x58(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._consume_addr16()
+        b = self.memory[address]
+        result = self._operation_and(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # and 0fe20h,#0abh            ;d8 20 ab       saddr
+    def _opcode_0xd8(self, opcode):
+        address = self._consume_saddr()
+        a = self.memory[address]
+        b = self._consume_byte()
+        result = self._operation_and(a, b)
+        self.memory[address] = result
+
     def _operation_or(self, a, b):
         result = a | b
+        self._update_psw_z(result)
+        return result
+
+    def _operation_and(self, a, b):
+        result = a & b
         self._update_psw_z(result)
         return result
 
@@ -286,11 +346,7 @@ class Processor(object):
         self.memory[address] = data
 
     def address_of_gp_reg(self, regnum):
-        # General Purpose Registers: Page 17
-        # Bank 3 = FEE0 - FEE7
-        # Bank 2 = FEE8 - FEEF
-        # Bank 1 = FEF0 - FEF7
-        # Bank 0 = FEF8 - FEFF
+        """Return the address in RAM of a general purpose register"""
         bank_addr = self.REGISTERS_BASE - (self.read_rb() * 8)
         return bank_addr + regnum
 

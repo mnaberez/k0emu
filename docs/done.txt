@@ -76,3 +76,25 @@
 
     or a,!0abcdh                ;68 cd ab
     or 0fe20h,#0abh             ;e8 20 ab
+
+    and a,#0abh                 ;5d ab
+    and a,0fe20h                ;5e 20          saddr
+    and a,!0abcdh               ;58 cd ab
+
+    and a,a                     ;61 51          illegal
+    and a,x                     ;61 58
+    and a,c                     ;61 5a
+    and a,b                     ;61 5b
+    and a,e                     ;61 5c
+    and a,d                     ;61 5d
+    and a,l                     ;61 5e
+    and a,h                     ;61 5f
+
+    and x,a                     ;61 50
+    and a,a                     ;61 51
+    and c,a                     ;61 52
+    and b,a                     ;61 53
+    and e,a                     ;61 54
+    and d,a                     ;61 55
+    and l,a                     ;61 56
+    and h,a                     ;61 57

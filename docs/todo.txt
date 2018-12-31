@@ -331,7 +331,6 @@ label127:
     dec d                       ;55
     dec l                       ;56
     dec h                       ;57
-    and a,!0abcdh               ;58 cd ab
     and a,[hl+0abh]             ;59 ab
     set1 0fe20h.5               ;5a 20          saddr
     set1 psw.5                  ;5a 1e
@@ -339,8 +338,6 @@ label127:
     clr1 psw.5                  ;5b 1e
     callf !0d00h                ;5c 00          5c = callf 0d00h-0dffh
     callf !0dffh                ;5c ff
-    and a,#0abh                 ;5d ab
-    and a,0fe20h                ;5e 20          saddr
     and a,[hl]                  ;5f
 
     adjba                       ;61 80
@@ -481,23 +478,6 @@ label127:
     subc l,a                    ;61 36
     subc h,a                    ;61 37
 
-    and x,a                     ;61 50
-    and a,a                     ;61 51
-    and c,a                     ;61 52
-    and b,a                     ;61 53
-    and e,a                     ;61 54
-    and d,a                     ;61 55
-    and l,a                     ;61 56
-    and h,a                     ;61 57
-
-    and a,x                     ;61 58
-    and a,a                     ;61 51
-    and a,c                     ;61 5a
-    and a,b                     ;61 5b
-    and a,e                     ;61 5c
-    and a,d                     ;61 5d
-    and a,l                     ;61 5e
-    and a,h                     ;61 5f
 
     xor a,x                     ;61 78
     xor a,a                     ;61 71
@@ -871,7 +851,6 @@ label17:
     callt [0054h]               ;d5
     movw hl,ax                  ;d6
     callt [0056h]               ;d7
-    and 0fe20h,#0abh            ;d8 20 ab       saddr
     callt [0058h]               ;d9
     subw ax,#0abcdh             ;da cd ab
     callt [005ah]               ;db
