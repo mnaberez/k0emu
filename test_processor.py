@@ -1794,6 +1794,86 @@ class ProcessorTests(unittest.TestCase):
         proc.step()
         self.assertEqual(proc.pc, 0x1000 + len(code))
 
+    # clr1 a.0                    ;61 8b
+    def test_61_8b_clr1_a_bit0(self):
+        proc = Processor()
+        code = [0x61, 0x8b]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111110)
+
+    # clr1 a.1                    ;61 9b
+    def test_61_9b_clr1_a_bit1(self):
+        proc = Processor()
+        code = [0x61, 0x9b]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111101)
+
+    # clr1 a.2                    ;61 ab
+    def test_61_ab_clr1_a_bit2(self):
+        proc = Processor()
+        code = [0x61, 0xab]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111011)
+
+    # clr1 a.3                    ;61 bb
+    def test_61_bb_clr1_a_bit3(self):
+        proc = Processor()
+        code = [0x61, 0xbb]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0b11110111)
+
+    # clr1 a.4                    ;61 cb
+    def test_61_cb_clr1_a_bit4(self):
+        proc = Processor()
+        code = [0x61, 0xcb]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0b11101111)
+
+    # clr1 a.5                    ;61 db
+    def test_61_db_clr1_a_bit5(self):
+        proc = Processor()
+        code = [0x61, 0xdb]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0b11011111)
+
+    # clr1 a.6                    ;61 eb
+    def test_61_eb_clr1_a_bit6(self):
+        proc = Processor()
+        code = [0x61, 0xeb]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0b10111111)
+
+    # clr1 a.7                    ;61 fb
+    def test_61_fb_clr1_a_bit7(self):
+        proc = Processor()
+        code = [0x61, 0xfb]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0b01111111)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

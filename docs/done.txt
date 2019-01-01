@@ -168,3 +168,12 @@
     bnc $label4                 ;9d fe
     bz $label5                  ;ad fe
     bnz $label6                 ;bd fe
+
+    clr1 a.0                    ;61 8b
+    clr1 a.1                    ;61 9b
+    clr1 a.2                    ;61 ab
+    clr1 a.3                    ;61 bb
+    clr1 a.4                    ;61 cb
+    clr1 a.5                    ;61 db
+    clr1 a.6                    ;61 eb
+    clr1 a.7                    ;61 fb

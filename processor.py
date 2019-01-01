@@ -314,6 +314,13 @@ class Processor(object):
             result = self._operation_set1(a, bit)
             self.write_gp_reg(Registers.A, result)
 
+        # clr1 a.bit
+        elif opcode2 in (0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0xdb, 0xeb, 0xfb):
+            a = self.read_gp_reg(Registers.A)
+            bit = _bit(opcode2)
+            result = self._operation_clr1(a, bit)
+            self.write_gp_reg(Registers.A, result)
+
         else:
             raise NotImplementedError()
 
@@ -494,6 +501,9 @@ class Processor(object):
 
     def _operation_set1(self, value, bit):
         return value | (2 ** bit)
+
+    def _operation_clr1(self, value, bit):
+        return value & ~(2 ** bit)
 
     def _operation_or(self, a, b):
         result = a | b

@@ -373,15 +373,6 @@ label127:
     xor1 cy,a.6                 ;61 ef
     xor1 cy,a.7                 ;61 ff
 
-    clr1 a.0                    ;61 8b
-    clr1 a.1                    ;61 9b
-    clr1 a.2                    ;61 ab
-    clr1 a.3                    ;61 bb
-    clr1 a.4                    ;61 cb
-    clr1 a.5                    ;61 db
-    clr1 a.6                    ;61 eb
-    clr1 a.7                    ;61 fb
-
     add a,x                     ;61 08
     add a,a                     ;61 01
     add a,c                     ;61 0a
