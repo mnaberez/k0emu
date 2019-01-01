@@ -204,3 +204,5 @@
     clr1 0fe20h.7               ;7b 20          saddr
     clr1 psw.7                  ;7b 1e
     di                          ;7b 1e          alias for clr1 psw.7
+
+    movw sp,#0abcdh             ;ee 1c cd ab

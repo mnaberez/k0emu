@@ -2115,6 +2115,16 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b01111111)
 
+    # movw sp,#0abcdh             ;ee 1c cd ab  (SP=0xFF1C)
+    def test_ee_movw_sp_imm16(self):
+        proc = Processor()
+        code = [0xee, 0x1c, 0xcd, 0xab]
+        proc.write_memory(0x0000, code)
+        proc.sp = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xabcd)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

@@ -776,7 +776,6 @@ label23:
     bt psw.6,$label23           ;ec 1e fd
     callt [006ch]               ;ed
     movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
-    movw sp,#0abcdh             ;ee 1c cd ab
     callt [006eh]               ;ef
     callt [0070h]               ;f1
     callt [0072h]               ;f3

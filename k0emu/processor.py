@@ -1,6 +1,7 @@
 
 class Processor(object):
     REGISTERS_BASE_ADDRESS = 0xFEF8
+    SP_ADDRESS = 0xFF1C
     PSW_ADDRESS = 0xFF1E
 
     def __init__(self):
@@ -113,6 +114,9 @@ class Processor(object):
                 f = self._opcode_0xad # bz $label5                  ;ad fe
             elif opcode == 0xbd:
                 f = self._opcode_0xbd # bnz $label5                 ;bd fe
+            elif opcode == 0xee:
+                f = self._opcode_0xee # movw sp,#0abcdh             ;ee 1c cd ab
+
             self._opcode_map[opcode] = f
 
     # nop
@@ -511,6 +515,14 @@ class Processor(object):
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
 
+    # movw sp,#0abcdh             ;ee 1c cd ab  (SP=0xFF1C)
+    def _opcode_0xee(self, opcode):
+        address = self._consume_saddrp()
+        address = address # TODO handle saddr's besides sp
+        low = self._consume_byte()
+        high = self._consume_byte()
+        self.sp = (high << 8) + low
+
     def _push(self, value):
         """Push a byte onto the stack"""
         self.sp -= 1
@@ -560,6 +572,10 @@ class Processor(object):
     def _consume_saddr(self):
         offset = self._consume_byte()
         return _saddr(offset)
+
+    def _consume_saddrp(self):
+        offset = self._consume_byte()
+        return _saddrp(offset)
 
     def read_gp_reg(self, regnum):
         address = self.address_of_gp_reg(regnum)
@@ -614,6 +630,12 @@ def _saddr(low):
     if low < 0x20:
         saddr += 0x100
     return saddr
+
+def _saddrp(low):
+    saddrp = _saddr(low)
+    if saddrp & 1 != 0:
+        raise Exception("saddrp must be an even address")
+    return _saddr(low)
 
 def _addr16(low, high):
     return low + (high << 8)
