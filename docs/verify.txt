@@ -1,0 +1,12 @@
+
+Verify on real hardware that PSW is really stored in FF1E.
+  From the instructions, PSW translates to FF1E:
+      # mov a,0fe20h                ;F0 20          saddr
+      # mov a,psw                   ;f0 1e
+  From the 78F0831Y device file, FF1E does indeed look like PSW:
+    ff1e: ISP (BIT R/W)
+    ff1e: RBS0 (BIT R/W)
+    ff1e: AC (BIT R/W)
+    ff1e: RBS1 (BIT R/W)
+    ff1e: Z (BIT R/W)
+    ff1e: IE (BIT R/W)

@@ -101,3 +101,33 @@
 
     call !0abcdh                ;9a cd ab
     ret                         ;af
+
+    xor a,x                     ;61 78
+    xor a,a                     ;61 71 illegal
+    xor a,c                     ;61 7a
+    xor a,b                     ;61 7b
+    xor a,e                     ;61 7c
+    xor a,d                     ;61 7d
+    xor a,l                     ;61 7e
+    xor a,h                     ;61 7f
+
+    xor x,a                     ;61 70
+    xor a,a                     ;61 71
+    xor c,a                     ;61 72
+    xor b,a                     ;61 73
+    xor e,a                     ;61 74
+    xor d,a                     ;61 75
+    xor l,a                     ;61 76
+    xor h,a                     ;61 77
+
+    xor a,!0abcdh               ;78 cd ab
+    xor a,#0abh                 ;7d ab
+    xor a,0fe20h                ;7e 20          saddr
+    xor 0fe20h,#0abh            ;f8 20 ab       saddr
+
+    push psw                    ;22
+    pop psw                     ;23
+    mov psw,a                   ;f2 1e
+    mov a,psw                   ;f0 1e
+
+    mov psw,#0abh               ;11 1e ab

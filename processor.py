@@ -1,12 +1,12 @@
 
 class Processor(object):
-    REGISTERS_BASE = 0xFEF8
+    REGISTERS_BASE_ADDRESS = 0xFEF8
+    PSW_ADDRESS = 0xFF1E
 
     def __init__(self):
         self.memory = bytearray(0x10000)
         self.pc = 0
         self.sp = 0xfe1f
-        self.psw = 0
         self._build_opcode_map()
 
     def step(self):
@@ -25,6 +25,10 @@ class Processor(object):
                 f = self._opcode_0x20 # set1 cy
             elif opcode == 0x21:
                 f = self._opcode_0x21 # clr1 cy
+            elif opcode == 0x22:
+                f = self._opcode_0x22 # push psw                    ;22
+            elif opcode == 0x23:
+                f = self._opcode_0x23 # pop psw                     ;23
             elif opcode in (0x30, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37):
                 f = self._opcode_0x30_to_0x37_except_0x31 # xch a,REG                    ;32...37 except 31
             elif opcode == 0xce:
@@ -79,6 +83,14 @@ class Processor(object):
                 f = self._opcode_0x9a # call !0abcdh                ;9a cd ab
             elif opcode == 0xaf:
                 f = self._opcode_0xaf # ret                         ;af
+            elif opcode == 0x7d:
+                f = self._opcode_0x7d # xor a,#0abh                 ;7d ab
+            elif opcode == 0x7e:
+                f = self._opcode_0x7e # xor a,0fe20h                ;7e 20          saddr
+            elif opcode == 0x78:
+                f = self._opcode_0x78 # xor a,!0abcdh               ;78 cd ab
+            elif opcode == 0xf8:
+                f = self._opcode_0xf8 # xor 0fe20h,#0abh            ;f8 20 ab       saddr
 
             self._opcode_map[opcode] = f
 
@@ -89,21 +101,29 @@ class Processor(object):
     # not1 cy
     def _opcode_0x01(self, opcode):
         bitweight = Flags.CY
-        carry = self.psw & bitweight
+        carry = self.read_psw() & bitweight
         if carry:
-            self.psw &= ~bitweight
+            self.write_psw(self.read_psw() & ~bitweight)
         else:
-            self.psw |= bitweight
+            self.write_psw(self.read_psw() | bitweight)
 
     # set1 cy
     def _opcode_0x20(self, opcode):
         bitweight = Flags.CY
-        self.psw |= bitweight
+        self.write_psw(self.read_psw() | bitweight)
 
     # clr1 cy
     def _opcode_0x21(self, opcode):
         bitweight = Flags.CY
-        self.psw &= ~bitweight
+        self.write_psw(self.read_psw() & ~bitweight)
+
+    # push psw                    ;22
+    def _opcode_0x22(self, opcode):
+        self._push(self.read_psw())
+
+    # pop psw                     ;23
+    def _opcode_0x23(self, opcode):
+        self.write_psw(self._pop())
 
     # xch a,REG                    ;32...37 except 31
     def _opcode_0x30_to_0x37_except_0x31(self, opcode):
@@ -173,12 +193,14 @@ class Processor(object):
         self.memory[address] = value
 
     # mov a,0fe20h                ;F0 20          saddr
+    # mov a,psw                   ;f0 1e          (psw=saddr ff1e)
     def _opcode_0xf0(self, opcode):
         address = self._consume_saddr()
         value = self.memory[address]
         self.write_gp_reg(Registers.A, value)
 
     # mov 0fe20h,a                ;f2 20          saddr
+    # mov psw,a                   ;f2 1e          (psw=saddr ff1e)
     def _opcode_0xf2(self, opcode):
         address = self._consume_saddr()
         value = self.read_gp_reg(Registers.A)
@@ -198,10 +220,14 @@ class Processor(object):
         self.memory[address] = value
 
     # mov 0fe20h,#0abh            ;11 20 ab       saddr
+    # mov psw,#0abh               ;11 1e ab
     def _opcode_0x11(self, opcode):
         address = self._consume_saddr()
         value = self._consume_byte()
-        self.memory[address] = value
+        if address == 0xff1e: # psw
+            self.write_psw(value) # TODO also write it to memory?
+        else:
+            self.memory[address] = value
 
     # mov 0fffeh, #0abh           ;13 fe ab       sfr
     def _opcode_0x13(self, opcode):
@@ -247,6 +273,22 @@ class Processor(object):
             reg = _reg(opcode2)
             b = self.read_gp_reg(reg)
             result = self._operation_and(a, b)
+            self.write_gp_reg(reg, result)
+
+        # xor a,reg (except: xor a,reg=a)
+        elif opcode2 in (0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f):
+            a = self.read_gp_reg(Registers.A)
+            reg = _reg(opcode2)
+            b = self.read_gp_reg(reg)
+            result = self._operation_xor(a, b)
+            self.write_gp_reg(Registers.A, result)
+
+        # xor reg,a
+        elif opcode2 in (0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
+            a = self.read_gp_reg(Registers.A)
+            reg = _reg(opcode2)
+            b = self.read_gp_reg(reg)
+            result = self._operation_xor(a, b)
             self.write_gp_reg(reg, result)
 
         else:
@@ -314,6 +356,37 @@ class Processor(object):
         result = self._operation_and(a, b)
         self.memory[address] = result
 
+    # xor a,!0abcdh               ;78 cd ab
+    def _opcode_0x78(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._consume_addr16()
+        b = self.memory[address]
+        result = self._operation_xor(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # xor 0fe20h,#0abh            ;f8 20 ab       saddr
+    def _opcode_0xf8(self, opcode):
+        address = self._consume_saddr()
+        a = self.memory[address]
+        b = self._consume_byte()
+        result = self._operation_xor(a, b)
+        self.memory[address] = result
+
+    # xor a,#0abh                 ;7d ab
+    def _opcode_0x7d(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        b = self._consume_byte()
+        result = self._operation_xor(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # xor a,0fe20h                ;7e 20          saddr
+    def _opcode_0x7e(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._consume_saddr()
+        b = self.memory[address]
+        result = self._operation_xor(a, b)
+        self.write_gp_reg(Registers.A, result)
+
     # call !0abcdh                ;9a cd ab
     def _opcode_0x9a(self, opcode):
         address = self._consume_addr16()
@@ -348,6 +421,11 @@ class Processor(object):
         self._update_psw_z(result)
         return result
 
+    def _operation_xor(self, a, b):
+        result = a ^ b
+        self._update_psw_z(result)
+        return result
+
     def _consume_byte(self):
         value = self.memory[self.pc]
         self.pc += 1
@@ -376,27 +454,35 @@ class Processor(object):
 
     def address_of_gp_reg(self, regnum):
         """Return the address in RAM of a general purpose register"""
-        bank_addr = self.REGISTERS_BASE - (self.read_rb() * 8)
+        bank_addr = self.REGISTERS_BASE_ADDRESS - (self.read_rb() * 8)
         return bank_addr + regnum
 
     def read_rb(self):
         """Reads PSW and returns a register bank number 0..3"""
-        rbs0 = (self.psw & Flags.RBS0) >> 3
-        rbs1 = (self.psw & Flags.RBS1) >> 4
+        rbs0 = (self.read_psw() & Flags.RBS0) >> 3
+        rbs1 = (self.read_psw() & Flags.RBS1) >> 4
         return rbs0 + rbs1
 
     def write_rb(self, value):
         """Writes a register bank number 0..3 to the PSW"""
         rbs0 = (value & 1) << 3
         rbs1 = (value & 2) << 4
-        self.psw &= ~(Flags.RBS0 + Flags.RBS1)
-        self.psw |= rbs0 + rbs1
+        self.write_psw(self.read_psw() & ~(Flags.RBS0 + Flags.RBS1))
+        self.write_psw(self.read_psw() | (rbs0 + rbs1))
+
+    def read_psw(self):
+        """Read the PSW"""
+        return self.memory[self.PSW_ADDRESS]
+
+    def write_psw(self, value):
+        """Write the PSW"""
+        self.memory[self.PSW_ADDRESS] = value
 
     def _update_psw_z(self, value):
         """Set the Z flag in PSW if value is zero, clear otherwise"""
-        self.psw &= ~Flags.Z
+        self.write_psw(self.read_psw() & ~Flags.Z)
         if value == 0:
-            self.psw |= Flags.Z
+            self.write_psw(self.read_psw() | Flags.Z)
 
     def write_memory(self, address, data):
         for address, value in enumerate(data, address):
@@ -423,6 +509,9 @@ def _addr16p(low, high):
 
 def _reg(opcode):
     return opcode & 0b111
+
+def _bit(opcode):
+    return (opcode & 0b01110000) >> 4
 
 class Registers(object):
     X = 0

@@ -16,7 +16,6 @@ label0:
     add a,0fe20h                ;0e 20          saddr
     add a,[hl]                  ;0f
     movw ax,#0abcdh             ;10 cd ab
-    mov psw,#0abh               ;11 1e ab
     movw bc,#0abcdh             ;12 cd ab
     movw de,#0abcdh             ;14 cd ab
     movw hl,#0abcdh             ;16 cd ab
@@ -31,8 +30,6 @@ label0:
     sub a,#0abh                 ;1d ab
     sub a,0fe20h                ;1e 20          saddr
     sub a,[hl]                  ;1f
-    push psw                    ;22
-    pop psw                     ;23
     ror a,1                     ;24
     rorc a,1                    ;25
     rol a,1                     ;26
@@ -478,25 +475,6 @@ label127:
     subc l,a                    ;61 36
     subc h,a                    ;61 37
 
-
-    xor a,x                     ;61 78
-    xor a,a                     ;61 71
-    xor a,c                     ;61 7a
-    xor a,b                     ;61 7b
-    xor a,e                     ;61 7c
-    xor a,d                     ;61 7d
-    xor a,l                     ;61 7e
-    xor a,h                     ;61 7f
-
-    xor x,a                     ;61 70
-    xor a,a                     ;61 71
-    xor c,a                     ;61 72
-    xor b,a                     ;61 73
-    xor e,a                     ;61 74
-    xor d,a                     ;61 75
-    xor l,a                     ;61 76
-    xor h,a                     ;61 77
-
     cmp a,x                     ;61 48
     cmp a,a                     ;61 41
     cmp a,c                     ;61 4a
@@ -743,7 +721,6 @@ label127:
     halt                        ;71 10
     stop                        ;71 00
 
-    xor a,!0abcdh               ;78 cd ab
     xor a,[hl+0abh]             ;79 ab
     set1 0fe20h.7               ;7a 20          saddr
     set1 psw.7                  ;7a 1e
@@ -753,8 +730,6 @@ label127:
     di                          ;7b 1e          alias for clr1 psw.7
     callf !0f00h                ;7c 00          7c = callf 0f00h-0fffh
     callf !0fffh                ;7c ff
-    xor a,#0abh                 ;7d ab
-    xor a,0fe20h                ;7e 20          saddr
     xor a,[hl]                  ;7f
     incw ax                     ;80
     inc 0fe20h                  ;81 20          saddr
@@ -877,13 +852,10 @@ label23:
     movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
     movw sp,#0abcdh             ;ee 1c cd ab
     callt [006eh]               ;ef
-    mov a,psw                   ;f0 1e
     callt [0070h]               ;f1
-    mov psw,a                   ;f2 1e
     callt [0072h]               ;f3
     callt [0074h]               ;f5
     callt [0076h]               ;f7
-    xor 0fe20h,#0abh            ;f8 20 ab       saddr
     callt [0078h]               ;f9
 label7:
     br $label7                  ;fa fe
