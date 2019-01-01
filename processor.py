@@ -98,6 +98,11 @@ class Processor(object):
                 # SET1 PSW.7                  ;7A 1E
                 # EI                          ;7A 1E          alias for SET1 PSW.7
                 f = self._opcode_0x0a_to_0x7a_set1
+            elif opcode in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
+                # clr1 0fe20h.0               ;0b 20          saddr
+                # clr1 psw.0                  ;0b 1e
+                # di                          ;7b 1e          alias for clr1 psw.7
+                f = self._opcode_0x0b_to_0x7b_clr
             elif opcode == 0xfa:
                 f = self._opcode_0xfa # br $label7                  ;fa fe
             elif opcode == 0x8d:
@@ -335,6 +340,14 @@ class Processor(object):
             result = self._operation_set1(value, bit)
             self.memory[address] = result
 
+        # clr1 sfr.bit
+        elif opcode2 in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
+            value = self.memory[address]
+            result = self._operation_clr1(value, bit)
+            self.memory[address] = result
+
         else:
             raise NotImplementedError()
 
@@ -446,6 +459,16 @@ class Processor(object):
         address = self._consume_saddr()
         value = self.memory[address]
         result = self._operation_set1(value, bit)
+        self.memory[address] = result
+
+    # clr1 0fe20h.0               ;0b 20          saddr
+    # clr1 psw.0                  ;0b 1e
+    # di                          ;7b 1e          alias for clr1 psw.7
+    def _opcode_0x0b_to_0x7b_clr(self, opcode):
+        bit = _bit(opcode)
+        address = self._consume_saddr()
+        value = self.memory[address]
+        result = self._operation_clr1(value, bit)
         self.memory[address] = result
 
     # ret                         ;af

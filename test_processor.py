@@ -1874,6 +1874,247 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b01111111)
 
+    # clr1 0fffeh.0               ;71 0b fe       sfr
+    def test_71_0b_clr1_sfr_bit0(self):
+        proc = Processor()
+        code = [0x71, 0x0b, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0b11111110)
+
+    # clr1 0fffeh.1               ;71 1b fe       sfr
+    def test_71_1b_clr1_sfr_bit1(self):
+        proc = Processor()
+        code = [0x71, 0x1b, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0b11111101)
+
+    # clr1 0fffeh.2               ;71 2b fe       sfr
+    def test_71_2b_clr1_sfr_bit2(self):
+        proc = Processor()
+        code = [0x71, 0x2b, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0b11111011)
+
+    # clr1 0fffeh.3               ;71 3b fe       sfr
+    def test_71_3b_clr1_sfr_bit3(self):
+        proc = Processor()
+        code = [0x71, 0x3b, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0b11110111)
+
+    # clr1 0fffeh.4               ;71 4b fe       sfr
+    def test_71_4b_clr1_sfr_bit4(self):
+        proc = Processor()
+        code = [0x71, 0x4b, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0b11101111)
+
+    # clr1 0fffeh.5               ;71 5b fe       sfr
+    def test_71_5b_clr1_sfr_bit5(self):
+        proc = Processor()
+        code = [0x71, 0x5b, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0b11011111)
+
+    # clr1 0fffeh.6               ;71 6b fe       sfr
+    def test_71_6b_clr1_sfr_bit6(self):
+        proc = Processor()
+        code = [0x71, 0x6b, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0b10111111)
+
+    # clr1 0fffeh.7               ;71 7b fe       sfr
+    def test_71_7b_clr1_sfr_bit7(self):
+        proc = Processor()
+        code = [0x71, 0x7b, 0xfe]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfffe] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfffe], 0b01111111)
+
+    # clr1 0fe20h.0               ;0b 20          saddr
+    def test_0b_clr1_saddr_bit0(self):
+        proc = Processor()
+        code = [0x0b, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b11111110)
+
+    # clr1 psw.0                  ;0b 1e
+    def test_0b_clr1_psw_bit0(self):
+        proc = Processor()
+        code = [0x0b, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b11111110)
+
+    # clr1 0fe20h.1               ;1b 20          saddr
+    def test_1b_clr1_saddr_bit1(self):
+        proc = Processor()
+        code = [0x1b, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b11111101)
+
+    # clr1 psw.1                  ;1b 1e
+    def test_1b_clr1_psw_bit1(self):
+        proc = Processor()
+        code = [0x1b, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b11111101)
+
+    # clr1 0fe20h.2               ;2b 20          saddr
+    def test_2b_clr1_saddr_bit2(self):
+        proc = Processor()
+        code = [0x2b, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b11111011)
+
+    # clr1 psw.2                  ;2b 1e
+    def test_2b_clr1_psw_bit2(self):
+        proc = Processor()
+        code = [0x2b, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b11111011)
+
+    # clr1 0fe20h.3               ;3b 20          saddr
+    def test_3b_clr1_saddr_bit3(self):
+        proc = Processor()
+        code = [0x3b, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b11110111)
+
+    # clr1 psw.3                  ;3b 1e
+    def test_3b_clr1_psw_bit3(self):
+        proc = Processor()
+        code = [0x3b, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b11110111)
+
+    # clr1 0fe20h.4               ;4b 20          saddr
+    def test_4b_clr1_saddr_bit4(self):
+        proc = Processor()
+        code = [0x4b, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b11101111)
+
+    # clr1 psw.4                  ;4b 1e
+    def test_4b_clr1_psw_bit4(self):
+        proc = Processor()
+        code = [0x4b, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b11101111)
+
+    # clr1 0fe20h.5               ;5b 20          saddr
+    def test_5b_clr1_saddr_bit5(self):
+        proc = Processor()
+        code = [0x5b, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b11011111)
+
+    # clr1 psw.5                  ;5b 1e
+    def test_5b_clr1_psw_bit5(self):
+        proc = Processor()
+        code = [0x5b, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b11011111)
+
+    # clr1 0fe20h.6               ;6b 20          saddr
+    def test_6b_clr1_saddr_bit6(self):
+        proc = Processor()
+        code = [0x6b, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b10111111)
+
+    # clr1 psw.6                  ;6b 1e
+    def test_6b_clr1_psw_bit6(self):
+        proc = Processor()
+        code = [0x6b, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b10111111)
+
+    # clr1 0fe20h.7               ;7b 20          saddr
+    def test_7b_clr1_saddr_bit6(self):
+        proc = Processor()
+        code = [0x7b, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0b11111111
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b01111111)
+
+    # clr1 psw.7                  ;7b 1e
+    # di                          ;7b 1e          alias for clr1 psw.7
+    def test_7b_clr1_psw_bit7(self):
+        proc = Processor()
+        code = [0x7b, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(0b11111111)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b01111111)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])
