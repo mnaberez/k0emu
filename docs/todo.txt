@@ -316,24 +316,6 @@ label127:
     adjba                       ;61 80
     adjbs                       ;61 90
 
-    mov1 cy,a.0                 ;61 8c
-    mov1 cy,a.1                 ;61 9c
-    mov1 cy,a.2                 ;61 ac
-    mov1 cy,a.3                 ;61 bc
-    mov1 cy,a.4                 ;61 cc
-    mov1 cy,a.5                 ;61 dc
-    mov1 cy,a.6                 ;61 ec
-    mov1 cy,a.7                 ;61 fc
-
-    mov1 a.0,cy                 ;61 89
-    mov1 a.1,cy                 ;61 99
-    mov1 a.2,cy                 ;61 a9
-    mov1 a.3,cy                 ;61 b9
-    mov1 a.4,cy                 ;61 c9
-    mov1 a.5,cy                 ;61 d9
-    mov1 a.6,cy                 ;61 e9
-    mov1 a.7,cy                 ;61 f9
-
     and1 cy,a.0                 ;61 8d
     and1 cy,a.1                 ;61 9d
     and1 cy,a.2                 ;61 ad
@@ -465,15 +447,6 @@ label127:
     mov1 cy,0fe20h.6            ;71 64 20       saddr
     mov1 cy,0fe20h.7            ;71 74 20       saddr
 
-    mov1 cy,0fffeh.0            ;71 0c fe       sfr
-    mov1 cy,0fffeh.1            ;71 1c fe       sfr
-    mov1 cy,0fffeh.2            ;71 2c fe       sfr
-    mov1 cy,0fffeh.3            ;71 3c fe       sfr
-    mov1 cy,0fffeh.4            ;71 4c fe       sfr
-    mov1 cy,0fffeh.5            ;71 5c fe       sfr
-    mov1 cy,0fffeh.6            ;71 6c fe       sfr
-    mov1 cy,0fffeh.7            ;71 7c fe       sfr
-
     mov1 cy,psw.0               ;71 04 1e
     mov1 cy,psw.1               ;71 14 1e
     mov1 cy,psw.2               ;71 24 1e
@@ -500,15 +473,6 @@ label127:
     mov1 0fe20h.5,cy            ;71 51 20       saddr
     mov1 0fe20h.6,cy            ;71 61 20       saddr
     mov1 0fe20h.7,cy            ;71 71 20       saddr
-
-    mov1 0fffeh.0,cy            ;71 09 fe       sfr
-    mov1 0fffeh.1,cy            ;71 19 fe       sfr
-    mov1 0fffeh.2,cy            ;71 29 fe       sfr
-    mov1 0fffeh.3,cy            ;71 39 fe       sfr
-    mov1 0fffeh.4,cy            ;71 49 fe       sfr
-    mov1 0fffeh.5,cy            ;71 59 fe       sfr
-    mov1 0fffeh.6,cy            ;71 69 fe       sfr
-    mov1 0fffeh.7,cy            ;71 79 fe       sfr
 
     mov1 psw.0,cy               ;71 01 1e
     mov1 psw.1,cy               ;71 11 1e

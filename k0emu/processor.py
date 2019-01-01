@@ -330,6 +330,22 @@ class Processor(object):
             result = self._operation_clr1(a, bit)
             self.write_gp_reg(Registers.A, result)
 
+        # mov1 cy,a.bit
+        elif opcode2 in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
+            bit = _bit(opcode2)
+            src = self.read_gp_reg(Registers.A)
+            dest = self.read_psw()
+            result = self._operation_mov1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            self.write_psw(result)
+
+        # mov1 a.bit,cy                 ;61 89
+        elif opcode2 in (0x89, 0x99, 0xa9, 0xb9, 0xc9, 0xd9, 0xe9, 0xf9):
+            bit = _bit(opcode2)
+            src = self.read_psw()
+            dest = self.read_gp_reg(Registers.A)
+            result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
+            self.write_gp_reg(Registers.A, result)
+
         else:
             raise NotImplementedError()
 
@@ -350,6 +366,24 @@ class Processor(object):
             address = self._consume_sfr()
             value = self.memory[address]
             result = self._operation_clr1(value, bit)
+            self.memory[address] = result
+
+        # mov1 cy,0fffeh.bit            ;71 0c fe       sfr
+        elif opcode2 in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
+            src = self.memory[address]
+            dest = self.read_gp_reg(Registers.A)
+            result = self._operation_mov1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            self.write_psw(result)
+
+        # mov1 0fffeh.bit,cy            ;71 09 fe       sfr
+        elif opcode2 in (0x09, 0x19, 0x29, 0x39, 0x49, 0x59, 0x69, 0x79):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
+            src = self.read_psw()
+            dest = self.memory[address]
+            result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
             self.memory[address] = result
 
         else:
@@ -533,6 +567,14 @@ class Processor(object):
         value = self.memory[self.sp]
         self.sp += 1
         return value
+
+    def _operation_mov1(self, src, src_bit, dest, dest_bit):
+        src_bitweight = 2 ** src_bit
+        dest_bitweight = 2 ** dest_bit
+        result = dest & ~dest_bitweight
+        if src & src_bitweight:
+            result |= dest_bitweight
+        return result
 
     def _operation_set1(self, value, bit):
         return value | (2 ** bit)

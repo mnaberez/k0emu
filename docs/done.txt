@@ -206,3 +206,39 @@
     di                          ;7b 1e          alias for clr1 psw.7
 
     movw sp,#0abcdh             ;ee 1c cd ab
+
+    mov1 a.0,cy                 ;61 89
+    mov1 a.1,cy                 ;61 99
+    mov1 a.2,cy                 ;61 a9
+    mov1 a.3,cy                 ;61 b9
+    mov1 a.4,cy                 ;61 c9
+    mov1 a.5,cy                 ;61 d9
+    mov1 a.6,cy                 ;61 e9
+    mov1 a.7,cy                 ;61 f9
+
+    mov1 cy,a.0                 ;61 8c
+    mov1 cy,a.1                 ;61 9c
+    mov1 cy,a.2                 ;61 ac
+    mov1 cy,a.3                 ;61 bc
+    mov1 cy,a.4                 ;61 cc
+    mov1 cy,a.5                 ;61 dc
+    mov1 cy,a.6                 ;61 ec
+    mov1 cy,a.7                 ;61 fc
+
+    mov1 cy,0fffeh.0            ;71 0c fe       sfr
+    mov1 cy,0fffeh.1            ;71 1c fe       sfr
+    mov1 cy,0fffeh.2            ;71 2c fe       sfr
+    mov1 cy,0fffeh.3            ;71 3c fe       sfr
+    mov1 cy,0fffeh.4            ;71 4c fe       sfr
+    mov1 cy,0fffeh.5            ;71 5c fe       sfr
+    mov1 cy,0fffeh.6            ;71 6c fe       sfr
+    mov1 cy,0fffeh.7            ;71 7c fe       sfr
+
+    mov1 0fffeh.0,cy            ;71 09 fe       sfr
+    mov1 0fffeh.1,cy            ;71 19 fe       sfr
+    mov1 0fffeh.2,cy            ;71 29 fe       sfr
+    mov1 0fffeh.3,cy            ;71 39 fe       sfr
+    mov1 0fffeh.4,cy            ;71 49 fe       sfr
+    mov1 0fffeh.5,cy            ;71 59 fe       sfr
+    mov1 0fffeh.6,cy            ;71 69 fe       sfr
+    mov1 0fffeh.7,cy            ;71 79 fe       sfr
