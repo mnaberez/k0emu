@@ -1,6 +1,6 @@
 import unittest
 import sys
-from processor import Processor, Registers, Flags
+from k0emu.processor import Processor, Registers, Flags
 
 class ProcessorTests(unittest.TestCase):
 
