@@ -386,6 +386,15 @@ class Processor(object):
             result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
             self.memory[address] = result
 
+        # mov1 0fe20h.bit,cy            ;71 01 20       saddr
+        elif opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
+            bit = _bit(opcode2)
+            address = self._consume_saddr()
+            src = self.read_psw()
+            dest = self.memory[address]
+            result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
+            self.memory[address] = result
+
         else:
             raise NotImplementedError()
 

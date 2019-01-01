@@ -2488,6 +2488,174 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.memory[0xfffe], 0b10000000)
 
+    # mov1 0fe20h.0,cy            ;71 01 20       saddr
+    def test_71_01_mov1_saddr_bit0_cy(self):
+        proc = Processor()
+        code = [0x71, 0x01, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b00000001)
+
+    # mov1 0fe20h.1,cy            ;71 11 20       saddr
+    def test_71_11_mov1_saddr_bit1_cy(self):
+        proc = Processor()
+        code = [0x71, 0x11, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b00000010)
+
+    # mov1 0fe20h.2,cy            ;71 21 20       saddr
+    def test_71_21_mov1_saddr_bit2_cy(self):
+        proc = Processor()
+        code = [0x71, 0x21, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b00000100)
+
+    # mov1 0fe20h.3,cy            ;71 31 20       saddr
+    def test_71_31_mov1_saddr_bit3_cy(self):
+        proc = Processor()
+        code = [0x71, 0x31, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b00001000)
+
+    # mov1 0fe20h.4,cy            ;71 41 20       saddr
+    def test_71_41_mov1_saddr_bit4_cy(self):
+        proc = Processor()
+        code = [0x71, 0x41, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b00010000)
+
+    # mov1 0fe20h.5,cy            ;71 51 20       saddr
+    def test_71_51_mov1_saddr_bit5_cy(self):
+        proc = Processor()
+        code = [0x71, 0x51, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b00100000)
+
+    # mov1 0fe20h.6,cy            ;71 61 20       saddr
+    def test_71_61_mov1_saddr_bit6_cy(self):
+        proc = Processor()
+        code = [0x71, 0x61, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b01000000)
+
+    # mov1 0fe20h.7,cy            ;71 71 20       saddr
+    def test_71_71_mov1_saddr_bit7_cy(self):
+        proc = Processor()
+        code = [0x71, 0x71, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0b10000000)
+
+    # mov1 psw.0,cy               ;71 01 1e
+    def test_71_01_mov1_psw_bit0_cy(self):
+        proc = Processor()
+        code = [0x71, 0x01, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00000001)
+
+    # mov1 psw.1,cy               ;71 11 1e
+    def test_71_11_mov1_psw_bit1_cy(self):
+        proc = Processor()
+        code = [0x71, 0x11, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00000011)
+
+    # mov1 psw.2,cy               ;71 21 1e
+    def test_71_21_mov1_psw_bit2_cy(self):
+        proc = Processor()
+        code = [0x71, 0x21, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00000101)
+
+    # mov1 psw.3,cy               ;71 31 1e
+    def test_71_31_mov1_psw_bit3_cy(self):
+        proc = Processor()
+        code = [0x71, 0x31, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00001001)
+
+    # mov1 psw.4,cy               ;71 41 1e
+    def test_71_41_mov1_psw_bit4_cy(self):
+        proc = Processor()
+        code = [0x71, 0x41, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00010001)
+
+    # mov1 psw.5,cy               ;71 51 1e
+    def test_71_51_mov1_psw_bit5_cy(self):
+        proc = Processor()
+        code = [0x71, 0x51, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00100001)
+
+    # mov1 psw.6,cy               ;71 61 1e
+    def test_71_61_mov1_psw_bit6_cy(self):
+        proc = Processor()
+        code = [0x71, 0x61, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b01000001)
+
+    # mov1 psw.7,cy               ;71 71 1e
+    def test_71_71_mov1_psw_bit7_cy(self):
+        proc = Processor()
+        code = [0x71, 0x71, 0x1e]
+        proc.write_memory(0x0000, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b10000001)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])
