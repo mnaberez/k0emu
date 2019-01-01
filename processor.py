@@ -63,6 +63,8 @@ class Processor(object):
                 f = self._opcode_0x13 # mov 0fffeh, #0abh           ;13 fe ab       sfr
             elif opcode == 0x61:
                 f = self._opcode_0x61
+            elif opcode == 0x71:
+                f = self._opcode_0x71
             elif opcode == 0x6d:
                 f = self._opcode_0x6d # or a,#0abh                  ;6d ab
             elif opcode == 0x6e:
@@ -91,7 +93,21 @@ class Processor(object):
                 f = self._opcode_0x78 # xor a,!0abcdh               ;78 cd ab
             elif opcode == 0xf8:
                 f = self._opcode_0xf8 # xor 0fe20h,#0abh            ;f8 20 ab       saddr
-
+            elif opcode in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
+                # SET1 0fe20h.7               ;7A 20          saddr
+                # SET1 PSW.7                  ;7A 1E
+                # EI                          ;7A 1E          alias for SET1 PSW.7
+                f = self._opcode_0x0a_to_0x7a_set1
+            elif opcode == 0xfa:
+                f = self._opcode_0xfa # br $label7                  ;fa fe
+            elif opcode == 0x8d:
+                f = self._opcode_0x8d # bc $label3                  ;8d fe
+            elif opcode == 0x9d:
+                f = self._opcode_0x9d # bnc $label3                 ;8d fe
+            elif opcode == 0xad:
+                f = self._opcode_0xad # bz $label5                  ;ad fe
+            elif opcode == 0xbd:
+                f = self._opcode_0xbd # bnz $label5                 ;bd fe
             self._opcode_map[opcode] = f
 
     # nop
@@ -291,6 +307,27 @@ class Processor(object):
             result = self._operation_xor(a, b)
             self.write_gp_reg(reg, result)
 
+        # set1 a.bit
+        elif opcode2 in (0x8a, 0x9a, 0xaa, 0xba, 0xca, 0xda, 0xea, 0xfa):
+            a = self.read_gp_reg(Registers.A)
+            bit = _bit(opcode2)
+            result = self._operation_set1(a, bit)
+            self.write_gp_reg(Registers.A, result)
+
+        else:
+            raise NotImplementedError()
+
+    def _opcode_0x71(self, opcode):
+        opcode2 = self._consume_byte()
+
+        # set1 sfr.bit
+        if opcode2 in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
+            value = self.memory[address]
+            result = self._operation_set1(value, bit)
+            self.memory[address] = result
+
         else:
             raise NotImplementedError()
 
@@ -394,11 +431,55 @@ class Processor(object):
         self._push(self.pc & 0xFF)
         self.pc = address
 
+    # SET1 0fe20h.7               ;7A 20          saddr
+    # SET1 PSW.7                  ;7A 1E          (psw=saddr ff1e)
+    # EI                          ;7A 1E          alias for SET1 PSW.7
+    def _opcode_0x0a_to_0x7a_set1(self, opcode):
+        bit = _bit(opcode)
+        address = self._consume_saddr()
+        value = self.memory[address]
+        result = self._operation_set1(value, bit)
+        self.memory[address] = result
+
     # ret                         ;af
     def _opcode_0xaf(self, opcode):
         address_low = self._pop()
         address_high = self._pop()
         self.pc = (address_high << 8) + address_low
+
+    # br $label7                  ;fa fe
+    def _opcode_0xfa(self, opcode):
+        displacement = self._consume_byte()
+        address = _resolve_rel(self.pc, displacement)
+        self.pc = address
+
+    # bc $label3                  ;8d fe
+    def _opcode_0x8d(self, opcode):
+        displacement = self._consume_byte()
+        if self.read_psw() & Flags.CY:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
+
+    # bnc $label3                 ;9d fe
+    def _opcode_0x9d(self, opcode):
+        displacement = self._consume_byte()
+        if self.read_psw() & Flags.CY == 0:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
+
+    # bz $label5                  ;ad fe
+    def _opcode_0xad(self, opcode):
+        displacement = self._consume_byte()
+        if self.read_psw() & Flags.Z:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
+
+    # bnz $label5                 ;bd fe
+    def _opcode_0xbd(self, opcode):
+        displacement = self._consume_byte()
+        if self.read_psw() & Flags.Z == 0:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
 
     def _push(self, value):
         """Push a byte onto the stack"""
@@ -410,6 +491,9 @@ class Processor(object):
         value = self.memory[self.sp]
         self.sp += 1
         return value
+
+    def _operation_set1(self, value, bit):
+        return value | (2 ** bit)
 
     def _operation_or(self, a, b):
         result = a | b
@@ -512,6 +596,11 @@ def _reg(opcode):
 
 def _bit(opcode):
     return (opcode & 0b01110000) >> 4
+
+def _resolve_rel(pc, displacement):
+    if displacement & 0x80:
+        displacement = -((displacement ^ 0xFF) + 1)
+    return (pc + displacement) & 0xffff
 
 class Registers(object):
     X = 0

@@ -131,3 +131,40 @@
     mov a,psw                   ;f0 1e
 
     mov psw,#0abh               ;11 1e ab
+
+    set1 0fe20h.0               ;0a 20          saddr
+    set1 psw.0                  ;0a 1e
+    set1 0fe20h.1               ;1a 20          saddr
+    set1 psw.1                  ;1a 1e
+    set1 0fe20h.2               ;2a 20          saddr
+    set1 psw.2                  ;2a 1e
+    set1 0fe20h.3               ;3a 20          saddr
+    set1 psw.3                  ;3a 1e
+    set1 0fe20h.4               ;4a 20          saddr
+    set1 psw.4                  ;4a 1e
+    set1 0fe20h.6               ;6a 20          saddr
+    set1 psw.6                  ;6a 1e
+
+    set1 a.0                    ;61 8a
+    set1 a.1                    ;61 9a
+    set1 a.2                    ;61 aa
+    set1 a.3                    ;61 ba
+    set1 a.4                    ;61 ca
+    set1 a.5                    ;61 da
+    set1 a.6                    ;61 ea
+    set1 a.7                    ;61 fa
+
+    set1 0fffeh.0               ;71 0a fe       sfr
+    set1 0fffeh.1               ;71 1a fe       sfr
+    set1 0fffeh.2               ;71 2a fe       sfr
+    set1 0fffeh.3               ;71 3a fe       sfr
+    set1 0fffeh.4               ;71 4a fe       sfr
+    set1 0fffeh.5               ;71 5a fe       sfr
+    set1 0fffeh.6               ;71 6a fe       sfr
+    set1 0fffeh.7               ;71 7a fe       sfr
+
+    br $label7                  ;fa fe
+    bc $label3                  ;8d fe
+    bnc $label4                 ;9d fe
+    bz $label5                  ;ad fe
+    bnz $label6                 ;bd fe

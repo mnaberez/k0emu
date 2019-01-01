@@ -6,8 +6,6 @@ label0:
     xch a,[hl]                  ;07
     add a,!0abcdh               ;08 cd ab
     add a,[hl+0abh]             ;09 ab
-    set1 0fe20h.0               ;0a 20          saddr
-    set1 psw.0                  ;0a 1e
     clr1 0fe20h.0               ;0b 20          saddr
     clr1 psw.0                  ;0b 1e
     callf !0800h                ;0c 00          0c = callf 0800h-08ffh
@@ -21,8 +19,6 @@ label0:
     movw hl,#0abcdh             ;16 cd ab
     sub a,!0abcdh               ;18 cd ab
     sub a,[hl+0abh]             ;19 ab
-    set1 0fe20h.1               ;1a 20          saddr
-    set1 psw.1                  ;1a 1e
     clr1 0fe20h.1               ;1b 20          saddr
     clr1 psw.1                  ;1b 1e
     callf !0900h                ;1c 00          1c = callf 0900h-09ffh
@@ -36,8 +32,6 @@ label0:
     rolc a,1                    ;27
     addc a,!0abcdh              ;28 cd ab
     addc a,[hl+0abh]            ;29 ab
-    set1 0fe20h.2               ;2a 20          saddr
-    set1 psw.2                  ;2a 1e
     clr1 0fe20h.2               ;2b 20          saddr
     clr1 psw.2                  ;2b 1e
     callf !0a00h                ;2c 00          2c = callf 0a00h-0affh
@@ -292,8 +286,6 @@ label127:
 
     subc a,!0abcdh              ;38 cd ab
     subc a,[hl+0abh]            ;39 ab
-    set1 0fe20h.3               ;3a 20          saddr
-    set1 psw.3                  ;3a 1e
     clr1 0fe20h.3               ;3b 20          saddr
     clr1 psw.3                  ;3b 1e
     callf !0b00h                ;3c 00          3c = callf 0b00h-0bffh
@@ -311,8 +303,6 @@ label127:
     inc h                       ;47
     cmp a,!0abcdh               ;48 cd ab
     cmp a,[hl+0abh]             ;49 ab
-    set1 0fe20h.4               ;4a 20          saddr
-    set1 psw.4                  ;4a 1e
     clr1 0fe20h.4               ;4b 20          saddr
     clr1 psw.4                  ;4b 1e
     callf !0c00h                ;4c 00          4c = callf 0c00h-0cffh
@@ -329,8 +319,6 @@ label127:
     dec l                       ;56
     dec h                       ;57
     and a,[hl+0abh]             ;59 ab
-    set1 0fe20h.5               ;5a 20          saddr
-    set1 psw.5                  ;5a 1e
     clr1 0fe20h.5               ;5b 20          saddr
     clr1 psw.5                  ;5b 1e
     callf !0d00h                ;5c 00          5c = callf 0d00h-0dffh
@@ -384,15 +372,6 @@ label127:
     xor1 cy,a.5                 ;61 df
     xor1 cy,a.6                 ;61 ef
     xor1 cy,a.7                 ;61 ff
-
-    set1 a.0                    ;61 8a
-    set1 a.1                    ;61 9a
-    set1 a.2                    ;61 aa
-    set1 a.3                    ;61 ba
-    set1 a.4                    ;61 ca
-    set1 a.5                    ;61 da
-    set1 a.6                    ;61 ea
-    set1 a.7                    ;61 fa
 
     clr1 a.0                    ;61 8b
     clr1 a.1                    ;61 9b
@@ -494,8 +473,6 @@ label127:
     cmp h,a                     ;61 47
 
     or a,[hl+0abh]              ;69 ab
-    set1 0fe20h.6               ;6a 20          saddr
-    set1 psw.6                  ;6a 1e
     clr1 0fe20h.6               ;6b 20          saddr
     clr1 psw.6                  ;6b 1e
     callf !0e00h                ;6c 00          6c = callf 0e00h-0effh
@@ -682,15 +659,6 @@ label127:
     xor1 cy,[hl].6              ;71 e7
     xor1 cy,[hl].7              ;71 f7
 
-    set1 0fffeh.0               ;71 0a fe       sfr
-    set1 0fffeh.1               ;71 1a fe       sfr
-    set1 0fffeh.2               ;71 2a fe       sfr
-    set1 0fffeh.3               ;71 3a fe       sfr
-    set1 0fffeh.4               ;71 4a fe       sfr
-    set1 0fffeh.5               ;71 5a fe       sfr
-    set1 0fffeh.6               ;71 6a fe       sfr
-    set1 0fffeh.7               ;71 7a fe       sfr
-
     set1 [hl].0                 ;71 82
     set1 [hl].1                 ;71 92
     set1 [hl].2                 ;71 a2
@@ -722,9 +690,6 @@ label127:
     stop                        ;71 00
 
     xor a,[hl+0abh]             ;79 ab
-    set1 0fe20h.7               ;7a 20          saddr
-    set1 psw.7                  ;7a 1e
-    ei                          ;7a 1e          alias for set1 psw.7
     clr1 0fe20h.7               ;7b 20          saddr
     clr1 psw.7                  ;7b 1e
     di                          ;7b 1e          alias for clr1 psw.7
@@ -750,7 +715,6 @@ label8:
 label9:
     bt psw.0,$label9            ;8c 1e fd
 label3:
-    bc $label3                  ;8d fe
     reti                        ;8f
     decw ax                     ;90
     dec 0fe20h                  ;91 20          saddr
@@ -767,7 +731,6 @@ label10:
 label11:
     bt psw.1,$label11           ;9c 1e fd
 label4:
-    bnc $label4                 ;9d fe
     retb                        ;9f
     addc 0fe20h,#0abh           ;a8 20 ab       saddr
     movw ax,0fffeh              ;a9 fe          sfrp
@@ -778,7 +741,6 @@ label12:
 label13:
     bt psw.2,$label13           ;ac 1e fd
 label5:
-    bz $label5                  ;ad fe
     mov a,[hl+0abh]             ;ae ab
     pop ax                      ;b0
     push ax                     ;b1
@@ -797,7 +759,6 @@ label14:
 label15:
     bt psw.3,$label15           ;bc 1e fd
 label6:
-    bnz $label6                 ;bd fe
     mov [hl+0abh],a             ;be ab
     brk                         ;bf
     callt [0040h]               ;c1
@@ -858,7 +819,6 @@ label23:
     callt [0076h]               ;f7
     callt [0078h]               ;f9
 label7:
-    br $label7                  ;fa fe
     callt [007ah]               ;fb
 label18:
     bt 0fe20h.7,$label18        ;fc 20 fd       saddr
