@@ -1,5 +1,7 @@
+Verify on Real Hardware
+-----------------------
 
-Verify on real hardware that PSW is really stored in FF1E.
+Verify that PSW is really stored in FF1E.
   From the instructions, PSW translates to FF1E:
       # mov a,0fe20h                ;F0 20          saddr
       # mov a,psw                   ;f0 1e
@@ -12,3 +14,5 @@ Verify on real hardware that PSW is really stored in FF1E.
     ff1e: IE (BIT R/W)
 
 Verify behavior of flag AC during INC.
+
+Verify behavior of flag AC during DEC.

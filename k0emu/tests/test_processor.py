@@ -2956,6 +2956,118 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.memory[0xfe20], 1)
 
+    # callf !0842h                ;0c 42
+    def test_0c_callf_addr11(self):
+        proc = Processor()
+        code = [0x0c, 0x42]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0x0842)
+
+    # callf !0942h                ;1c 42
+    def test_1c_callf_addr11(self):
+        proc = Processor()
+        code = [0x1c, 0x42]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0x0942)
+
+    # callf !0a42h                ;2c 42
+    def test_2c_callf_addr11(self):
+        proc = Processor()
+        code = [0x2c, 0x42]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0x0a42)
+
+    # callf !0b42h                ;3c 42
+    def test_3c_callf_addr11(self):
+        proc = Processor()
+        code = [0x3c, 0x42]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0x0b42)
+
+    # callf !0c42h                ;4c 42
+    def test_4c_callf_addr11(self):
+        proc = Processor()
+        code = [0x4c, 0x42]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0x0c42)
+
+    # callf !0d42h                ;5c 42
+    def test_5c_callf_addr11(self):
+        proc = Processor()
+        code = [0x5c, 0x42]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0x0d42)
+
+    # callf !0e42h                ;6c 42
+    def test_6c_callf_addr11(self):
+        proc = Processor()
+        code = [0x6c, 0x42]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0x0e42)
+
+    # callf !0f42h                ;7c 42
+    def test_7c_callf_addr11(self):
+        proc = Processor()
+        code = [0x7c, 0x42]
+        proc.write_memory(0x0123, code)
+        proc.pc = 0x0123
+        return_address = proc.pc + len(code)
+        proc.sp = 0xFE1F
+        proc.step()
+        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+        self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+        self.assertEqual(proc.pc, 0x0f42)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

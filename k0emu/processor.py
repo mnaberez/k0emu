@@ -120,8 +120,9 @@ class Processor(object):
                 f = self._opcode_0x40_to_0x47_inc # inc x ;40 .. inc h ;47
             elif opcode == 0x81:
                 f = self._opcode_0x81  # inc 0fe20h                  ;81 20          saddr
-
-            self._opcode_map[opcode] = f
+            elif opcode in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
+                f = self._opcode_0x0c_to_0x7c_callf
+            self._opcode_map[opcode] = f # 0c 00          0c = callf 0800h-08ffh
 
     # nop
     def _opcode_0x00(self, opcode):
@@ -594,6 +595,16 @@ class Processor(object):
         value = self.memory[address]
         result = self._operation_inc(value)
         self.memory[address] = result
+
+    # 0c 00          0c = callf 0800h-08ffh
+    # ...
+    # 7c 00          7c = callf 0f00h-0fffh
+    def _opcode_0x0c_to_0x7c_callf(self, opcode):
+        base = 0x0800 + ((opcode >> 4) << 8)
+        offset = self._consume_byte()
+        self._push(self.pc >> 8)
+        self._push(self.pc & 0xFF)
+        self.pc = base + offset
 
     def _push(self, value):
         """Push a byte onto the stack"""

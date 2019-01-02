@@ -289,3 +289,20 @@
     inc h                       ;47
 
     inc 0fe20h                  ;81 20          saddr
+
+    callf !0800h                ;0c 00          0c = callf 0800h-08ffh
+    callf !08ffh                ;0c ff
+    callf !0900h                ;1c 00          1c = callf 0900h-09ffh
+    callf !09ffh                ;1c ff
+    callf !0a00h                ;2c 00          2c = callf 0a00h-0affh
+    callf !0affh                ;2c ff
+    callf !0b00h                ;3c 00          3c = callf 0b00h-0bffh
+    callf !0bffh                ;3c ff
+    callf !0c00h                ;4c 00          4c = callf 0c00h-0cffh
+    callf !0cffh                ;4c ff
+    callf !0d00h                ;5c 00          5c = callf 0d00h-0dffh
+    callf !0dffh                ;5c ff
+    callf !0e00h                ;6c 00          6c = callf 0e00h-0effh
+    callf !0effh                ;6c ff
+    callf !0f00h                ;7c 00          7c = callf 0f00h-0fffh
+    callf !0fffh                ;7c ff

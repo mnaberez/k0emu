@@ -5,10 +5,14 @@ def main():
     proc = Processor()
     proc.write_memory(0x0000, [
         0x9a, 0xcd, 0xab,  # call 0xabcd
+        0x1c, 0x01,
     ])
     proc.write_memory(0xabcd, [
         0x00, # nop
         0x00, # nop
+        0xaf, # ret
+    ])
+    proc.write_memory(0x0901, [
         0xaf, # ret
     ])
     proc.pc = 0

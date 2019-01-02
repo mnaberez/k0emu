@@ -6,8 +6,6 @@ label0:
     xch a,[hl]                  ;07
     add a,!0abcdh               ;08 cd ab
     add a,[hl+0abh]             ;09 ab
-    callf !0800h                ;0c 00          0c = callf 0800h-08ffh
-    callf !08ffh                ;0c ff
     add a,#0abh                 ;0d ab
     add a,0fe20h                ;0e 20          saddr
     add a,[hl]                  ;0f
@@ -17,8 +15,6 @@ label0:
     movw hl,#0abcdh             ;16 cd ab
     sub a,!0abcdh               ;18 cd ab
     sub a,[hl+0abh]             ;19 ab
-    callf !0900h                ;1c 00          1c = callf 0900h-09ffh
-    callf !09ffh                ;1c ff
     sub a,#0abh                 ;1d ab
     sub a,0fe20h                ;1e 20          saddr
     sub a,[hl]                  ;1f
@@ -28,8 +24,6 @@ label0:
     rolc a,1                    ;27
     addc a,!0abcdh              ;28 cd ab
     addc a,[hl+0abh]            ;29 ab
-    callf !0a00h                ;2c 00          2c = callf 0a00h-0affh
-    callf !0affh                ;2c ff
     addc a,#0abh                ;2d ab
     addc a,0fe20h               ;2e 20          saddr
     addc a,[hl]                 ;2f
@@ -280,15 +274,11 @@ label127:
 
     subc a,!0abcdh              ;38 cd ab
     subc a,[hl+0abh]            ;39 ab
-    callf !0b00h                ;3c 00          3c = callf 0b00h-0bffh
-    callf !0bffh                ;3c ff
     subc a,#0abh                ;3d ab
     subc a,0fe20h               ;3e 20          saddr
     subc a,[hl]                 ;3f
     cmp a,!0abcdh               ;48 cd ab
     cmp a,[hl+0abh]             ;49 ab
-    callf !0c00h                ;4c 00          4c = callf 0c00h-0cffh
-    callf !0cffh                ;4c ff
     cmp a,#0abh                 ;4d ab
     cmp a,0fe20h                ;4e 20          saddr
     cmp a,[hl]                  ;4f
@@ -301,8 +291,6 @@ label127:
     dec l                       ;56
     dec h                       ;57
     and a,[hl+0abh]             ;59 ab
-    callf !0d00h                ;5c 00          5c = callf 0d00h-0dffh
-    callf !0dffh                ;5c ff
     and a,[hl]                  ;5f
 
     adjba                       ;61 80
@@ -426,8 +414,6 @@ label127:
     cmp h,a                     ;61 47
 
     or a,[hl+0abh]              ;69 ab
-    callf !0e00h                ;6c 00          6c = callf 0e00h-0effh
-    callf !0effh                ;6c ff
     or a,[hl]                   ;6f
 
     mov1 cy,[hl].0              ;71 84
@@ -578,8 +564,6 @@ label127:
     stop                        ;71 00
 
     xor a,[hl+0abh]             ;79 ab
-    callf !0f00h                ;7c 00          7c = callf 0f00h-0fffh
-    callf !0fffh                ;7c ff
     xor a,[hl]                  ;7f
     incw ax                     ;80
     incw bc                     ;82
@@ -710,5 +694,3 @@ label19:
     callt [007ch]               ;fd
     movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
     callt [007eh]               ;ff
-
-    end
