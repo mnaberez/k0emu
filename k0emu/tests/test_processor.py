@@ -3096,6 +3096,78 @@ class ProcessorTests(unittest.TestCase):
             self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
             self.assertEqual(proc.pc, 0xabcd)
 
+    # rolc a,1                    ;27
+    def test_27_rolc_a(self):
+        tests = ((0,         0b00000000, 0,        0b00000000),
+                 (Flags.CY,  0b00000000, 0,        0b00000001),
+                 (0,         0b10000000, Flags.CY, 0b00000000),
+                 (Flags.CY,  0b11111111, Flags.CY, 0b11111111),
+                 (Flags.CY,  0b11000001, Flags.CY, 0b10000011))
+        for original_psw, original_a, rotated_psw, rotated_a in tests:
+            proc = Processor()
+            code = [0x27]
+            proc.write_memory(0x0000, code)
+            proc.write_psw(original_psw)
+            proc.write_gp_reg(Registers.A, original_a)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
+            self.assertEqual(proc.read_psw(), rotated_psw)
+
+    # rorc a,1                    ;25
+    def test_25_rorc_a(self):
+        tests = ((0,         0b00000000, 0,        0b00000000),
+                 (Flags.CY,  0b00000000, 0,        0b10000000),
+                 (0,         0b00000001, Flags.CY, 0b00000000),
+                 (Flags.CY,  0b11111111, Flags.CY, 0b11111111),
+                 (Flags.CY,  0b11000001, Flags.CY, 0b11100000))
+        for original_psw, original_a, rotated_psw, rotated_a in tests:
+            proc = Processor()
+            code = [0x25]
+            proc.write_memory(0x0000, code)
+            proc.write_psw(original_psw)
+            proc.write_gp_reg(Registers.A, original_a)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
+            self.assertEqual(proc.read_psw(), rotated_psw)
+
+    # rol a,1                    ;26
+    def test_26_rol_a(self):
+        tests = ((0,         0b00000000, 0,        0b00000000),
+                 (Flags.CY,  0b01000010, 0,        0b10000100),
+                 (0,         0b10010000, Flags.CY, 0b00100001),
+                 (0,         0b11111111, Flags.CY, 0b11111111),
+                 (Flags.CY,  0b10000000, Flags.CY, 0b00000001),)
+        for original_psw, original_a, rotated_psw, rotated_a in tests:
+            proc = Processor()
+            code = [0x26]
+            proc.write_memory(0x0000, code)
+            proc.write_psw(original_psw)
+            proc.write_gp_reg(Registers.A, original_a)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
+            self.assertEqual(proc.read_psw(), rotated_psw)
+
+    # ror a,1                     ;24
+    def test_24_ror_a(self):
+        tests = ((0,         0b00000000, 0,        0b00000000),
+                 (Flags.CY,  0b00000000, 0,        0b00000000),
+                 (0,         0b11111111, Flags.CY, 0b11111111),
+                 (0,         0b00000101, Flags.CY, 0b10000010),
+                 (Flags.CY,  0b00000001, Flags.CY, 0b10000000),)
+        for original_psw, original_a, rotated_psw, rotated_a in tests:
+            proc = Processor()
+            code = [0x24]
+            proc.write_memory(0x0000, code)
+            proc.write_psw(original_psw)
+            proc.write_gp_reg(Registers.A, original_a)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
+            self.assertEqual(proc.read_psw(), rotated_psw)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

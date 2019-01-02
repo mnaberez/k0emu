@@ -339,3 +339,8 @@
     callt [007ah]               ;fb
     callt [007ch]               ;fd
     callt [007eh]               ;ff
+
+    rolc a,1                    ;27
+    rorc a,1                    ;25
+    rol a,1                     ;26
+    ror a,1                     ;24

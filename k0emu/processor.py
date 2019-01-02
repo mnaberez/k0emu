@@ -133,6 +133,14 @@ class Processor(object):
                 f = self._opcode_0x0c_to_0x7c_callf
             elif opcode & 0b11000001 == 0b11000001:
                 f = self._opcode_0xc1_to_0xff_callt
+            elif opcode == 0x24:
+                f = self._opcode_0x24  # ror a,1                     ;24
+            elif opcode == 0x25:
+                f = self._opcode_0x25  # rorc a,1                    ;25
+            elif opcode == 0x26:
+                f = self._opcode_0x26  # rol a,1                     ;26
+            elif opcode == 0x27:
+                f = self._opcode_0x27  # rolc a,1                    ;27
             else:
                 f = self._opcode_not_implemented
 
@@ -172,6 +180,76 @@ class Processor(object):
     # pop psw                     ;23
     def _opcode_0x23(self, opcode):
         self.write_psw(self._pop())
+
+    # ror a,1                     ;24
+    def _opcode_0x24(self, opcode):
+        value = self.read_gp_reg(Registers.A)
+        original_bit_0 = value & 1
+        rotated = value >> 1
+
+        psw = self.read_psw()
+
+        if original_bit_0:
+            rotated |= 0x80
+            psw |= Flags.CY
+        else:
+            psw &= ~Flags.CY
+        rotated &= 0xFF
+
+        self.write_psw(psw)
+        self.write_gp_reg(Registers.A, rotated)
+
+    # rorc a,1                    ;25
+    def _opcode_0x25(self, opcode):
+        value = self.read_gp_reg(Registers.A)
+        original_bit_0 = value & 1
+        rotated = value >> 1
+
+        psw = self.read_psw()
+
+        if psw & Flags.CY:
+            rotated |= 0x80
+
+        if original_bit_0:
+            psw |= Flags.CY
+        else:
+            psw &= ~Flags.CY
+        rotated &= 0xFF
+
+        self.write_psw(psw)
+        self.write_gp_reg(Registers.A, rotated)
+
+    # rol a,1                     ;26
+    def _opcode_0x26(self, opcode):
+        rotated = self.read_gp_reg(Registers.A) << 1
+        psw = self.read_psw()
+
+        if rotated & 0x100:
+            rotated |= 1
+            psw |= Flags.CY
+        else:
+            psw &= ~Flags.CY
+        rotated &= 0xFF
+
+        self.write_psw(psw)
+        self.write_gp_reg(Registers.A, rotated)
+
+    # rolc a,1                    ;27
+    def _opcode_0x27(self, opcode):
+        rotated = self.read_gp_reg(Registers.A) << 1
+        psw = self.read_psw()
+
+        if psw & Flags.CY:
+             rotated |= 1
+
+        if rotated & 0x100:
+            psw |= Flags.CY
+        else:
+            psw &= ~Flags.CY
+        rotated &= 0xFF
+
+        self.write_psw(psw)
+        self.write_gp_reg(Registers.A, rotated)
 
     # xch a,REG                    ;32...37 except 31
     def _opcode_0x30_to_0x37_except_0x31(self, opcode):
