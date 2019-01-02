@@ -1,19 +1,28 @@
 
 class Processor(object):
     REGISTERS_BASE_ADDRESS = 0xFEF8
+    RESET_VECTOR_ADDRESS = 0x0000
     SP_ADDRESS = 0xFF1C
     PSW_ADDRESS = 0xFF1E
 
     def __init__(self):
         self.memory = bytearray(0x10000)
-        self.pc = 0
-        self.sp = 0xfe1f
         self._build_opcode_map()
+        self.reset()
+
+    def reset(self):
+        self.sp = 0
+        low = self.memory[self.RESET_VECTOR_ADDRESS]
+        high = self.memory[self.RESET_VECTOR_ADDRESS+1]
+        self.pc = (high << 8) + low
 
     def step(self):
         opcode = self._consume_byte()
         handler = self._opcode_map[opcode]
         handler(opcode)
+
+    def __str__(self):
+        return RegisterTrace.generate(self)
 
     def _build_opcode_map(self):
         self._opcode_map = {}
@@ -124,8 +133,14 @@ class Processor(object):
                 f = self._opcode_0x0c_to_0x7c_callf
             elif opcode & 0b11000001 == 0b11000001:
                 f = self._opcode_0xc1_to_0xff_callt
+            else:
+                f = self._opcode_not_implemented
 
-            self._opcode_map[opcode] = f # 0c 00          0c = callf 0800h-08ffh
+            self._opcode_map[opcode] = f
+
+    # not implemented
+    def _opcode_not_implemented(self, opcode):
+        raise NotImplementedError()
 
     # nop
     def _opcode_0x00(self, opcode):
@@ -805,3 +820,33 @@ class Flags(object):
     RBS1   = 2**5
     Z      = 2**6
     IE     = 2**7
+
+
+class RegisterTrace:
+    NamedRegisters = (
+        ('X', Registers.X), ('A', Registers.A), ('C', Registers.C),
+        ('B', Registers.B), ('E', Registers.E), ('D', Registers.D),
+        ('L', Registers.L), ('H', Registers.H)
+    )
+
+    NamedFlags = (
+        ('C', Flags.CY), ('I', Flags.ISP), ('U', Flags.UNUSED),
+        ('R', Flags.RBS0), ('A', Flags.AC), ('R', Flags.RBS1),
+        ('Z', Flags.Z), ('I', Flags.IE)
+    )
+
+    @classmethod
+    def generate(klass, processor):
+        s = ""
+        for name, reg in klass.NamedRegisters:
+            s += "%s=%02X " % (name, processor.read_gp_reg(reg))
+        s += "SP=%04X" % processor.sp
+        s += " ["
+        psw = processor.read_psw()
+        for name, flag in klass.NamedFlags:
+            if psw & flag:
+                s += name
+            else:
+                s += '.'
+        s += "]"
+        return s

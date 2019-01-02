@@ -1,25 +1,37 @@
+'''
+Usage: k0dasm <rom.bin>
+
+'''
+import sys
+
 from k0dasm.disassemble import disassemble
 from k0emu.processor import Processor
 
 def main():
     proc = Processor()
-    proc.write_memory(0x0000, [
-        0x9a, 0xcd, 0xab,  # call 0xabcd
-        0x1c, 0x01,
-    ])
-    proc.write_memory(0xabcd, [
-        0x00, # nop
-        0x00, # nop
-        0xaf, # ret
-    ])
-    proc.write_memory(0x0901, [
-        0xaf, # ret
-    ])
-    proc.pc = 0
 
-    for i in range(11):
-        print("%04x: %s" % (proc.pc, disassemble(proc.memory, proc.pc)))
-        proc.step()
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+        with open(filename, 'rb') as f:
+            rom = bytearray(f.read())
+        proc.write_memory(0, rom)
+        proc.reset()
+    else:
+        sys.stderr.write(__doc__)
+        sys.exit(1)
+
+    while True:
+        dasm = disassemble(proc.memory, proc.pc)
+        hex = ' '.join(["%02x" % x for x in dasm.all_bytes]).ljust(12)
+        line = ("%04x: %s %s" % (proc.pc, hex, dasm)).ljust(36)
+        try:
+            proc.step()
+        except NotImplementedError:
+            line += "!!! NOT IMPLEMENTED !!!"
+            print(line)
+            sys.exit(1)
+        line += str(proc)
+        print(line)
 
 if __name__ == "__main__":
     main()
