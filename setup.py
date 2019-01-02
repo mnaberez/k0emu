@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 if sys.version_info[:2] < (3, 4):
     raise RuntimeError('k0emu requires Python 3.4 or later')
 
-DESC = "NEC 78K0 disassembler"
+DESC = "NEC 78K0 emulator"
 
 CLASSIFIERS = [
     'Development Status :: 3 - Alpha',
