@@ -116,6 +116,10 @@ class Processor(object):
                 f = self._opcode_0xbd # bnz $label5                 ;bd fe
             elif opcode == 0xee:
                 f = self._opcode_0xee # movw sp,#0abcdh             ;ee 1c cd ab
+            elif opcode in (0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47):
+                f = self._opcode_0x40_to_0x47_inc # inc x ;40 .. inc h ;47
+            elif opcode == 0x81:
+                f = self._opcode_0x81  # inc 0fe20h                  ;81 20          saddr
 
             self._opcode_map[opcode] = f
 
@@ -575,6 +579,22 @@ class Processor(object):
         high = self._consume_byte()
         self.sp = (high << 8) + low
 
+    # inc x                       ;40
+    # ...
+    # inc h                       ;47
+    def _opcode_0x40_to_0x47_inc(self, opcode):
+        reg = _reg(opcode)
+        value = self.read_gp_reg(reg)
+        result = self._operation_inc(value)
+        self.write_gp_reg(reg, result)
+
+    # inc 0fe20h                  ;81 20          saddr
+    def _opcode_0x81(self, opcode):
+        address = self._consume_saddr()
+        value = self.memory[address]
+        result = self._operation_inc(value)
+        self.memory[address] = result
+
     def _push(self, value):
         """Push a byte onto the stack"""
         self.sp -= 1
@@ -592,6 +612,18 @@ class Processor(object):
         result = dest & ~dest_bitweight
         if src & src_bitweight:
             result |= dest_bitweight
+        return result
+
+    def _operation_inc(self, value):
+        result = (value + 1) & 0xFF
+
+        psw = self.read_psw() & ~(Flags.Z + Flags.AC)
+        if result == 0:
+            psw |= Flags.Z
+        if (value & (2**3)) and (result & (2**4)):
+            psw |= Flags.AC
+        self.write_psw(psw)
+
         return result
 
     def _operation_set1(self, value, bit):

@@ -10,3 +10,5 @@ Verify on real hardware that PSW is really stored in FF1E.
     ff1e: RBS1 (BIT R/W)
     ff1e: Z (BIT R/W)
     ff1e: IE (BIT R/W)
+
+Verify behavior of flag AC during INC.

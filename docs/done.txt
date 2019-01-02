@@ -278,3 +278,14 @@
     mov1 cy,psw.5               ;71 54 1e
     mov1 cy,psw.6               ;71 64 1e
     mov1 cy,psw.7               ;71 74 1e
+
+    inc x                       ;40
+    inc a                       ;41
+    inc c                       ;42
+    inc b                       ;43
+    inc e                       ;44
+    inc d                       ;45
+    inc l                       ;46
+    inc h                       ;47
+
+    inc 0fe20h                  ;81 20          saddr

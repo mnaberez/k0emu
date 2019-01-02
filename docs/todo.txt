@@ -285,14 +285,6 @@ label127:
     subc a,#0abh                ;3d ab
     subc a,0fe20h               ;3e 20          saddr
     subc a,[hl]                 ;3f
-    inc x                       ;40
-    inc a                       ;41
-    inc c                       ;42
-    inc b                       ;43
-    inc e                       ;44
-    inc d                       ;45
-    inc l                       ;46
-    inc h                       ;47
     cmp a,!0abcdh               ;48 cd ab
     cmp a,[hl+0abh]             ;49 ab
     callf !0c00h                ;4c 00          4c = callf 0c00h-0cffh
@@ -590,7 +582,6 @@ label127:
     callf !0fffh                ;7c ff
     xor a,[hl]                  ;7f
     incw ax                     ;80
-    inc 0fe20h                  ;81 20          saddr
     incw bc                     ;82
     incw de                     ;84
     mov a,[de]                  ;85

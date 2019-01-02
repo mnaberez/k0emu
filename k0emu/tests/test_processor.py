@@ -2824,6 +2824,138 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10000001)
 
+    #    inc x                       ;40
+    def test_40_inc_x_result_0_to_1_clears_z_ac(self):
+        proc = Processor()
+        code = [0x40]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.X, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.X), 1)
+
+    #    inc x                       ;40
+    def test_40_inc_x_result_ff_to_0_wraps_and_sets_z(self):
+        proc = Processor()
+        code = [0x40]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.X, 0xFF)
+        proc.write_psw(Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.X), 0)
+
+    #    inc x                       ;40
+    def test_40_inc_x_result_0f_to_10_sets_ac(self):
+        proc = Processor()
+        code = [0x40]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.X, 0b00001111)
+        proc.write_psw(Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.AC)
+        self.assertEqual(proc.read_gp_reg(Registers.X), 0b00010000)
+
+    #    inc a                       ;41
+    def test_41_inc_a(self):
+        proc = Processor()
+        code = [0x41]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 1)
+
+    #    inc c                       ;42
+    def test_42_inc_c(self):
+        proc = Processor()
+        code = [0x42]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.C, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.C), 1)
+
+    #    inc b                       ;43
+    def test_43_inc_b(self):
+        proc = Processor()
+        code = [0x43]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.B, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.B), 1)
+
+    #    inc e                       ;44
+    def test_44_inc_e(self):
+        proc = Processor()
+        code = [0x44]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.E, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.E), 1)
+
+    #    inc d                       ;45
+    def test_45_inc_d(self):
+        proc = Processor()
+        code = [0x45]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.D, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.D), 1)
+
+    #    inc l                       ;46
+    def test_46_inc_l(self):
+        proc = Processor()
+        code = [0x46]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.L, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.L), 1)
+
+    #    inc h                       ;47
+    def test_47_inc_h(self):
+        proc = Processor()
+        code = [0x47]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.H, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.H), 1)
+
+    # inc 0fe20h                  ;81 20          saddr
+    def test_81_inc_saddr(self):
+        proc = Processor()
+        code = [0x81, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.memory[0xfe20], 1)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])
