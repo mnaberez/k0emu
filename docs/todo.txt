@@ -278,14 +278,6 @@ label127:
     cmp a,#0abh                 ;4d ab
     cmp a,0fe20h                ;4e 20          saddr
     cmp a,[hl]                  ;4f
-    dec x                       ;50
-    dec a                       ;51
-    dec c                       ;52
-    dec b                       ;53
-    dec e                       ;54
-    dec d                       ;55
-    dec l                       ;56
-    dec h                       ;57
     and a,[hl+0abh]             ;59 ab
     and a,[hl]                  ;5f
 
@@ -581,7 +573,6 @@ label9:
 label3:
     reti                        ;8f
     decw ax                     ;90
-    dec 0fe20h                  ;91 20          saddr
     decw bc                     ;92
     decw de                     ;94
     mov [de],a                  ;95

@@ -3168,6 +3168,150 @@ class ProcessorTests(unittest.TestCase):
             self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
             self.assertEqual(proc.read_psw(), rotated_psw)
 
+    # dec x                       ;50
+    def test_50_dec_x_0_to_ff_wraps_clears_z_ac(self):
+        proc = Processor()
+        code = [0x50]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.X, 0)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.X), 0xFF)
+
+    # dec x                       ;50
+    def test_50_dec_x_1_to_0_sets_z_clears_ac(self):
+        proc = Processor()
+        code = [0x50]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.X, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.X), 0)
+
+    # dec x                       ;50
+    def test_dec_x_10_to_0f_clears_z_sets_ac(self):
+        proc = Processor()
+        code = [0x50]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.X, 0x10)
+        proc.write_psw(Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.AC)
+        self.assertEqual(proc.read_gp_reg(Registers.X), 0x0f)
+
+    # dec x                       ;50
+    def test_dec_x_ff_to_fe_clears_z_clears_ac(self):
+        proc = Processor()
+        code = [0x50]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.X, 0xff)
+        proc.write_psw(Flags.Z | Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_gp_reg(Registers.X), 0xfe)
+
+    # dec a                       ;51
+    def test_51_dec_a(self):
+        proc = Processor()
+        code = [0x51]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.A, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0)
+
+    # dec c                       ;52
+    def test_52_dec_c(self):
+        proc = Processor()
+        code = [0x52]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.C, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0)
+
+    # dec b                       ;53
+    def test_53_dec_b(self):
+        proc = Processor()
+        code = [0x53]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.B, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.B), 0)
+
+    # dec e                       ;54
+    def test_54_dec_e(self):
+        proc = Processor()
+        code = [0x54]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.E, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.E), 0)
+
+    # dec d                       ;55
+    def test_55_dec_d(self):
+        proc = Processor()
+        code = [0x55]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.D, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.D), 0)
+
+    # dec l                       ;56
+    def test_56_dec_d(self):
+        proc = Processor()
+        code = [0x56]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.L, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.L), 0)
+
+    # dec h                       ;57
+    def test_57_dec_h(self):
+        proc = Processor()
+        code = [0x57]
+        proc.write_memory(0x0000, code)
+        proc.write_gp_reg(Registers.H, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_gp_reg(Registers.H), 0)
+
+    # dec 0fe20h                  ;91 20          saddr
+    def test_91_dec_saddr(self):
+        proc = Processor()
+        code = [0x91, 0x20]
+        proc.write_memory(0x0000, code)
+        proc.memory[0xfe20] = 1
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.memory[0xfe20], 0)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

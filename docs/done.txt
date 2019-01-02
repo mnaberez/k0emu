@@ -344,3 +344,13 @@
     rorc a,1                    ;25
     rol a,1                     ;26
     ror a,1                     ;24
+
+    dec x                       ;50
+    dec a                       ;51
+    dec c                       ;52
+    dec b                       ;53
+    dec e                       ;54
+    dec d                       ;55
+    dec l                       ;56
+    dec h                       ;57
+    dec 0fe20h                  ;91 20          saddr

@@ -127,8 +127,12 @@ class Processor(object):
                 f = self._opcode_0xee # movw sp,#0abcdh             ;ee 1c cd ab
             elif opcode in (0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47):
                 f = self._opcode_0x40_to_0x47_inc # inc x ;40 .. inc h ;47
+            elif opcode in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
+                f = self._opcode_0x50_to_0x57_dec # dec x ;50 .. dec h ;57
             elif opcode == 0x81:
                 f = self._opcode_0x81  # inc 0fe20h                  ;81 20          saddr
+            elif opcode == 0x91:
+                f = self._opcode_0x91  # dec 0fe20h                  ;91 20          saddr
             elif opcode in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
                 f = self._opcode_0x0c_to_0x7c_callf
             elif opcode & 0b11000001 == 0b11000001:
@@ -685,11 +689,27 @@ class Processor(object):
         result = self._operation_inc(value)
         self.write_gp_reg(reg, result)
 
+    # dec x                       ;50
+    # ...
+    # dec h                       ;57
+    def _opcode_0x50_to_0x57_dec(self, opcode):
+        reg = _reg(opcode)
+        value = self.read_gp_reg(reg)
+        result = self._operation_dec(value)
+        self.write_gp_reg(reg, result)
+
     # inc 0fe20h                  ;81 20          saddr
     def _opcode_0x81(self, opcode):
         address = self._consume_saddr()
         value = self.memory[address]
         result = self._operation_inc(value)
+        self.memory[address] = result
+
+    # dec 0fe20h                  ;91 20          saddr
+    def _opcode_0x91(self, opcode):
+        address = self._consume_saddr()
+        value = self.memory[address]
+        result = self._operation_dec(value)
         self.memory[address] = result
 
     # 0c 00          0c = callf 0800h-08ffh
@@ -744,7 +764,21 @@ class Processor(object):
         psw = self.read_psw() & ~(Flags.Z + Flags.AC)
         if result == 0:
             psw |= Flags.Z
-        if (value & (2**3)) and (result & (2**4)):
+        if (value == 0x0f) and (result == 0x10):
+            psw |= Flags.AC
+        self.write_psw(psw)
+
+        return result
+
+    def _operation_dec(self, value):
+        result = value - 1
+        if result < 0:
+            result = 0xFF
+
+        psw = self.read_psw() & ~(Flags.Z + Flags.AC)
+        if result == 0:
+            psw |= Flags.Z
+        if (value == 0x10) and (result == 0x0f):
             psw |= Flags.AC
         self.write_psw(psw)
 
