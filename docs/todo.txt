@@ -629,68 +629,36 @@ label15:
 label6:
     mov [hl+0abh],a             ;be ab
     brk                         ;bf
-    callt [0040h]               ;c1
     movw ax,bc                  ;c2
-    callt [0042h]               ;c3
     movw ax,de                  ;c4
-    callt [0044h]               ;c5
     movw ax,hl                  ;c6
-    callt [0046h]               ;c7
     cmp 0fe20h,#0abh            ;c8 20 ab       saddr
-    callt [0048h]               ;c9
     addw ax,#0abcdh             ;ca cd ab
-    callt [004ah]               ;cb
 label16:
     bt 0fe20h.4,$label16        ;cc 20 fd       saddr
 label17:
     bt psw.4,$label17           ;cc 1e fd
-    callt [004ch]               ;cd
-    callt [004eh]               ;cf
-    callt [0050h]               ;d1
     movw bc,ax                  ;d2
-    callt [0052h]               ;d3
     movw de,ax                  ;d4
-    callt [0054h]               ;d5
     movw hl,ax                  ;d6
-    callt [0056h]               ;d7
-    callt [0058h]               ;d9
     subw ax,#0abcdh             ;da cd ab
-    callt [005ah]               ;db
 label20:
     bt 0fe20h.5,$label20        ;dc 20 fd       saddr
 label21:
     bt psw.5,$label21           ;dc 1e fd
-    callt [005ch]               ;dd
     xch a,[hl+0abh]             ;de ab
-    callt [005eh]               ;df
-    callt [0060h]               ;e1
     xchw ax,bc                  ;e2
-    callt [0062h]               ;e3
     xchw ax,de                  ;e4
-    callt [0064h]               ;e5
     xchw ax,hl                  ;e6
-    callt [0066h]               ;e7
-    callt [0068h]               ;e9
     cmpw ax,#0abcdh             ;ea cd ab
-    callt [006ah]               ;eb
 label22:
     bt 0fe20h.6,$label22        ;ec 20 fd       saddr
 label23:
     bt psw.6,$label23           ;ec 1e fd
-    callt [006ch]               ;ed
     movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
-    callt [006eh]               ;ef
-    callt [0070h]               ;f1
-    callt [0072h]               ;f3
-    callt [0074h]               ;f5
-    callt [0076h]               ;f7
-    callt [0078h]               ;f9
 label7:
-    callt [007ah]               ;fb
 label18:
     bt 0fe20h.7,$label18        ;fc 20 fd       saddr
 label19:
     bt psw.7,$label19           ;fc 1e fd
-    callt [007ch]               ;fd
     movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
-    callt [007eh]               ;ff

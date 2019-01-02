@@ -3068,6 +3068,34 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0f42)
 
+    def test_c1_to_ff_callt(self):
+        vectors_by_opcode = {0xC1: 0x0040, 0xC3: 0x0042, 0xC5: 0x0044, 0xC7: 0x0046,
+                             0xC9: 0x0048, 0xCB: 0x004a, 0xCD: 0x004c, 0xCF: 0x004e,
+                             0xD1: 0x0050, 0xD3: 0x0052, 0xD5: 0x0054, 0xD7: 0x0056,
+                             0xD9: 0x0058, 0xDB: 0x005A, 0xDD: 0x005C, 0xDF: 0x005e,
+                             0xE1: 0x0060, 0xE3: 0x0062, 0xE5: 0x0064, 0xE7: 0x0066,
+                             0xE9: 0x0068, 0xEB: 0x006a, 0xED: 0x006c, 0xEF: 0x006e,
+                             0xF1: 0x0070, 0xF3: 0x0072, 0xF5: 0x0074, 0xF7: 0x0076,
+                             0xF9: 0x0078, 0xFB: 0x007a, 0xFD: 0x007c, 0xFF: 0x007e,
+                            }
+        for opcode, vector in vectors_by_opcode.items():
+            proc = Processor()
+            subroutine_address = 0xabcd
+            proc.memory[vector] = subroutine_address & 0xFF
+            proc.memory[vector+1] = subroutine_address >> 8
+
+            code = [opcode]
+            proc.write_memory(0x1000, code)
+            proc.pc = 0x1000
+            return_address = proc.pc + len(code)
+
+            proc.sp = 0xFE1F
+            proc.step()
+            self.assertEqual(proc.sp, 0xFE1d)
+            self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
+            self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
+            self.assertEqual(proc.pc, 0xabcd)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])
