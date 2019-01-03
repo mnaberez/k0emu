@@ -71,6 +71,8 @@ class Processor(object):
                 f = self._opcode_0x11 # mov 0fe20h,#0abh            ;11 20 ab       saddr
             elif opcode == 0x13:
                 f = self._opcode_0x13 # mov 0fffeh, #0abh           ;13 fe ab       sfr
+            elif opcode == 0x31:
+                f = self._opcode_0x31
             elif opcode == 0x61:
                 f = self._opcode_0x61
             elif opcode == 0x71:
@@ -151,6 +153,8 @@ class Processor(object):
                 f = self._opcode_0x8b  # dbnz c,$label1              ;8a fe
             elif opcode == 0x04:
                 f = self._opcode_0x04  # dbnz 0fe20h,$label0         ;04 20 fd       saddr
+            elif opcode in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
+                f = self._opcode_0x8c_to_0xfc_bt # bt 0fe20h.bit,$label8         ;8c 20 fd       saddr
             else:
                 f = self._opcode_not_implemented
 
@@ -371,6 +375,27 @@ class Processor(object):
         value = self._consume_byte()
         self.memory[address] = value
 
+    def _opcode_0x31(self, opcode):
+        opcode2 = self._consume_byte()
+
+        # bt a.bit,$label32             ;31 0e fd
+        if opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
+            bit = _bit(opcode2)
+            displacement = self._consume_byte()
+            value = self.read_gp_reg(Registers.A)
+            self._operation_bt(value, bit, displacement)
+
+        # bt 0fffeh.bit,$label24        ;31 06 fe fc    sfr
+        elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
+            displacement = self._consume_byte()
+            value = self.memory[address]
+            self._operation_bt(value, bit, displacement)
+
+        else:
+            raise NotImplementedError
+
     def _opcode_0x61(self, opcode):
         opcode2 = self._consume_byte()
 
@@ -532,6 +557,14 @@ class Processor(object):
         b = self.memory[address]
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+
+    # bt 0fe20h.bit,$label8         ;8c 20 fd       saddr
+    def _opcode_0x8c_to_0xfc_bt(self, opcode):
+        bit = _bit(opcode)
+        address = self._consume_saddr()
+        displacement = self._consume_byte()
+        value = self.memory[address]
+        self._operation_bt(value, bit, displacement)
 
     # or 0fe20h,#0abh             ;e8 20 ab      saddr
     def _opcode_0xe8(self, opcode):
@@ -789,6 +822,12 @@ class Processor(object):
         value = self.memory[self.sp]
         self.sp += 1
         return value
+
+    def _operation_bt(self, value, bit, displacement):
+        bitweight = 2 ** bit
+        if value & bitweight:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
 
     def _operation_mov1(self, src, src_bit, dest, dest_bit):
         src_bitweight = 2 ** src_bit

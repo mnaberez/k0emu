@@ -3429,6 +3429,615 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
         self.assertEqual(proc.memory[0xfe20], 0) # decremented
 
+    # bt a.0,$label32             ;31 0e fd
+    def test_31_0e_bt_a_bit0_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x0e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00000001)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.0,$label32             ;31 0e fd
+    def test_31_0e_bt_a_bit0_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x0e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    #  bt a.1,$label33             ;31 1e fd
+    def test_31_1e_bt_a_bit1_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x1e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00000010)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.1,$label33             ;31 1e fd
+    def test_31_1e_bt_a_bit1_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x1e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.2,$label34             ;31 2e fd
+    def test_31_2e_bt_a_bit2_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x2e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00000100)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.2,$label34             ;31 2e fd
+    def test_31_2e_bt_a_bit2_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x2e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.3,$label35             ;31 3e fd
+    def test_31_3e_bt_a_bit3_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x3e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00001000)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.3,$label35             ;31 3e fd
+    def test_31_3e_bt_a_bit3_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x3e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.4,$label36             ;31 4e fd
+    def test_31_4e_bt_a_bit4_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x4e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00010000)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.4,$label36             ;31 4e fd
+    def test_31_4e_bt_a_bit4_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x4e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.5,$label37             ;31 5e fd
+    def test_31_5e_bt_a_bit5_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x5e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00100000)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.5,$label37             ;31 5e fd
+    def test_31_5e_bt_a_bit5_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x5e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.6,$label38             ;31 6e fd
+    def test_31_6e_bt_a_bit6_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x6e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b01000000)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.6,$label38             ;31 6e fd
+    def test_31_6e_bt_a_bit6_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x6e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.7,$label39             ;31 7e fd
+    def test_31_7e_bt_a_bit7_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x7e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b10000000)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt a.7,$label39             ;31 7e fd
+    def test_31_7e_bt_a_bit7_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x7e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.0,$label24        ;31 06 fe fc    sfr
+    def test_31_06_bt_a_bit0_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x06, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0b00000001
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x24) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.0,$label24        ;31 06 fe fc    sfr
+    def test_31_06_bt_a_bit0_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x06, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.1,$label25        ;31 16 fe fc    sfr
+    def test_31_16_bt_a_bit1_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x16, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0b00000010
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x24) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.1,$label25        ;31 16 fe fc    sfr
+    def test_31_16_bt_a_bit1_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x16, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.2,$label26        ;31 26 fe fc    sfr
+    def test_31_26_bt_a_bit2_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x26, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0b00000100
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x24) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.2,$label26        ;31 26 fe fc    sfr
+    def test_31_26_bt_a_bit2_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x26, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.3,$label27        ;31 36 fe fc    sfr
+    def test_31_36_bt_a_bit3_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x36, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0b00001000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x24) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.3,$label27        ;31 36 fe fc    sfr
+    def test_31_36_bt_a_bit3_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x36, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.4,$label28        ;31 46 fe fc    sfr
+    def test_31_46_bt_a_bit4_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x46, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0b00010000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x24) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.4,$label28        ;31 46 fe fc    sfr
+    def test_31_46_bt_a_bit4_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x46, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.5,$label29        ;31 56 fe fc    sfr
+    def test_31_56_bt_a_bit5_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x56, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0b00100000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x24) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.5,$label29        ;31 56 fe fc    sfr
+    def test_31_56_bt_a_bit5_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x56, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.6,$label30        ;31 66 fe fc    sfr
+    def test_31_66_bt_a_bit6_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x66, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0b01000000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x24) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.6,$label30        ;31 66 fe fc    sfr
+    def test_31_66_bt_a_bit6_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x66, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.7,$label31        ;31 76 fe fc    sfr
+    def test_31_76_bt_a_bit7_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x76, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0b10000000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x24) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fffeh.7,$label31        ;31 76 fe fc    sfr
+    def test_31_76_bt_a_bit7_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x76, 0xfe, 0x20]
+        proc.write_memory(0, code)
+        proc.memory[0x0fffe] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt psw.0,$label9            ;8c 1e fd
+    def test_8c_bt_psw_bit0_branches_if_set(self):
+        proc = Processor()
+        code = [0x8c, 0x1e, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b00000001
+        proc.write_psw(0b00000001)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0b00000001) # unchanged
+
+    # bt 0fe20h.0,$label8         ;8c 20 fd       saddr
+    def test_8c_bt_saddr_bit0_branches_if_set(self):
+        proc = Processor()
+        code = [0x8c, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b00000001
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fe20h.0,$label8         ;8c 20 fd       saddr
+    def test_8c_bt_saddr_bit0_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x8c, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fe20h.1,$label10        ;9c 20 fd       saddr
+    def test_9c_bt_saddr_bit1_branches_if_set(self):
+        proc = Processor()
+        code = [0x9c, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b00000010
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt psw.1,$label11           ;9c 1e fd
+    def test_9c_bt_psw_bit1_branches_if_set(self):
+        proc = Processor()
+        code = [0x9c, 0x1e, 0x30]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00000010)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0b00000010) # unchanged
+
+    # bt 0fe20h.1,$label10        ;9c 20 fd       saddr
+    def test_9c_bt_saddr_bit1_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x9c, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fe20h.2,$label12        ;ac 20 fd       saddr
+    def test_ac_bt_saddr_bit2_branches_if_set(self):
+        proc = Processor()
+        code = [0xac, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b00000100
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt psw.2,$label13           ;ac 1e fd
+    def test_ac_bt_psw_bit2_branches_if_set(self):
+        proc = Processor()
+        code = [0xac, 0x1e, 0x30]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00000100)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0b00000100) # unchanged
+
+    # bt 0fe20h.2,$label12        ;ac 20 fd       saddr
+    def test_ac_bt_saddr_bit2_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0xac, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fe20h.3,$label14        ;bc 20 fd       saddr
+    def test_bc_bt_saddr_bit3_branches_if_set(self):
+        proc = Processor()
+        code = [0xbc, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b00001000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt psw.3,$label15           ;bc 1e fd
+    def test_bc_bt_psw_bit3_branches_if_set(self):
+        proc = Processor()
+        code = [0xbc, 0x1e, 0x30]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00001000)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0b00001000) # unchanged
+
+    # bt 0fe20h.3,$label14        ;bc 20 fd       saddr
+    def test_bc_bt_saddr_bit3_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0xbc, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fe20h.4,$label16        ;cc 20 fd       saddr
+    def test_cc_bt_saddr_bit4_branches_if_set(self):
+        proc = Processor()
+        code = [0xcc, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b0010000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt psw.4,$label17           ;cc 1e fd
+    def test_cc_bt_psw_bit4_branches_if_set(self):
+        proc = Processor()
+        code = [0xcc, 0x1e, 0x30]
+        proc.write_memory(0, code)
+        proc.write_psw(0b0010000)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0b0010000) # unchanged
+
+    # bt 0fe20h.4,$label16        ;cc 20 fd       saddr
+    def test_cc_bt_saddr_bit4_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0xcc, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fe20h.5,$label20        ;dc 20 fd       saddr
+    def test_dc_bt_saddr_bit5_branches_if_set(self):
+        proc = Processor()
+        code = [0xdc, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b00100000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt psw.5,$label21           ;dc 1e fd
+    def test_dc_bt_psw_bit5_branches_if_set(self):
+        proc = Processor()
+        code = [0xdc, 0x1e, 0x30]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00100000)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0b00100000) # unchanged
+
+    # bt 0fe20h.5,$label20        ;dc 20 fd       saddr
+    def test_dc_bt_saddr_bit5_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0xdc, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fe20h.6,$label22        ;ec 20 fd       saddr
+    def test_ec_bt_saddr_bit6_branches_if_set(self):
+        proc = Processor()
+        code = [0xec, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b01000000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt psw.6,$label23           ;ec 1e fd
+    def test_ec_bt_psw_bit6_branches_if_set(self):
+        proc = Processor()
+        code = [0xec, 0x1e, 0x30]
+        proc.write_memory(0, code)
+        proc.write_psw(0b01000000)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0b01000000) # unchanged
+
+    # bt 0fe20h.6,$label22        ;ec 20 fd       saddr
+    def test_ec_bt_saddr_bit6_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0xec, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt 0fe20h.7,$label18        ;fc 20 fd       saddr
+    def test_fc_bt_saddr_bit7_branches_if_set(self):
+        proc = Processor()
+        code = [0xfc, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0b10000000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt psw.7,$label19           ;fc 1e fd
+    def test_fc_bt_psw_bit7_branches_if_set(self):
+        proc = Processor()
+        code = [0xfc, 0x1e, 0x30]
+        proc.write_memory(0, code)
+        proc.write_psw(0b10000000)
+        proc.step()
+        self.assertEqual(proc.pc, 0x33) # branch taken
+        self.assertEqual(proc.read_psw(), 0b10000000) # unchanged
+
+    # bt 0fe20h.7,$label18        ;fc 20 fd       saddr
+    def test_fc_bt_saddr_bit7_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0xfc, 0x20, 0x30]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

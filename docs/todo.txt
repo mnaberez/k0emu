@@ -45,40 +45,6 @@
     rol4 [hl]                   ;31 80
     br ax                       ;31 98
 
-label24:
-    bt 0fffeh.0,$label24        ;31 06 fe fc    sfr
-label25:
-    bt 0fffeh.1,$label25        ;31 16 fe fc    sfr
-label26:
-    bt 0fffeh.2,$label26        ;31 26 fe fc    sfr
-label27:
-    bt 0fffeh.3,$label27        ;31 36 fe fc    sfr
-label28:
-    bt 0fffeh.4,$label28        ;31 46 fe fc    sfr
-label29:
-    bt 0fffeh.5,$label29        ;31 56 fe fc    sfr
-label30:
-    bt 0fffeh.6,$label30        ;31 66 fe fc    sfr
-label31:
-    bt 0fffeh.7,$label31        ;31 76 fe fc    sfr
-
-label32:
-    bt a.0,$label32             ;31 0e fd
-label33:
-    bt a.1,$label33             ;31 1e fd
-label34:
-    bt a.2,$label34             ;31 2e fd
-label35:
-    bt a.3,$label35             ;31 3e fd
-label36:
-    bt a.4,$label36             ;31 4e fd
-label37:
-    bt a.5,$label37             ;31 5e fd
-label38:
-    bt a.6,$label38             ;31 6e fd
-label39:
-    bt a.7,$label39             ;31 7e fd
-
 label40:
     bt [hl].0,$label40          ;31 86 fd
 label41:
@@ -560,10 +526,6 @@ label127:
     add 0fe20h,#0abh            ;88 20 ab       saddr
     movw ax,0fe20h              ;89 20          saddrp
     movw ax,sp                  ;89 1c
-label8:
-    bt 0fe20h.0,$label8         ;8c 20 fd       saddr
-label9:
-    bt psw.0,$label9            ;8c 1e fd
 label3:
     reti                        ;8f
     decw ax                     ;90
@@ -575,20 +537,12 @@ label3:
     sub 0fe20h,#0abh            ;98 20 ab       saddr
     movw 0fe20h,ax              ;99 20          saddrp
     movw sp,ax                  ;99 1c
-label10:
-    bt 0fe20h.1,$label10        ;9c 20 fd       saddr
-label11:
-    bt psw.1,$label11           ;9c 1e fd
 label4:
     retb                        ;9f
     addc 0fe20h,#0abh           ;a8 20 ab       saddr
     movw ax,0fffeh              ;a9 fe          sfrp
     mov a,[hl+c]                ;aa
     mov a,[hl+b]                ;ab
-label12:
-    bt 0fe20h.2,$label12        ;ac 20 fd       saddr
-label13:
-    bt psw.2,$label13           ;ac 1e fd
 label5:
     mov a,[hl+0abh]             ;ae ab
     pop ax                      ;b0
@@ -603,10 +557,6 @@ label5:
     movw 0fffeh,ax              ;b9 fe          sfrp
     mov [hl+c],a                ;ba
     mov [hl+b],a                ;bb
-label14:
-    bt 0fe20h.3,$label14        ;bc 20 fd       saddr
-label15:
-    bt psw.3,$label15           ;bc 1e fd
 label6:
     mov [hl+0abh],a             ;be ab
     brk                         ;bf
@@ -615,31 +565,14 @@ label6:
     movw ax,hl                  ;c6
     cmp 0fe20h,#0abh            ;c8 20 ab       saddr
     addw ax,#0abcdh             ;ca cd ab
-label16:
-    bt 0fe20h.4,$label16        ;cc 20 fd       saddr
-label17:
-    bt psw.4,$label17           ;cc 1e fd
     movw bc,ax                  ;d2
     movw de,ax                  ;d4
     movw hl,ax                  ;d6
     subw ax,#0abcdh             ;da cd ab
-label20:
-    bt 0fe20h.5,$label20        ;dc 20 fd       saddr
-label21:
-    bt psw.5,$label21           ;dc 1e fd
     xch a,[hl+0abh]             ;de ab
     xchw ax,bc                  ;e2
     xchw ax,de                  ;e4
     xchw ax,hl                  ;e6
     cmpw ax,#0abcdh             ;ea cd ab
-label22:
-    bt 0fe20h.6,$label22        ;ec 20 fd       saddr
-label23:
-    bt psw.6,$label23           ;ec 1e fd
     movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
-label7:
-label18:
-    bt 0fe20h.7,$label18        ;fc 20 fd       saddr
-label19:
-    bt psw.7,$label19           ;fc 1e fd
     movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
