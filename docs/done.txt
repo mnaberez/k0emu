@@ -423,3 +423,12 @@ label31:
     xchw ax,bc                  ;e2
     xchw ax,de                  ;e4
     xchw ax,hl                  ;e6
+
+    mov a,[de]                  ;85
+    mov [de],a                  ;95
+
+    mov a,[hl]                  ;87
+    mov [hl],a                  ;97
+
+    xch a,[hl]                  ;07
+    xch a,[de]                  ;05

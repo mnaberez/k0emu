@@ -4122,6 +4122,80 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x34)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0x12)
 
+    # mov a,[de]                  ;85
+    def test_85_mov_a_de(self):
+        proc = Processor()
+        code = [0x85]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
+        proc.memory[0xabcd] = 0x42
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
+    # mov [de],a                  ;95
+    def test_95_mov_de_a(self):
+        proc = Processor()
+        code = [0x95]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x42)
+
+    # mov a,[hl]                  ;87
+    def test_87_mov_a_hl(self):
+        proc = Processor()
+        code = [0x87]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0x42
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
+    # mov [hl],a                  ;97
+    def test_97_mov_hl_a(self):
+        proc = Processor()
+        code = [0x97]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x42)
+
+    # xch a,[de]                  ;05
+    def test_05_xch_a_de(self):
+        proc = Processor()
+        code = [0x05]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x12)
+        proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
+        proc.memory[0xabcd] = 0x34
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x12)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x34)
+
+    # xch a,[hl]                  ;07
+    def test_07_xch_a_hl(self):
+        proc = Processor()
+        code = [0x07]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x12)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0x34
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x12)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x34)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

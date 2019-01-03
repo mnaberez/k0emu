@@ -1,7 +1,5 @@
     movw ax,!0abceh             ;02 ce ab       addr16p
     movw !0abceh,ax             ;03 ce ab       addr16p
-    xch a,[de]                  ;05
-    xch a,[hl]                  ;07
     add a,!0abcdh               ;08 cd ab
     add a,[hl+0abh]             ;09 ab
     add a,#0abh                 ;0d ab
@@ -516,9 +514,7 @@ label127:
     incw ax                     ;80
     incw bc                     ;82
     incw de                     ;84
-    mov a,[de]                  ;85
     incw hl                     ;86
-    mov a,[hl]                  ;87
     add 0fe20h,#0abh            ;88 20 ab       saddr
     movw ax,0fe20h              ;89 20          saddrp
     movw ax,sp                  ;89 1c
@@ -527,9 +523,7 @@ label3:
     decw ax                     ;90
     decw bc                     ;92
     decw de                     ;94
-    mov [de],a                  ;95
     decw hl                     ;96
-    mov [hl],a                  ;97
     sub 0fe20h,#0abh            ;98 20 ab       saddr
     movw 0fe20h,ax              ;99 20          saddrp
     movw sp,ax                  ;99 1c
