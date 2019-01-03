@@ -155,6 +155,10 @@ class Processor(object):
                 f = self._opcode_0x04  # dbnz 0fe20h,$label0         ;04 20 fd       saddr
             elif opcode in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
                 f = self._opcode_0x8c_to_0xfc_bt # bt 0fe20h.bit,$label8         ;8c 20 fd       saddr
+            elif opcode in (0x10, 0x12, 0x14, 0x16):
+                f = self._opcode_0x10_to_0x16_movw
+            elif opcode in (0xe2, 0xe4, 0xe6):
+                f = self._opcode_0xe2_to_0xe6_xchw
             else:
                 f = self._opcode_not_implemented
 
@@ -176,6 +180,22 @@ class Processor(object):
             self.write_psw(self.read_psw() & ~bitweight)
         else:
             self.write_psw(self.read_psw() | bitweight)
+
+    # movw regpair,#0abcdh             ;10..16 cd ab
+    def _opcode_0x10_to_0x16_movw(self, opcode):
+        regpair = _regpair(opcode)
+        value = self._consume_word()
+        self.write_gp_regpair(regpair, value)
+
+    # xchw ax,bc                  ;e2
+    # xchw ax,de                  ;e4
+    # xchw ax,hl                  ;e6
+    def _opcode_0xe2_to_0xe6_xchw(self, opcode):
+        ax_value = self.read_gp_regpair(RegisterPairs.AX)
+        other_regpair = _regpair(opcode)
+        other_value = self.read_gp_regpair(other_regpair)
+        self.write_gp_regpair(RegisterPairs.AX, other_value)
+        self.write_gp_regpair(other_regpair, ax_value)
 
     # set1 cy
     def _opcode_0x20(self, opcode):
@@ -886,8 +906,13 @@ class Processor(object):
 
     def _consume_byte(self):
         value = self.memory[self.pc]
-        self.pc += 1
+        self.pc = (self.pc + 1) & 0xFFFF
         return value
+
+    def _consume_word(self):
+        low = self._consume_byte()
+        high = self._consume_byte()
+        return _word(low, high)
 
     def _consume_addr16(self):
         low = self._consume_byte()
@@ -906,6 +931,8 @@ class Processor(object):
         offset = self._consume_byte()
         return _saddrp(offset)
 
+    # Registers
+
     def read_gp_reg(self, regnum):
         address = self.address_of_gp_reg(regnum)
         return self.memory[address]
@@ -915,9 +942,33 @@ class Processor(object):
         self.memory[address] = data
 
     def address_of_gp_reg(self, regnum):
-        """Return the address in RAM of a general purpose register"""
+        """Return the address in RAM of a general purpose register:
+           A, X, B, C, etc."""
         bank_addr = self.REGISTERS_BASE_ADDRESS - (self.read_rb() * 8)
         return bank_addr + regnum
+
+    # Register Pairs
+
+    def read_gp_regpair(self, regpairnum):
+        address = self.address_of_gp_regpair(regpairnum)
+        low = self.memory[address]
+        high = self.memory[address+1]
+        return _word(low, high)
+
+    def write_gp_regpair(self, regpairnum, value):
+        address = self.address_of_gp_regpair(regpairnum)
+        low = value & 0xFF
+        high = value >> 8
+        self.memory[address] = low
+        self.memory[address+1] = high
+
+    def address_of_gp_regpair(self, regpairnum):
+        """Return the address in RAM of a general purpose register
+           pair: AX, BC, DE, etc.  The pair is stored in two bytes:
+           low then high"""
+        return self.address_of_gp_reg(regpairnum << 1)
+
+    # Register Banks
 
     def read_rb(self):
         """Reads PSW and returns a register bank number 0..3"""
@@ -931,6 +982,8 @@ class Processor(object):
         rbs1 = (value & 2) << 4
         self.write_psw(self.read_psw() & ~(Flags.RBS0 + Flags.RBS1))
         self.write_psw(self.read_psw() | (rbs0 + rbs1))
+
+    # PSW
 
     def read_psw(self):
         """Read the PSW"""
@@ -966,8 +1019,10 @@ def _saddrp(low):
         raise Exception("saddrp must be an even address")
     return _saddr(low)
 
-def _addr16(low, high):
+def _word(low, high):
     return low + (high << 8)
+
+_addr16 = _word
 
 def _addr16p(low, high):
     addr16p = _addr16(low, high)
@@ -977,6 +1032,9 @@ def _addr16p(low, high):
 
 def _reg(opcode):
     return opcode & 0b111
+
+def _regpair(opcode):
+    return (opcode >> 1) & 0b11
 
 def _bit(opcode):
     return (opcode & 0b01110000) >> 4

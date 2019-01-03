@@ -7,10 +7,6 @@
     add a,#0abh                 ;0d ab
     add a,0fe20h                ;0e 20          saddr
     add a,[hl]                  ;0f
-    movw ax,#0abcdh             ;10 cd ab
-    movw bc,#0abcdh             ;12 cd ab
-    movw de,#0abcdh             ;14 cd ab
-    movw hl,#0abcdh             ;16 cd ab
     sub a,!0abcdh               ;18 cd ab
     sub a,[hl+0abh]             ;19 ab
     sub a,#0abh                 ;1d ab
@@ -570,9 +566,6 @@ label6:
     movw hl,ax                  ;d6
     subw ax,#0abcdh             ;da cd ab
     xch a,[hl+0abh]             ;de ab
-    xchw ax,bc                  ;e2
-    xchw ax,de                  ;e4
-    xchw ax,hl                  ;e6
     cmpw ax,#0abcdh             ;ea cd ab
     movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
     movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp

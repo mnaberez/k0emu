@@ -1,0 +1,9 @@
+
+           AAXX            XX AA
+MOVW AX,#0xABCD         10 CD AB
+  -> 0xFEF8 = CD (X)
+  -> 0xFEF9 = AB (A)
+
+MOVW FE00,AX
+  -> FE00 = CD (X)
+  -> FE01 = AB (A)

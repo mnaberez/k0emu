@@ -414,3 +414,12 @@ label31:
     bt psw.5,$label21           ;dc 1e fd
     bt psw.6,$label23           ;ec 1e fd
     bt psw.7,$label19           ;fc 1e fd
+
+    movw ax,#0abcdh             ;10 cd ab
+    movw bc,#0abcdh             ;12 cd ab
+    movw de,#0abcdh             ;14 cd ab
+    movw hl,#0abcdh             ;16 cd ab
+
+    xchw ax,bc                  ;e2
+    xchw ax,de                  ;e4
+    xchw ax,hl                  ;e6
