@@ -354,3 +354,10 @@
     dec l                       ;56
     dec h                       ;57
     dec 0fe20h                  ;91 20          saddr
+
+label1:
+    dbnz c,$label1              ;8a fe
+label2:
+    dbnz b,$label2              ;8b fe
+label0:
+    dbnz 0fe20h,$label0         ;04 20 fd       saddr

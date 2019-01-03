@@ -1,7 +1,5 @@
     movw ax,!0abceh             ;02 ce ab       addr16p
     movw !0abceh,ax             ;03 ce ab       addr16p
-label0:
-    dbnz 0fe20h,$label0         ;04 20 fd       saddr
     xch a,[de]                  ;05
     xch a,[hl]                  ;07
     add a,!0abcdh               ;08 cd ab
@@ -562,10 +560,6 @@ label127:
     add 0fe20h,#0abh            ;88 20 ab       saddr
     movw ax,0fe20h              ;89 20          saddrp
     movw ax,sp                  ;89 1c
-label1:
-    dbnz c,$label1              ;8a fe
-label2:
-    dbnz b,$label2              ;8b fe
 label8:
     bt 0fe20h.0,$label8         ;8c 20 fd       saddr
 label9:

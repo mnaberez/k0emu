@@ -3312,6 +3312,123 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.memory[0xfe20], 0)
 
+    # dbnz c,$label1              ;8a fe
+    def test_8a_dbnz_c_0_to_ff_branches(self):
+        proc = Processor()
+        code = [0x8a, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.write_gp_reg(Registers.C, 0)
+        proc.write_psw(Flags.AC | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, 0x0ff2) # branch taken
+        self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0xFF) # decremented
+
+    # dbnz c,$label1              ;8a fe
+    def test_8a_dbnz_c_3_to_2_branches(self):
+        proc = Processor()
+        code = [0x8a, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.write_gp_reg(Registers.C, 3)
+        proc.write_psw(Flags.AC | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, 0x0ff2) # branch taken
+        self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
+        self.assertEqual(proc.read_gp_reg(Registers.C), 2) # decremented
+
+    # dbnz c,$label1              ;8a fe
+    def test_8a_dbnz_c_1_to_0_doesnt_branch(self):
+        proc = Processor()
+        code = [0x8a, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.write_gp_reg(Registers.C, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, 0x1000+len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), Flags.AC) # unchanged
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0) # decremented
+
+    # dbnz b,$label2              ;8b fe
+    def test_8b_dbnz_b_0_to_ff_branches(self):
+        proc = Processor()
+        code = [0x8b, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.write_gp_reg(Registers.B, 0)
+        proc.write_psw(Flags.AC | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, 0x0ff2) # branch taken
+        self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
+        self.assertEqual(proc.read_gp_reg(Registers.B), 0xFF) # decremented
+
+    # dbnz b,$label1              ;8b fe
+    def test_8b_dbnz_b_3_to_2_branches(self):
+        proc = Processor()
+        code = [0x8b, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.write_gp_reg(Registers.B, 3)
+        proc.write_psw(Flags.AC | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, 0x0ff2) # branch taken
+        self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
+        self.assertEqual(proc.read_gp_reg(Registers.B), 2) # decremented
+
+    # dbnz b,$label1              ;8b fe
+    def test_8b_dbnz_b_1_to_0_doesnt_branch(self):
+        proc = Processor()
+        code = [0x8b, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.write_gp_reg(Registers.B, 1)
+        proc.write_psw(Flags.AC)
+        proc.step()
+        self.assertEqual(proc.pc, 0x1000+len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), Flags.AC) # unchanged
+        self.assertEqual(proc.read_gp_reg(Registers.B), 0) # decremented
+
+    # dbnz 0fe20h,$label0         ;04 20 fd       saddr
+    def test_04_dbnz_saddr_0_to_ff_branches(self):
+        proc = Processor()
+        code = [0x04, 0x20, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.memory[0xfe20] = 0
+        proc.write_psw(Flags.AC | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, 0x0ff3) # branch taken
+        self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
+        self.assertEqual(proc.memory[0xfe20], 0xFF) # decremented
+
+    # dbnz 0fe20h,$label0         ;04 20 fd       saddr
+    def test_04_dbnz_saddr_3_to_2_branches(self):
+        proc = Processor()
+        code = [0x04, 0x20, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.memory[0xfe20] = 3
+        proc.write_psw(Flags.AC | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, 0x0ff3) # branch taken
+        self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
+        self.assertEqual(proc.memory[0xfe20], 2) # decremented
+
+    # dbnz 0fe20h,$label0         ;04 20 fd       saddr
+    def test_04_dbnz_saddr_1_to_0_doesnt_branch(self):
+        proc = Processor()
+        code = [0x04, 0x20, 0xf0]
+        proc.write_memory(0x1000, code)
+        proc.pc = 0x1000
+        proc.memory[0xfe20] = 1
+        proc.write_psw(Flags.AC | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, 0x1000+len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
+        self.assertEqual(proc.memory[0xfe20], 0) # decremented
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

@@ -16,3 +16,7 @@ Verify that PSW is really stored in FF1E.
 Verify behavior of flag AC during INC.
 
 Verify behavior of flag AC during DEC.
+
+Verify DBNZ wrap-around behavior.
+
+Verify all branch displacement calculations.

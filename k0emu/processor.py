@@ -145,6 +145,12 @@ class Processor(object):
                 f = self._opcode_0x26  # rol a,1                     ;26
             elif opcode == 0x27:
                 f = self._opcode_0x27  # rolc a,1                    ;27
+            elif opcode == 0x8a:
+                f = self._opcode_0x8a  # dbnz c,$label1              ;8a fe
+            elif opcode == 0x8b:
+                f = self._opcode_0x8b  # dbnz c,$label1              ;8a fe
+            elif opcode == 0x04:
+                f = self._opcode_0x04  # dbnz 0fe20h,$label0         ;04 20 fd       saddr
             else:
                 f = self._opcode_not_implemented
 
@@ -738,6 +744,40 @@ class Processor(object):
         self._push(self.pc >> 8)
         self._push(self.pc & 0xFF)
         self.pc = address
+
+    # dbnz c,$label1              ;8a fe
+    def _opcode_0x8a(self, opcode):
+        displacement = self._consume_byte()
+        c = self.read_gp_reg(Registers.C) - 1
+        if c < 0:
+            c = 0xFF
+        self.write_gp_reg(Registers.C, c)
+        if c != 0:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
+
+    # dbnz b,$label2              ;8b fe
+    def _opcode_0x8b(self, opcode):
+        displacement = self._consume_byte()
+        c = self.read_gp_reg(Registers.B) - 1
+        if c < 0:
+            c = 0xFF
+        self.write_gp_reg(Registers.B, c)
+        if c != 0:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
+
+    # dbnz 0fe20h,$label0         ;04 20 fd       saddr
+    def _opcode_0x04(self, opcode):
+        value_address = self._consume_saddr()
+        displacement = self._consume_byte()
+        value = self.memory[value_address] - 1
+        if value < 0:
+            value = 0xFF
+        self.memory[value_address] = value
+        if value != 0:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
 
     def _push(self, value):
         """Push a byte onto the stack"""
