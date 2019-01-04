@@ -177,6 +177,10 @@ class Processor(object):
                 f = self._opcode_0xb1_to_0xb7_push_rp # push ax                     ;b1
             elif opcode in (0xb0, 0xb2, 0xb4, 0xb6):
                 f = self._opcode_0xb0_to_0xb6_pop_rp # pop ax                      ;b0
+            elif opcode in (0x80, 0x82, 0x84, 0x86):
+                f = self._opcode_0x80_to_0x86_incw # incw ax                     ;80
+            elif opcode in (0x90, 0x92, 0x94, 0x96):
+                f = self._opcode_0x90_to_0x96_decw # decw ax                     ;90
             else:
                 f = self._opcode_not_implemented
 
@@ -350,6 +354,24 @@ class Processor(object):
         other_value = self.memory[address]
         self.write_gp_reg(Registers.A, other_value)
         self.memory[address] = a_value
+
+    # incw ax                     ;80
+    # ...
+    # incw hl                     ;86
+    def _opcode_0x80_to_0x86_incw(self, opcode):
+        regpair = _regpair(opcode)
+        value = self.read_gp_regpair(regpair)
+        result = self._operation_incw(value)
+        self.write_gp_regpair(regpair, result)
+
+    # decw ax                     ;90
+    # ...
+    # decw hl                     ;96
+    def _opcode_0x90_to_0x96_decw(self, opcode):
+        regpair = _regpair(opcode)
+        value = self.read_gp_regpair(regpair)
+        result = self._operation_decw(value)
+        self.write_gp_regpair(regpair, result)
 
     # br !0abcdh                  ;9b cd ab
     def _opcode_0x9b(self, opcode):
@@ -960,6 +982,16 @@ class Processor(object):
             psw |= Flags.AC
         self.write_psw(psw)
 
+        return result
+
+    def _operation_incw(self, value):
+        return (value + 1) & 0xFFFF
+
+    def _operation_decw(self, value):
+        if value == 0:
+            result = 0xFFFF
+        else:
+            result = value - 1
         return result
 
     def _operation_set1(self, value, bit):

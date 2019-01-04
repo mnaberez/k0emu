@@ -462,3 +462,13 @@ label31:
     clr1 [hl].5                 ;71 d3
     clr1 [hl].6                 ;71 e3
     clr1 [hl].7                 ;71 f3
+
+    incw ax                     ;80
+    incw bc                     ;82
+    incw de                     ;84
+    incw hl                     ;86
+
+    decw ax                     ;90
+    decw bc                     ;92
+    decw de                     ;94
+    decw hl                     ;96

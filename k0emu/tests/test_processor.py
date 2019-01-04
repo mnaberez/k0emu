@@ -4526,6 +4526,118 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.memory[0xabcd], 0b01111111)
         self.assertEqual(proc.read_psw(), 0x55) # unchanged
 
+    # incw ax                     ;80
+    def test_80_incw_ax(self):
+        tests = ((0, 1), (0xff, 0x100), (0xffff, 0))
+        for before, after in tests:
+            proc = Processor()
+            code = [0x80]
+            proc.write_memory(0, code)
+            proc.write_gp_regpair(RegisterPairs.AX, before)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), after)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # incw bc                     ;82
+    def test_82_incw_bc(self):
+        tests = ((0, 1), (0xff, 0x100), (0xffff, 0))
+        for before, after in tests:
+            proc = Processor()
+            code = [0x82]
+            proc.write_memory(0, code)
+            proc.write_gp_regpair(RegisterPairs.BC, before)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), after)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # incw de                     ;84
+    def test_84_incw_bc(self):
+        tests = ((0, 1), (0xff, 0x100), (0xffff, 0))
+        for before, after in tests:
+            proc = Processor()
+            code = [0x84]
+            proc.write_memory(0, code)
+            proc.write_gp_regpair(RegisterPairs.DE, before)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), after)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # incw hl                     ;86
+    def test_86_incw_bc(self):
+        tests = ((0, 1), (0xff, 0x100), (0xffff, 0))
+        for before, after in tests:
+            proc = Processor()
+            code = [0x86]
+            proc.write_memory(0, code)
+            proc.write_gp_regpair(RegisterPairs.HL, before)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), after)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # decw ax                     ;90
+    def test_90_decw_ax(self):
+        tests = ((1, 0), (0x100, 0xff), (0, 0xffff))
+        for before, after in tests:
+            proc = Processor()
+            code = [0x90]
+            proc.write_memory(0, code)
+            proc.write_gp_regpair(RegisterPairs.AX, before)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), after)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # decw bc                     ;92
+    def test_92_decw_bc(self):
+        tests = ((1, 0), (0x100, 0xff), (0, 0xffff))
+        for before, after in tests:
+            proc = Processor()
+            code = [0x92]
+            proc.write_memory(0, code)
+            proc.write_gp_regpair(RegisterPairs.BC, before)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), after)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # decw de                     ;94
+    def test_92_decw_de(self):
+        tests = ((1, 0), (0x100, 0xff), (0, 0xffff))
+        for before, after in tests:
+            proc = Processor()
+            code = [0x94]
+            proc.write_memory(0, code)
+            proc.write_gp_regpair(RegisterPairs.DE, before)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), after)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # decw hl                     ;96
+    def test_92_decw_hl(self):
+        tests = ((1, 0), (0x100, 0xff), (0, 0xffff))
+        for before, after in tests:
+            proc = Processor()
+            code = [0x96]
+            proc.write_memory(0, code)
+            proc.write_gp_regpair(RegisterPairs.HL, before)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), after)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])
