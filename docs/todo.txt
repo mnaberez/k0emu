@@ -519,7 +519,6 @@ label127:
     movw ax,0fe20h              ;89 20          saddrp
     movw ax,sp                  ;89 1c
 label3:
-    reti                        ;8f
     decw ax                     ;90
     decw bc                     ;92
     decw de                     ;94

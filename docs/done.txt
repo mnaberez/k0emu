@@ -442,3 +442,5 @@ label31:
     pop bc                      ;b2
     pop de                      ;b4
     pop hl                      ;b6
+
+    reti                        ;8f

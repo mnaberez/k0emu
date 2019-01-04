@@ -4304,6 +4304,20 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.sp, 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0xabcd)
 
+    # reti                        ;8f
+    def test_8f_reti(self):
+        proc = Processor()
+        code = [0x8f]
+        proc.write_memory(0, code)
+        proc.sp = 0xfe10
+        proc.memory[0xfe12] = 0x55 # psw
+        proc.memory[0xfe11] = 0xab # pch
+        proc.memory[0xfe10] = 0xcd # pcl
+        proc.step()
+        self.assertEqual(proc.pc, 0xabcd)
+        self.assertEqual(proc.read_psw(), 0x55)
+        self.assertEqual(proc.sp, 0xfe13)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

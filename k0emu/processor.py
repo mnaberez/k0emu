@@ -101,6 +101,8 @@ class Processor(object):
                 f = self._opcode_0x9a # call !0abcdh                ;9a cd ab
             elif opcode == 0xaf:
                 f = self._opcode_0xaf # ret                         ;af
+            elif opcode == 0x8f:
+                f = self._opcode_0x8f # reti                        ;8f
             elif opcode == 0x7d:
                 f = self._opcode_0x7d # xor a,#0abh                 ;7d ab
             elif opcode == 0x7e:
@@ -749,6 +751,11 @@ class Processor(object):
     # ret                         ;af
     def _opcode_0xaf(self, opcode):
         self.pc = self._pop_word()
+
+    # reti                        ;8f
+    def _opcode_0x8f(self, opcode):
+        self.pc = self._pop_word()
+        self.write_psw(self._pop())
 
     # br $label7                  ;fa fe
     def _opcode_0xfa(self, opcode):
