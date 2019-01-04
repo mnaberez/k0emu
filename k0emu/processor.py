@@ -171,6 +171,10 @@ class Processor(object):
                 f = self._opcode_0x87 # mov a,[hl]                  ;87
             elif opcode == 0x97:
                 f = self._opcode_0x97 # mov [hl],a                  ;97
+            elif opcode in (0xb1, 0xb3, 0xb5, 0xb7):
+                f = self._opcode_0xb1_to_0xb7_push_rp # push ax                     ;b1
+            elif opcode in (0xb0, 0xb2, 0xb4, 0xb6):
+                f = self._opcode_0xb0_to_0xb6_pop_rp # pop ax                      ;b0
             else:
                 f = self._opcode_not_implemented
 
@@ -719,8 +723,7 @@ class Processor(object):
     # call !0abcdh                ;9a cd ab
     def _opcode_0x9a(self, opcode):
         address = self._consume_addr16()
-        self._push(self.pc >> 8)
-        self._push(self.pc & 0xFF)
+        self._push_word(self.pc)
         self.pc = address
 
     # SET1 0fe20h.7               ;7A 20          saddr
@@ -745,9 +748,7 @@ class Processor(object):
 
     # ret                         ;af
     def _opcode_0xaf(self, opcode):
-        address_low = self._pop()
-        address_high = self._pop()
-        self.pc = (address_high << 8) + address_low
+        self.pc = self._pop_word()
 
     # br $label7                  ;fa fe
     def _opcode_0xfa(self, opcode):
@@ -829,8 +830,7 @@ class Processor(object):
     def _opcode_0x0c_to_0x7c_callf(self, opcode):
         base = 0x0800 + ((opcode >> 4) << 8)
         offset = self._consume_byte()
-        self._push(self.pc >> 8)
-        self._push(self.pc & 0xFF)
+        self._push_word(self.pc)
         self.pc = base + offset
 
     # callt [0040h]               ;c1
@@ -846,8 +846,7 @@ class Processor(object):
         address_high = self.memory[vector_address+1]
         address = (address_high << 8) + address_low
 
-        self._push(self.pc >> 8)
-        self._push(self.pc & 0xFF)
+        self._push_word(self.pc)
         self.pc = address
 
     # dbnz c,$label1              ;8a fe
@@ -884,16 +883,21 @@ class Processor(object):
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
 
-    def _push(self, value):
-        """Push a byte onto the stack"""
-        self.sp -= 1
-        self.memory[self.sp] = value
+    # push ax                     ;b1
+    # ...
+    # push hl                     ;b7
+    def _opcode_0xb1_to_0xb7_push_rp(self, opcode):
+        regpair = _regpair(opcode)
+        value = self.read_gp_regpair(regpair)
+        self._push_word(value)
 
-    def _pop(self):
-        """Pop a byte off the stack"""
-        value = self.memory[self.sp]
-        self.sp += 1
-        return value
+    # pop ax                      ;b0
+    # ...
+    # pop hl                      ;b6
+    def _opcode_0xb0_to_0xb6_pop_rp(self, opcode):
+        regpair = _regpair(opcode)
+        value = self._pop_word()
+        self.write_gp_regpair(regpair, value)
 
     def _operation_bt(self, value, bit, displacement):
         bitweight = 2 ** bit
@@ -982,6 +986,30 @@ class Processor(object):
     def _consume_saddrp(self):
         offset = self._consume_byte()
         return _saddrp(offset)
+
+    # Stack
+
+    def _push(self, value):
+        """Push a byte onto the stack"""
+        self.sp -= 1
+        self.memory[self.sp] = value
+
+    def _pop(self):
+        """Pop a byte off the stack"""
+        value = self.memory[self.sp]
+        self.sp += 1
+        return value
+
+    def _push_word(self, value):
+        """Push a word onto the stack"""
+        self._push(value >> 8)
+        self._push(value & 0xFF)
+
+    def _pop_word(self):
+        """Pop a word off the stack"""
+        low = self._pop()
+        high = self._pop()
+        return (high << 8) + low
 
     # Registers
 

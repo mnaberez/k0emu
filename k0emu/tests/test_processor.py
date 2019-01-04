@@ -4196,6 +4196,114 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.memory[0xabcd], 0x12)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x34)
 
+    # push ax                     ;b1
+    def test_b1_push_ax(self):
+        proc = Processor()
+        code = [0xb1]
+        proc.write_memory(0, code)
+        proc.sp = 0xfe12
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xfe10)
+        self.assertEqual(proc.memory[0xfe11], 0xab) # A
+        self.assertEqual(proc.memory[0xfe10], 0xcd) # X
+
+    # push bc                     ;b3
+    def test_b3_push_bc(self):
+        proc = Processor()
+        code = [0xb3]
+        proc.write_memory(0, code)
+        proc.sp = 0xfe12
+        proc.write_gp_regpair(RegisterPairs.BC, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xfe10)
+        self.assertEqual(proc.memory[0xfe11], 0xab) # B
+        self.assertEqual(proc.memory[0xfe10], 0xcd) # C
+
+    # push de                     ;b5
+    def test_b5_push_de(self):
+        proc = Processor()
+        code = [0xb5]
+        proc.write_memory(0, code)
+        proc.sp = 0xfe12
+        proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xfe10)
+        self.assertEqual(proc.memory[0xfe11], 0xab) # D
+        self.assertEqual(proc.memory[0xfe10], 0xcd) # E
+
+    # push hl                     ;b7
+    def test_b7_push_de(self):
+        proc = Processor()
+        code = [0xb7]
+        proc.write_memory(0, code)
+        proc.sp = 0xfe12
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xfe10)
+        self.assertEqual(proc.memory[0xfe11], 0xab) # H
+        self.assertEqual(proc.memory[0xfe10], 0xcd) # L
+
+    # pop ax                      ;b0
+    def test_b0_pop_ax(self):
+        proc = Processor()
+        code = [0xb0]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.AX, 0)
+        proc.sp = 0xfe10
+        proc.memory[0xfe11] = 0xab # A
+        proc.memory[0xfe10] = 0xcd # X
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xfe12)
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
+
+    # pop bc                      ;b2
+    def test_b2_pop_bc(self):
+        proc = Processor()
+        code = [0xb2]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.BC, 0)
+        proc.sp = 0xfe10
+        proc.memory[0xfe11] = 0xab # A
+        proc.memory[0xfe10] = 0xcd # X
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xfe12)
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), 0xabcd)
+
+    # pop de                      ;b4
+    def test_b4_pop_de(self):
+        proc = Processor()
+        code = [0xb4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.DE, 0)
+        proc.sp = 0xfe10
+        proc.memory[0xfe11] = 0xab # A
+        proc.memory[0xfe10] = 0xcd # X
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xfe12)
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), 0xabcd)
+
+    # pop hl                      ;b6
+    def test_b4_pop_hl(self):
+        proc = Processor()
+        code = [0xb6]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0)
+        proc.sp = 0xfe10
+        proc.memory[0xfe11] = 0xab # A
+        proc.memory[0xfe10] = 0xcd # X
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.sp, 0xfe12)
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0xabcd)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

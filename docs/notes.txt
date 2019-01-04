@@ -1,4 +1,5 @@
-
+Register Pairs
+--------------
            AAXX            XX AA
 MOVW AX,#0xABCD         10 CD AB
   -> 0xFEF8 = CD (X)
@@ -7,3 +8,19 @@ MOVW AX,#0xABCD         10 CD AB
 MOVW FE00,AX
   -> FE00 = CD (X)
   -> FE01 = AB (A)
+
+Stack
+-----
+
+movw sp,#0xfe12
+mov a,#0xab
+mov x,#0xcd
+push ax
+-> fe10 = cd (x)
+-> fe11 = ab (a)
+
+movw sp,#0xfe12
+call foo
+(pc = address 0x0087 here)
+-> fe10 = 87
+-> fe11 = 00

@@ -535,14 +535,6 @@ label4:
     mov a,[hl+b]                ;ab
 label5:
     mov a,[hl+0abh]             ;ae ab
-    pop ax                      ;b0
-    push ax                     ;b1
-    pop bc                      ;b2
-    push bc                     ;b3
-    pop de                      ;b4
-    push de                     ;b5
-    pop hl                      ;b6
-    push hl                     ;b7
     subc 0fe20h,#0abh           ;b8 20 ab       saddr
     movw 0fffeh,ax              ;b9 fe          sfrp
     mov [hl+c],a                ;ba

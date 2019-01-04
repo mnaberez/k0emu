@@ -432,3 +432,13 @@ label31:
 
     xch a,[hl]                  ;07
     xch a,[de]                  ;05
+
+    push ax                     ;b1
+    push bc                     ;b3
+    push de                     ;b5
+    push hl                     ;b7
+
+    pop ax                      ;b0
+    pop bc                      ;b2
+    pop de                      ;b4
+    pop hl                      ;b6
