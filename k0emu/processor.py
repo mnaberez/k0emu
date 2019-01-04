@@ -550,10 +550,26 @@ class Processor(object):
             result = self._operation_set1(value, bit)
             self.memory[address] = result
 
+        # set1 [hl].bit
+        elif opcode2 in (0x82, 0x92, 0xa2, 0xb2, 0xc2, 0xd2, 0xe2, 0xf2):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            value = self.memory[address]
+            result = self._operation_set1(value, bit)
+            self.memory[address] = result
+
         # clr1 sfr.bit
         elif opcode2 in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
             bit = _bit(opcode2)
             address = self._consume_sfr()
+            value = self.memory[address]
+            result = self._operation_clr1(value, bit)
+            self.memory[address] = result
+
+        # clr1 [hl].bit
+        elif opcode2 in (0x83, 0x93, 0xa3, 0xb3, 0xc3, 0xd3, 0xe3, 0xf3):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
             value = self.memory[address]
             result = self._operation_clr1(value, bit)
             self.memory[address] = result

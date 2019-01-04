@@ -488,24 +488,6 @@ label127:
     xor1 cy,[hl].6              ;71 e7
     xor1 cy,[hl].7              ;71 f7
 
-    set1 [hl].0                 ;71 82
-    set1 [hl].1                 ;71 92
-    set1 [hl].2                 ;71 a2
-    set1 [hl].3                 ;71 b2
-    set1 [hl].4                 ;71 c2
-    set1 [hl].5                 ;71 d2
-    set1 [hl].6                 ;71 e2
-    set1 [hl].7                 ;71 f2
-
-    clr1 [hl].0                 ;71 83
-    clr1 [hl].1                 ;71 93
-    clr1 [hl].2                 ;71 a3
-    clr1 [hl].3                 ;71 b3
-    clr1 [hl].4                 ;71 c3
-    clr1 [hl].5                 ;71 d3
-    clr1 [hl].6                 ;71 e3
-    clr1 [hl].7                 ;71 f3
-
     halt                        ;71 10
     stop                        ;71 00
 
