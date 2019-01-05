@@ -489,3 +489,11 @@ label31:
     and a,[hl+0abh]             ;59 ab
     and a,[hl+c]                ;31 5a
     and a,[hl+b]                ;31 5b
+
+    movw ax,bc                  ;c2
+    movw ax,de                  ;c4
+    movw ax,hl                  ;c6
+
+    movw bc,ax                  ;d2
+    movw de,ax                  ;d4
+    movw hl,ax                  ;d6

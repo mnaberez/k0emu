@@ -197,6 +197,10 @@ class Processor(object):
                 f = self._opcode_0xba # mov [hl+c],a                ;ba
             elif opcode == 0xbb:
                 f = self._opcode_0xbb # mov [hl+b],a                ;bb
+            elif opcode in (0xc2, 0xc4, 0xc6):
+                f = self._opcode_0xc2_to_0xc6_movw # movw ax,bc..hl                  ;c2..c6
+            elif opcode in (0xd2, 0xd4, 0xd6):
+                f = self._opcode_0xd2_to_0xd6_movw # # movw bc..hl,ax                  ;d2..d6
             elif opcode == 0xde:
                 f = self._opcode_0xde # xch a,[hl+0abh]             ;de ab
             else:
@@ -1043,6 +1047,22 @@ class Processor(object):
         address = self._based_hl_imm(imm)
         value = self.read_gp_reg(Registers.A)
         self.memory[address] = value
+
+    # movw ax,bc                  ;c2
+    # movw ax,de                  ;c4
+    # movw ax,hl                  ;c6
+    def _opcode_0xc2_to_0xc6_movw(self, opcode):
+        regpair = _regpair(opcode)
+        value = self.read_gp_regpair(regpair)
+        self.write_gp_regpair(RegisterPairs.AX, value)
+
+    # movw bc,ax                  ;d2
+    # movw de,ax                  ;d4
+    # movw hl,ax                  ;d6
+    def _opcode_0xd2_to_0xd6_movw(self, opcode):
+        regpair = _regpair(opcode)
+        value = self.read_gp_regpair(RegisterPairs.AX)
+        self.write_gp_regpair(regpair, value)
 
     # xch a,[hl+0abh]             ;de ab
     def _opcode_0xde(self, opcode):

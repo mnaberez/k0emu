@@ -4850,6 +4850,71 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.memory[0xABCD], 0x55)
 
+    # movw ax,bc                  ;c2
+    def test_c2_movw_ax_bc(self):
+        proc = Processor()
+        code = [0xc2]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.AX, 0)
+        proc.write_gp_regpair(RegisterPairs.BC, 0x42)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x42)
+
+    # movw ax,de                  ;c4
+    def test_c4_movw_ax_de(self):
+        proc = Processor()
+        code = [0xc4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.AX, 0)
+        proc.write_gp_regpair(RegisterPairs.DE, 0x42)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x42)
+
+    # movw ax,hl                  ;c6
+    def test_c6_movw_ax_hl(self):
+        proc = Processor()
+        code = [0xc6]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.AX, 0)
+        proc.write_gp_regpair(RegisterPairs.HL, 0x42)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x42)
+
+    # movw bc,ax                  ;d2
+    def test_d2_movw_bc_ax(self):
+        proc = Processor()
+        code = [0xd2]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.BC, 0)
+        proc.write_gp_regpair(RegisterPairs.AX, 0x42)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), 0x42)
+
+    # movw de,ax                  ;d4
+    def test_d4_movw_de_ax(self):
+        proc = Processor()
+        code = [0xd4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.DE, 0)
+        proc.write_gp_regpair(RegisterPairs.AX, 0x42)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), 0x42)
+
+    # movw hl,ax                  ;d6
+    def test_d6_movw_hl_ax(self):
+        proc = Processor()
+        code = [0xd6]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0)
+        proc.write_gp_regpair(RegisterPairs.AX, 0x42)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0x42)
 
 
 def test_suite():

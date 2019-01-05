@@ -501,14 +501,8 @@ label5:
     movw 0fffeh,ax              ;b9 fe          sfrp
 label6:
     brk                         ;bf
-    movw ax,bc                  ;c2
-    movw ax,de                  ;c4
-    movw ax,hl                  ;c6
     cmp 0fe20h,#0abh            ;c8 20 ab       saddr
     addw ax,#0abcdh             ;ca cd ab
-    movw bc,ax                  ;d2
-    movw de,ax                  ;d4
-    movw hl,ax                  ;d6
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
     movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
