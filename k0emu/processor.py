@@ -490,6 +490,22 @@ class Processor(object):
             result = a * x
             self.write_gp_regpair(RegisterPairs.AX, result)
 
+        # xch a,[hl+c]                ;31 8a
+        elif opcode2 == 0x8a:
+            address = self._based_hl_c()
+            other_value = self.memory[address]
+            a_value = self.read_gp_reg(Registers.A)
+            self.write_gp_reg(Registers.A, other_value)
+            self.memory[address] = a_value
+
+        # xch a,[hl+b]                ;31 8b
+        elif opcode2 == 0x8b:
+            address = self._based_hl_b()
+            other_value = self.memory[address]
+            a_value = self.read_gp_reg(Registers.A)
+            self.write_gp_reg(Registers.A, other_value)
+            self.memory[address] = a_value
+
         # br ax                       ;31 98
         elif opcode2 == 0x98:
             self.pc = self.read_gp_regpair(RegisterPairs.AX)

@@ -483,3 +483,5 @@ label31:
     mov [hl+c],a                ;ba
     mov [hl+b],a                ;bb
     br ax                       ;31 98
+    xch a,[hl+c]                ;31 8a
+    xch a,[hl+b]                ;31 8b

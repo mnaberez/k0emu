@@ -4764,6 +4764,34 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
+    # xch a,[hl+c]                ;31 8a
+    def test_31_8a_xch_a_based_hl_c(self):
+        proc = Processor()
+        code = [0x31, 0x8a]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x55)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xAB00)
+        proc.write_gp_reg(Registers.C, 0xCD)
+        proc.memory[0xabcd] = 0xAA
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
+        self.assertEqual(proc.memory[0xABCD], 0x55)
+
+    # xch a,[hl+b]                ;31 8b
+    def test_31_8b_xch_a_based_hl_b(self):
+        proc = Processor()
+        code = [0x31, 0x8b]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x55)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xAB00)
+        proc.write_gp_reg(Registers.B, 0xCD)
+        proc.memory[0xabcd] = 0xAA
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
+        self.assertEqual(proc.memory[0xABCD], 0x55)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

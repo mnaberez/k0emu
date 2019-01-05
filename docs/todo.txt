@@ -15,8 +15,6 @@
     addc a,#0abh                ;2d ab
     addc a,0fe20h               ;2e 20          saddr
     addc a,[hl]                 ;2f
-    xch a,[hl+b]                ;31 8b
-    xch a,[hl+c]                ;31 8a
     add a,[hl+b]                ;31 0b
     add a,[hl+c]                ;31 0a
     addc a,[hl+b]               ;31 2b
