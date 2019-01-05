@@ -23,10 +23,6 @@
     sub a,[hl+c]                ;31 1a
     subc a,[hl+b]               ;31 3b
     subc a,[hl+c]               ;31 3a
-    or a,[hl+b]                 ;31 6b
-    or a,[hl+c]                 ;31 6a
-    xor a,[hl+b]                ;31 7b
-    xor a,[hl+c]                ;31 7a
     cmp a,[hl+b]                ;31 4b
     cmp a,[hl+c]                ;31 4a
     divuw c                     ;31 82
@@ -351,9 +347,6 @@ label127:
     cmp l,a                     ;61 46
     cmp h,a                     ;61 47
 
-    or a,[hl+0abh]              ;69 ab
-    or a,[hl]                   ;6f
-
     mov1 cy,[hl].0              ;71 84
     mov1 cy,[hl].1              ;71 94
     mov1 cy,[hl].2              ;71 a4
@@ -483,8 +476,6 @@ label127:
     halt                        ;71 10
     stop                        ;71 00
 
-    xor a,[hl+0abh]             ;79 ab
-    xor a,[hl]                  ;7f
     add 0fe20h,#0abh            ;88 20 ab       saddr
     movw ax,0fe20h              ;89 20          saddrp
     movw ax,sp                  ;89 1c

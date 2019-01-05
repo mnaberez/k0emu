@@ -497,3 +497,12 @@ label31:
     movw bc,ax                  ;d2
     movw de,ax                  ;d4
     movw hl,ax                  ;d6
+
+    or a,[hl]                   ;6f
+    or a,[hl+0abh]              ;69 ab
+    or a,[hl+c]                 ;31 6a
+    or a,[hl+b]                 ;31 6b
+    xor a,[hl]                  ;7f
+    xor a,[hl+0abh]             ;79 ab
+    xor a,[hl+c]                ;31 7a
+    xor a,[hl+b]                ;31 7b

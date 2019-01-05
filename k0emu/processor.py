@@ -83,8 +83,12 @@ class Processor(object):
                 f = self._opcode_0x71
             elif opcode == 0x6d:
                 f = self._opcode_0x6d # or a,#0abh                  ;6d ab
+            elif opcode == 0x69:
+                f = self._opcode_0x69 # or a,[hl+0abh]              ;69 ab
             elif opcode == 0x6e:
                 f = self._opcode_0x6e # or a,0fe20h                 ;6e 20          saddr
+            elif opcode == 0x6f:
+                f = self._opcode_0x6f # or a,[hl]                   ;6f
             elif opcode == 0xe8:
                 f = self._opcode_0xe8 # or 0fe20h,#0abh             ;e8 20 ab
             elif opcode == 0x68:
@@ -111,8 +115,12 @@ class Processor(object):
                 f = self._opcode_0x7d # xor a,#0abh                 ;7d ab
             elif opcode == 0x7e:
                 f = self._opcode_0x7e # xor a,0fe20h                ;7e 20          saddr
+            elif opcode == 0x7f:
+                f = self._opcode_0x7f # xor a,[hl]                  ;7f
             elif opcode == 0x78:
                 f = self._opcode_0x78 # xor a,!0abcdh               ;78 cd ab
+            elif opcode == 0x79:
+                f = self._opcode_0x79 # xor a,[hl+0abh]             ;79 ab
             elif opcode == 0xf8:
                 f = self._opcode_0xf8 # xor 0fe20h,#0abh            ;f8 20 ab       saddr
             elif opcode in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
@@ -507,6 +515,38 @@ class Processor(object):
             result = self._operation_and(a, b)
             self.write_gp_reg(Registers.A, result)
 
+        # or a,[hl+c]                 ;31 6a
+        elif opcode2 == 0x6a:
+            address = self._based_hl_c()
+            b = self.memory[address]
+            a = self.read_gp_reg(Registers.A)
+            result = self._operation_or(a, b)
+            self.write_gp_reg(Registers.A, result)
+
+        # or a,[hl+c]                 ;31 6b
+        elif opcode2 == 0x6b:
+            address = self._based_hl_b()
+            b = self.memory[address]
+            a = self.read_gp_reg(Registers.A)
+            result = self._operation_or(a, b)
+            self.write_gp_reg(Registers.A, result)
+
+        # xor a,[hl+c]                ;31 7a
+        elif opcode2 == 0x7a:
+            address = self._based_hl_c()
+            b = self.memory[address]
+            a = self.read_gp_reg(Registers.A)
+            result = self._operation_xor(a, b)
+            self.write_gp_reg(Registers.A, result)
+
+        # xor a,[hl+b]                ;31 7b
+        elif opcode2 == 0x7b:
+            address = self._based_hl_b()
+            b = self.memory[address]
+            a = self.read_gp_reg(Registers.A)
+            result = self._operation_xor(a, b)
+            self.write_gp_reg(Registers.A, result)
+
         # mulu x                      ;31 88
         elif opcode2 == 0x88:
             a = self.read_gp_reg(Registers.A)
@@ -700,6 +740,15 @@ class Processor(object):
         else:
             raise NotImplementedError()
 
+    # or a,[hl+0abh]              ;69 ab
+    def _opcode_0x69(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        imm = self._consume_byte()
+        address = self._based_hl_imm(imm)
+        b = self.memory[address]
+        result = self._operation_or(a, b)
+        self.write_gp_reg(Registers.A, result)
+
     # or a,#0abh                  ;6d ab
     def _opcode_0x6d(self, opcode):
         a = self.read_gp_reg(Registers.A)
@@ -711,6 +760,14 @@ class Processor(object):
     def _opcode_0x6e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
+        b = self.memory[address]
+        result = self._operation_or(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # or a,[hl]                   ;6f
+    def _opcode_0x6f(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self.read_gp_regpair(RegisterPairs.HL)
         b = self.memory[address]
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
@@ -795,6 +852,15 @@ class Processor(object):
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # xor a,[hl+0abh]             ;79 ab
+    def _opcode_0x79(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        imm = self._consume_byte()
+        address = self._based_hl_imm(imm)
+        b = self.memory[address]
+        result = self._operation_xor(a, b)
+        self.write_gp_reg(Registers.A, result)
+
     # xor 0fe20h,#0abh            ;f8 20 ab       saddr
     def _opcode_0xf8(self, opcode):
         address = self._consume_saddr()
@@ -814,6 +880,14 @@ class Processor(object):
     def _opcode_0x7e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
+        b = self.memory[address]
+        result = self._operation_xor(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # xor a,[hl]                  ;7f
+    def _opcode_0x7f(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self.read_gp_regpair(RegisterPairs.HL)
         b = self.memory[address]
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
