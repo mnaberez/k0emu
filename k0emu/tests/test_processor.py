@@ -4638,6 +4638,123 @@ class ProcessorTests(unittest.TestCase):
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), after)
             self.assertEqual(proc.read_psw(), 0x55) # unchanged
 
+    # mulu x                      ;31 88
+    def test_31_88_mulu_x(self):
+        tests = ((0, 0, 0), (2, 2, 4), (0xff, 0xff, 0xfe01))
+        for a, x, expected in tests:
+            proc = Processor()
+            code = [0x31, 0x88]
+            proc.write_memory(0, code)
+            proc.write_gp_reg(Registers.A, a)
+            proc.write_gp_reg(Registers.X, x)
+            proc.write_psw(0x55)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), expected)
+            self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # mov a,[hl+0abh]             ;ae ab
+    def test_ae_mov_a_hl_based_imm(self):
+        proc = Processor()
+        code = [0xae, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabad)
+        proc.memory[0xabcd] = 0x42
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
+    # mov a,[hl+0abh]             ;ae ab
+    def test_ae_mov_a_hl_based_imm_wraps(self):
+        proc = Processor()
+        code = [0xae, 0x2]
+        proc.write_memory(0x100, code)
+        proc.pc = 0x100
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xffff)
+        proc.memory[0x0001] = 0x42
+        proc.step()
+        self.assertEqual(proc.pc, 0x100 + len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
+    # mov [hl+c],a                ;ba
+    def test_ba_mov_hl_based_c_a(self):
+        proc = Processor()
+        code = [0xba]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_reg(Registers.C, 0xcd)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.memory[0xabcd] = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x42)
+
+    # mov [hl+b],a                ;bb
+    def test_bb_mov_hl_based_b_a(self):
+        proc = Processor()
+        code = [0xbb]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_reg(Registers.B, 0xcd)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.memory[0xabcd] = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x42)
+
+    # mov [hl+0abh],a             ;be ab
+    def test_be_mov_hl_based_imm_a(self):
+        proc = Processor()
+        code = [0xbe, 0xcd]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.memory[0xabcd] = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x42)
+
+    # xch a,[hl+0abh]             ;de ab
+    def test_de_xch_a_hl_based_imm_a(self):
+        proc = Processor()
+        code = [0xde, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0x12)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabad)
+        proc.memory[0xabcd] = 0x34
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0x12)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x34)
+
+    # mov a,[hl+b]                ;ab
+    def test_ab_mov_a_based_hl_b(self):
+        proc = Processor()
+        code = [0xab]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.write_gp_reg(Registers.B, 0xcd)
+        proc.memory[0xabcd] = 0x42
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
+    # mov a,[hl+c]                ;aa
+    def test_aa_mov_a_based_hl_c(self):
+        proc = Processor()
+        code = [0xaa]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.write_gp_reg(Registers.C, 0xcd)
+        proc.memory[0xabcd] = 0x42
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

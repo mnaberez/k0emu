@@ -181,6 +181,20 @@ class Processor(object):
                 f = self._opcode_0x80_to_0x86_incw # incw ax                     ;80
             elif opcode in (0x90, 0x92, 0x94, 0x96):
                 f = self._opcode_0x90_to_0x96_decw # decw ax                     ;90
+            elif opcode == 0xaa:
+                f = self._opcode_0xaa # mov a,[hl+c]                ;aa
+            elif opcode == 0xab:
+                f = self._opcode_0xab # mov a,[hl+b]                ;ab
+            elif opcode == 0xae:
+                f = self._opcode_0xae # mov a,[hl+0abh]             ;ae ab
+            elif opcode == 0xbe:
+                f = self._opcode_0xbe # mov [hl+0abh],a             ;be ab
+            elif opcode == 0xba:
+                f = self._opcode_0xba # mov [hl+c],a                ;ba
+            elif opcode == 0xbb:
+                f = self._opcode_0xbb # mov [hl+b],a                ;bb
+            elif opcode == 0xde:
+                f = self._opcode_0xde # xch a,[hl+0abh]             ;de ab
             else:
                 f = self._opcode_not_implemented
 
@@ -468,6 +482,13 @@ class Processor(object):
             displacement = self._consume_byte()
             value = self.memory[address]
             self._operation_bt(value, bit, displacement)
+
+        # mulu x                      ;31 88
+        elif opcode2 == 0x88:
+            a = self.read_gp_reg(Registers.A)
+            x = self.read_gp_reg(Registers.X)
+            result = a * x
+            self.write_gp_regpair(RegisterPairs.AX, result)
 
         else:
             raise NotImplementedError
@@ -928,6 +949,53 @@ class Processor(object):
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
 
+    # mov a,[hl+c]                ;aa
+    def _opcode_0xaa(self, opcode):
+        address = self._based_hl_c()
+        value = self.memory[address]
+        self.write_gp_reg(Registers.A, value)
+
+    # mov a,[hl+b]                ;ab
+    def _opcode_0xab(self, opcode):
+        address = self._based_hl_b()
+        value = self.memory[address]
+        self.write_gp_reg(Registers.A, value)
+
+    # mov a,[hl+0abh]             ;ae ab
+    def _opcode_0xae(self, opcode):
+        imm = self._consume_byte()
+        address = self._based_hl_imm(imm)
+        value = self.memory[address]
+        self.write_gp_reg(Registers.A, value)
+
+    # mov [hl+c],a                ;ba
+    def _opcode_0xba(self, opcode):
+        address = self._based_hl_c()
+        value = self.read_gp_reg(Registers.A)
+        self.memory[address] = value
+
+    # mov [hl+b],a                ;bb
+    def _opcode_0xbb(self, opcode):
+        address = self._based_hl_b()
+        value = self.read_gp_reg(Registers.A)
+        self.memory[address] = value
+
+    # mov [hl+0abh],a             ;be ab
+    def _opcode_0xbe(self, opcode):
+        imm = self._consume_byte()
+        address = self._based_hl_imm(imm)
+        value = self.read_gp_reg(Registers.A)
+        self.memory[address] = value
+
+    # xch a,[hl+0abh]             ;de ab
+    def _opcode_0xde(self, opcode):
+        imm = self._consume_byte()
+        address = self._based_hl_imm(imm)
+        other_value = self.memory[address]
+        a_value = self.read_gp_reg(Registers.A)
+        self.write_gp_reg(Registers.A, other_value)
+        self.memory[address] = a_value
+
     # push ax                     ;b1
     # ...
     # push hl                     ;b7
@@ -1041,6 +1109,23 @@ class Processor(object):
     def _consume_saddrp(self):
         offset = self._consume_byte()
         return _saddrp(offset)
+
+    def _based_hl_imm(self, imm):
+        '''MOV A,[HL+byte]'''
+        hl = self.read_gp_regpair(RegisterPairs.HL)
+        return (hl + imm) & 0xFFFF
+
+    def _based_hl_b(self):
+        '''MOV A,[HL+B]'''
+        hl = self.read_gp_regpair(RegisterPairs.HL)
+        b = self.read_gp_reg(Registers.B)
+        return (hl + b) & 0xFFFF
+
+    def _based_hl_c(self):
+        '''MOV A,[HL+C]'''
+        hl = self.read_gp_regpair(RegisterPairs.HL)
+        c = self.read_gp_reg(Registers.C)
+        return (hl + c) & 0xFFFF
 
     # Stack
 

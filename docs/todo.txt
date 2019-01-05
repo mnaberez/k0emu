@@ -33,7 +33,6 @@
     xor a,[hl+c]                ;31 7a
     cmp a,[hl+b]                ;31 4b
     cmp a,[hl+c]                ;31 4a
-    mulu x                      ;31 88
     divuw c                     ;31 82
     ror4 [hl]                   ;31 90
     rol4 [hl]                   ;31 80
@@ -504,16 +503,10 @@ label4:
     retb                        ;9f
     addc 0fe20h,#0abh           ;a8 20 ab       saddr
     movw ax,0fffeh              ;a9 fe          sfrp
-    mov a,[hl+c]                ;aa
-    mov a,[hl+b]                ;ab
 label5:
-    mov a,[hl+0abh]             ;ae ab
     subc 0fe20h,#0abh           ;b8 20 ab       saddr
     movw 0fffeh,ax              ;b9 fe          sfrp
-    mov [hl+c],a                ;ba
-    mov [hl+b],a                ;bb
 label6:
-    mov [hl+0abh],a             ;be ab
     brk                         ;bf
     movw ax,bc                  ;c2
     movw ax,de                  ;c4
@@ -524,7 +517,6 @@ label6:
     movw de,ax                  ;d4
     movw hl,ax                  ;d6
     subw ax,#0abcdh             ;da cd ab
-    xch a,[hl+0abh]             ;de ab
     cmpw ax,#0abcdh             ;ea cd ab
     movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
     movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp

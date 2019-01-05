@@ -472,3 +472,13 @@ label31:
     decw bc                     ;92
     decw de                     ;94
     decw hl                     ;96
+
+    mulu x                      ;31 88
+
+    mov a,[hl+0abh]             ;ae ab
+    mov [hl+0abh],a             ;be ab
+    xch a,[hl+0abh]             ;de ab
+    mov a,[hl+b]                ;ab
+    mov a,[hl+c]                ;aa
+    mov [hl+c],a                ;ba
+    mov [hl+b],a                ;bb

@@ -20,3 +20,5 @@ Verify behavior of flag AC during DEC.
 Verify DBNZ wrap-around behavior.
 
 Verify all branch displacement calculations.
+
+Verify # mov a,[hl+0abh]             ;ae ab wrap-around behavior.
