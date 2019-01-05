@@ -5032,6 +5032,198 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
 
+    # mov1 cy,[hl].0              ;71 84
+    def test_71_84_mov1_cy_hl_bit0(self):
+        proc = Processor()
+        code = [0x71, 0x84]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00000001
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # mov1 cy,[hl].1              ;71 94
+    def test_71_94_mov1_cy_hl_bit1(self):
+        proc = Processor()
+        code = [0x71, 0x94]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00000010
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # mov1 cy,[hl].2              ;71 a4
+    def test_71_a4_mov1_cy_hl_bit2(self):
+        proc = Processor()
+        code = [0x71, 0xa4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00000100
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # mov1 cy,[hl].3              ;71 b4
+    def test_71_b4_mov1_cy_hl_bit3(self):
+        proc = Processor()
+        code = [0x71, 0xb4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00001000
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # mov1 cy,[hl].4              ;71 c4
+    def test_71_c4_mov1_cy_hl_bit4(self):
+        proc = Processor()
+        code = [0x71, 0xc4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00010000
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # mov1 cy,[hl].5              ;71 d4
+    def test_71_d4_mov1_cy_hl_bit5(self):
+        proc = Processor()
+        code = [0x71, 0xd4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00100000
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # mov1 cy,[hl].6              ;71 e4
+    def test_71_e4_mov1_cy_hl_bit6(self):
+        proc = Processor()
+        code = [0x71, 0xe4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b01000000
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # mov1 cy,[hl].7              ;71 f4
+    def test_71_f4_mov1_cy_hl_bit6(self):
+        proc = Processor()
+        code = [0x71, 0xf4]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b10000000
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # mov1 [hl].0,cy              ;71 81
+    def test_71_81_mov1_hl_cy_bit0(self):
+        proc = Processor()
+        code = [0x71, 0x81]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0b00000001)
+
+    # mov1 [hl].1,cy              ;71 91
+    def test_71_91_mov1_hl_cy_bit1(self):
+        proc = Processor()
+        code = [0x71, 0x91]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0b00000010)
+
+    # mov1 [hl].2,cy              ;71 a1
+    def test_71_a1_mov1_hl_cy_bit2(self):
+        proc = Processor()
+        code = [0x71, 0xa1]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0b00000100)
+
+    # mov1 [hl].3,cy              ;71 b1
+    def test_71_b1_mov1_hl_cy_bit3(self):
+        proc = Processor()
+        code = [0x71, 0xb1]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0b00001000)
+
+    # mov1 [hl].4,cy              ;71 c1
+    def test_71_c1_mov1_hl_cy_bit4(self):
+        proc = Processor()
+        code = [0x71, 0xc1]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0b00010000)
+
+    # mov1 [hl].5,cy              ;71 d1
+    def test_71_d1_mov1_hl_cy_bit5(self):
+        proc = Processor()
+        code = [0x71, 0xd1]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0b00100000)
+
+    # mov1 [hl].6,cy              ;71 e1
+    def test_71_e1_mov1_hl_cy_bit6(self):
+        proc = Processor()
+        code = [0x71, 0xe1]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0b01000000)
+
+    # mov1 [hl].7,cy              ;71 f1
+    def test_71_f1_mov1_hl_cy_bit7(self):
+        proc = Processor()
+        code = [0x71, 0xf1]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xabcd], 0b10000000)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

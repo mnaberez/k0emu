@@ -506,3 +506,21 @@ label31:
     xor a,[hl+0abh]             ;79 ab
     xor a,[hl+c]                ;31 7a
     xor a,[hl+b]                ;31 7b
+
+    mov1 cy,[hl].0              ;71 84
+    mov1 cy,[hl].1              ;71 94
+    mov1 cy,[hl].2              ;71 a4
+    mov1 cy,[hl].3              ;71 b4
+    mov1 cy,[hl].4              ;71 c4
+    mov1 cy,[hl].5              ;71 d4
+    mov1 cy,[hl].6              ;71 e4
+    mov1 cy,[hl].7              ;71 f4
+
+    mov1 [hl].0,cy              ;71 81
+    mov1 [hl].1,cy              ;71 91
+    mov1 [hl].2,cy              ;71 a1
+    mov1 [hl].3,cy              ;71 b1
+    mov1 [hl].4,cy              ;71 c1
+    mov1 [hl].5,cy              ;71 d1
+    mov1 [hl].6,cy              ;71 e1
+    mov1 [hl].7,cy              ;71 f1

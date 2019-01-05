@@ -737,6 +737,24 @@ class Processor(object):
             result = self._operation_mov1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
             self.write_psw(result)
 
+        # mov1 cy,[hl].bit              ;71 84
+        elif opcode2 in (0x84, 0x94, 0xa4, 0xb4, 0xc4, 0xd4, 0xe4, 0xf4):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_mov1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            self.write_psw(result)
+
+        # mov1 [hl].bit,cy              ;71 81
+        elif opcode2 in (0x81, 0x91, 0xa1, 0xb1, 0xc1, 0xd1, 0xe1, 0xf1):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            src = self.read_psw()
+            dest = self.memory[address]
+            result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
+            self.memory[address] = result
+
         else:
             raise NotImplementedError()
 
