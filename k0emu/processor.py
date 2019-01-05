@@ -490,6 +490,10 @@ class Processor(object):
             result = a * x
             self.write_gp_regpair(RegisterPairs.AX, result)
 
+        # br ax                       ;31 98
+        elif opcode2 == 0x98:
+            self.pc = self.read_gp_regpair(RegisterPairs.AX)
+
         else:
             raise NotImplementedError
 

@@ -36,7 +36,6 @@
     divuw c                     ;31 82
     ror4 [hl]                   ;31 90
     rol4 [hl]                   ;31 80
-    br ax                       ;31 98
 
 label40:
     bt [hl].0,$label40          ;31 86 fd

@@ -73,7 +73,7 @@ class ProcessorTests(unittest.TestCase):
     def test_00_nop(self):
         proc = Processor()
         code = [0x00] # nop
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.step()
         self.assertEqual(proc.pc, len(code))
 
@@ -81,7 +81,7 @@ class ProcessorTests(unittest.TestCase):
     def test_01_not1_cy_0_to_1(self):
         proc = Processor()
         code = [0x01] # not1 cy
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(proc.read_psw() & ~Flags.CY)
         proc.step()
         self.assertEqual(proc.read_psw(), Flags.CY)
@@ -91,7 +91,7 @@ class ProcessorTests(unittest.TestCase):
     def test_01_not1_cy_1_to_0(self):
         proc = Processor()
         code = [0x01] # not1 cy
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(proc.read_psw() | Flags.CY)
         proc.step()
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
@@ -101,7 +101,7 @@ class ProcessorTests(unittest.TestCase):
     def test_20_set1_cy(self):
         proc = Processor()
         code = [0x20] # set1 cy
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(proc.read_psw() & ~Flags.CY)
         proc.step()
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
@@ -111,7 +111,7 @@ class ProcessorTests(unittest.TestCase):
     def test_21_clr1_cy(self):
         proc = Processor()
         code = [0x21] # clr1 cy
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(proc.read_psw() | Flags.CY)
         proc.step()
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
@@ -121,7 +121,7 @@ class ProcessorTests(unittest.TestCase):
     def test_30_xch_a_x(self):
         proc = Processor()
         code = [0x30] # xch a,x
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.X, 0xAA)
         proc.step()
@@ -133,7 +133,7 @@ class ProcessorTests(unittest.TestCase):
     def test_32_xch_a_c(self):
         proc = Processor()
         code = [0x32] # xch a,c
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.C, 0xAA)
         proc.step()
@@ -145,7 +145,7 @@ class ProcessorTests(unittest.TestCase):
     def test_32_xch_a_b(self):
         proc = Processor()
         code = [0x33] # xch a,c
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.B, 0xAA)
         proc.step()
@@ -157,7 +157,7 @@ class ProcessorTests(unittest.TestCase):
     def test_32_xch_a_e(self):
         proc = Processor()
         code = [0x34] # xch a,c
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.E, 0xAA)
         proc.step()
@@ -169,7 +169,7 @@ class ProcessorTests(unittest.TestCase):
     def test_35_xch_a_e(self):
         proc = Processor()
         code = [0x35] # xch a,c
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.D, 0xAA)
         proc.step()
@@ -181,7 +181,7 @@ class ProcessorTests(unittest.TestCase):
     def test_35_xch_a_l(self):
         proc = Processor()
         code = [0x36] # xch a,l
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.L, 0xAA)
         proc.step()
@@ -193,7 +193,7 @@ class ProcessorTests(unittest.TestCase):
     def test_37_xch_a_h(self):
         proc = Processor()
         code = [0x37] # xch a,h
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.H, 0xAA)
         proc.step()
@@ -205,7 +205,7 @@ class ProcessorTests(unittest.TestCase):
     def test_ce_xch_a_abs(self):
         proc = Processor()
         code = [0xce, 0xcd, 0xab] # xch a,!0abcdh
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.memory[0xabcd] = 0xAA
         proc.step()
@@ -217,7 +217,7 @@ class ProcessorTests(unittest.TestCase):
     def test_83_xch_a_saddr(self):
         proc = Processor()
         code = [0x83, 0x20] # xch a,0fe20h
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.memory[0xfe20] = 0xAA
         proc.step()
@@ -229,7 +229,7 @@ class ProcessorTests(unittest.TestCase):
     def test_93_xch_a_sfr(self):
         proc = Processor()
         code = [0x93, 0xfe] # xch a,0fffeh
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.memory[0xfffe] = 0xAA
         proc.step()
@@ -241,7 +241,7 @@ class ProcessorTests(unittest.TestCase):
     def test_a0_mov_x_imm_byte(self):
         proc = Processor()
         code = [0xA0, 0x42] # mov x, #42
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.step()
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x42)
         self.assertEqual(proc.pc, len(code))
@@ -251,7 +251,7 @@ class ProcessorTests(unittest.TestCase):
     def test_a7_mov_l_imm_byte(self):
         proc = Processor()
         code = [0xA7, 0x42] # mov h, #42
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.step()
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
         self.assertEqual(proc.pc, len(code))
@@ -261,15 +261,24 @@ class ProcessorTests(unittest.TestCase):
     def test_9b_br_addr16(self):
         proc = Processor()
         code = [0x9B, 0xCD, 0xAB] # br !0abcdh
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.step()
         self.assertEqual(proc.pc, 0xABCD)
+
+    # br ax                       ;31 98
+    def test_31_98_br_ax(self):
+        proc = Processor()
+        code = [0x31, 0x98]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.pc, 0xabcd)
 
     # sel rb0                     ;61 d0
     def test_61_d0_sel_rb0(self):
         proc = Processor()
         code = [0x61, 0xD0] # sel rb0
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_rb(1)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -279,7 +288,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_d8_sel_rb1(self):
         proc = Processor()
         code = [0x61, 0xD8] # sel rb1
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_rb(), 0)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -289,7 +298,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_f0_sel_rb2(self):
         proc = Processor()
         code = [0x61, 0xF0] # sel rb2
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_rb(), 0)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -299,7 +308,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_f8_sel_rb3(self):
         proc = Processor()
         code = [0x61, 0xF8] # sel rb3
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_rb(), 0)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -309,7 +318,7 @@ class ProcessorTests(unittest.TestCase):
     def test_60_mov_a_x(self):
         proc = Processor()
         code = [0x60] # mov a,x
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.X, 0x42)
         proc.step()
@@ -319,7 +328,7 @@ class ProcessorTests(unittest.TestCase):
     def test_62_mov_a_c(self):
         proc = Processor()
         code = [0x62] # mov a,c
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.C, 0x42)
         proc.step()
@@ -330,7 +339,7 @@ class ProcessorTests(unittest.TestCase):
     def test_62_mov_a_b(self):
         proc = Processor()
         code = [0x63] # mov a,b
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.B, 0x42)
         proc.step()
@@ -341,7 +350,7 @@ class ProcessorTests(unittest.TestCase):
     def test_62_mov_a_e(self):
         proc = Processor()
         code = [0x64] # mov a,e
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.E, 0x42)
         proc.step()
@@ -352,7 +361,7 @@ class ProcessorTests(unittest.TestCase):
     def test_65_mov_a_d(self):
         proc = Processor()
         code = [0x65] # mov a,d
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.D, 0x42)
         proc.step()
@@ -363,7 +372,7 @@ class ProcessorTests(unittest.TestCase):
     def test_66_mov_a_l(self):
         proc = Processor()
         code = [0x66] # mov a,l
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.L, 0x42)
         proc.step()
@@ -374,7 +383,7 @@ class ProcessorTests(unittest.TestCase):
     def test_67_mov_a_h(self):
         proc = Processor()
         code = [0x67] # mov a,h
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.H, 0x42)
         proc.step()
@@ -385,7 +394,7 @@ class ProcessorTests(unittest.TestCase):
     def test_70_mov_x_a(self):
         proc = Processor()
         code = [0x70] # mov a,x
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
@@ -396,7 +405,7 @@ class ProcessorTests(unittest.TestCase):
     def test_72_mov_a_c(self):
         proc = Processor()
         code = [0x72] # mov c,a
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
@@ -407,7 +416,7 @@ class ProcessorTests(unittest.TestCase):
     def test_73_mov_b_a(self):
         proc = Processor()
         code = [0x73] # mov b,a
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
@@ -418,7 +427,7 @@ class ProcessorTests(unittest.TestCase):
     def test_74_mov_e_a(self):
         proc = Processor()
         code = [0x74] # mov e,a
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
@@ -429,7 +438,7 @@ class ProcessorTests(unittest.TestCase):
     def test_75_mov_d_a(self):
         proc = Processor()
         code = [0x75] # mov d,a
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.D), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
@@ -440,7 +449,7 @@ class ProcessorTests(unittest.TestCase):
     def test_76_mov_l_a(self):
         proc = Processor()
         code = [0x76] # mov l,a
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
@@ -451,7 +460,7 @@ class ProcessorTests(unittest.TestCase):
     def test_67_mov_a_l(self):
         proc = Processor()
         code = [0x77] # mov h,a
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.read_gp_reg(Registers.H), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
@@ -462,7 +471,7 @@ class ProcessorTests(unittest.TestCase):
     def test_8e_mov_a_addr16(self):
         proc = Processor()
         code = [0x8e, 0xcd, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xabcd] = 0x42
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.step()
@@ -473,7 +482,7 @@ class ProcessorTests(unittest.TestCase):
     def test_9e_mov_addr16_a(self):
         proc = Processor()
         code = [0x9e, 0xcd, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         self.assertEqual(proc.memory[0xabcd], 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
@@ -484,7 +493,7 @@ class ProcessorTests(unittest.TestCase):
     def test_f0_mov_a_saddr(self):
         proc = Processor()
         code = [0xf0, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0x42
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.step()
@@ -495,7 +504,7 @@ class ProcessorTests(unittest.TestCase):
     def test_f0_mov_a_psw(self):
         proc = Processor()
         code = [0xf0, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.step()
@@ -506,7 +515,7 @@ class ProcessorTests(unittest.TestCase):
     def test_f2_mov_saddr_a(self):
         proc = Processor()
         code = [0xf2, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x42)
         self.assertEqual(proc.memory[0xfe20], 0)
         proc.step()
@@ -517,7 +526,7 @@ class ProcessorTests(unittest.TestCase):
     def test_f2_mov_psw_a(self):
         proc = Processor()
         code = [0xf2, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
@@ -528,7 +537,7 @@ class ProcessorTests(unittest.TestCase):
     def test_f4_mov_a_sfr(self):
         proc = Processor()
         code = [0xf4, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0x42
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.step()
@@ -539,7 +548,7 @@ class ProcessorTests(unittest.TestCase):
     def test_f6_mov_sfr_a(self):
         proc = Processor()
         code = [0xf6, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x42)
         self.assertEqual(proc.memory[0xfffe], 0)
         proc.step()
@@ -550,7 +559,7 @@ class ProcessorTests(unittest.TestCase):
     def test_11_mov_saddr_imm(self):
         proc = Processor()
         code = [0x11, 0x20, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -560,7 +569,7 @@ class ProcessorTests(unittest.TestCase):
     def test_11_mov_psw_imm(self):
         proc = Processor()
         code = [0x11, 0x1e, 0x42]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -570,7 +579,7 @@ class ProcessorTests(unittest.TestCase):
     def test_13_mov_sfr_imm(self):
         proc = Processor()
         code = [0x13, 0xfe, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -580,7 +589,7 @@ class ProcessorTests(unittest.TestCase):
     def test_6d_or_a_imm_result_nonzero(self):
         proc = Processor()
         code = [0x6d, 0xaa]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
@@ -592,7 +601,7 @@ class ProcessorTests(unittest.TestCase):
     def test_6d_or_a_imm_result_zero(self):
         proc = Processor()
         code = [0x6d, 0x00]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(proc.read_psw() & ~Flags.Z)
         proc.step()
@@ -604,7 +613,7 @@ class ProcessorTests(unittest.TestCase):
     def test_6e_or_a_saddr(self):
         proc = Processor()
         code = [0x6e, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0xAA
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -617,7 +626,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_68_or_a_x(self):
         proc = Processor()
         code = [0x61, 0x68]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_gp_reg(Registers.X, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -630,7 +639,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_6a_or_a_c(self):
         proc = Processor()
         code = [0x61, 0x6a]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_gp_reg(Registers.C, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -643,7 +652,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_6b_or_a_b(self):
         proc = Processor()
         code = [0x61, 0x6b]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_gp_reg(Registers.B, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -656,7 +665,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_6e_or_a_e(self):
         proc = Processor()
         code = [0x61, 0x6c]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_gp_reg(Registers.E, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -669,7 +678,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_6d_or_a_d(self):
         proc = Processor()
         code = [0x61, 0x6d]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_gp_reg(Registers.D, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -682,7 +691,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_6e_or_a_l(self):
         proc = Processor()
         code = [0x61, 0x6e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_gp_reg(Registers.L, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -695,7 +704,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_6f_or_a_h(self):
         proc = Processor()
         code = [0x61, 0x6f]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_gp_reg(Registers.H, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -708,7 +717,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_60_or_x_a(self):
         proc = Processor()
         code = [0x61, 0x60]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0x55)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -721,7 +730,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_61_or_a_a(self):
         proc = Processor()
         code = [0x61, 0x61]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
@@ -733,7 +742,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_62_or_c_a(self):
         proc = Processor()
         code = [0x61, 0x62]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.C, 0x55)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -746,7 +755,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_63_or_b_a(self):
         proc = Processor()
         code = [0x61, 0x63]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.B, 0x55)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -759,7 +768,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_65_or_d_a(self):
         proc = Processor()
         code = [0x61, 0x65]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.D, 0x55)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -772,7 +781,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_66_or_l_a(self):
         proc = Processor()
         code = [0x61, 0x66]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.L, 0x55)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -785,7 +794,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_67_or_h_a(self):
         proc = Processor()
         code = [0x61, 0x67]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.H, 0x55)
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -798,7 +807,7 @@ class ProcessorTests(unittest.TestCase):
     def test_e8_or_saddr_imm(self):
         proc = Processor()
         code = [0xe8, 0x20, 0x55]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0xAA
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
@@ -810,7 +819,7 @@ class ProcessorTests(unittest.TestCase):
     def test_68_or_a_addr16(self):
         proc = Processor()
         code = [0x68, 0xcd, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.memory[0xabcd] = 0xAA
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -823,7 +832,7 @@ class ProcessorTests(unittest.TestCase):
     def test_5d_and_a_imm_result_zero(self):
         proc = Processor()
         code = [0x5d, 0xff]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x00)
         proc.write_psw(proc.read_psw() & ~Flags.Z)
         proc.step()
@@ -835,7 +844,7 @@ class ProcessorTests(unittest.TestCase):
     def test_5d_and_a_imm_result_nonzero(self):
         proc = Processor()
         code = [0x5d, 0xff]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() & ~Flags.Z)
         proc.step()
@@ -847,7 +856,7 @@ class ProcessorTests(unittest.TestCase):
     def test_5e_and_a_saddr(self):
         proc = Processor()
         code = [0x5e, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0xff
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -860,7 +869,7 @@ class ProcessorTests(unittest.TestCase):
     def test_58_and_a_addr16(self):
         proc = Processor()
         code = [0x58, 0xcd, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xabcd] = 0xff
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -873,7 +882,7 @@ class ProcessorTests(unittest.TestCase):
     def test_d8_and_saddr_imm(self):
         proc = Processor()
         code = [0xd8, 0x20, 0xf0]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0xff
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
@@ -885,7 +894,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_58_and_a_x(self):
         proc = Processor()
         code = [0x61, 0x58]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_gp_reg(Registers.X, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -898,7 +907,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_5a_and_a_c(self):
         proc = Processor()
         code = [0x61, 0x5a]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_gp_reg(Registers.C, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -911,7 +920,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_5b_and_a_b(self):
         proc = Processor()
         code = [0x61, 0x5b]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_gp_reg(Registers.B, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -924,7 +933,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_5c_and_a_e(self):
         proc = Processor()
         code = [0x61, 0x5c]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_gp_reg(Registers.E, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -937,7 +946,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_5d_and_a_d(self):
         proc = Processor()
         code = [0x61, 0x5d]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_gp_reg(Registers.D, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -950,7 +959,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_5e_and_a_l(self):
         proc = Processor()
         code = [0x61, 0x5e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_gp_reg(Registers.L, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -963,7 +972,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_5f_and_a_h(self):
         proc = Processor()
         code = [0x61, 0x5f]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_gp_reg(Registers.H, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -976,7 +985,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_50_and_x_a(self):
         proc = Processor()
         code = [0x61, 0x50]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0xff)
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -989,7 +998,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_51_and_a_a(self):
         proc = Processor()
         code = [0x61, 0x51]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
@@ -1001,7 +1010,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_52_and_c_a(self):
         proc = Processor()
         code = [0x61, 0x52]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.C, 0xff)
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1014,7 +1023,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_53_and_b_a(self):
         proc = Processor()
         code = [0x61, 0x53]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.B, 0xff)
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1027,7 +1036,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_54_and_e_a(self):
         proc = Processor()
         code = [0x61, 0x54]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.E, 0xff)
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1040,7 +1049,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_55_and_e_a(self):
         proc = Processor()
         code = [0x61, 0x55]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.D, 0xff)
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1053,7 +1062,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_56_and_e_a(self):
         proc = Processor()
         code = [0x61, 0x56]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.L, 0xff)
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1066,7 +1075,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_57_and_h_a(self):
         proc = Processor()
         code = [0x61, 0x57]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.H, 0xff)
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1093,7 +1102,7 @@ class ProcessorTests(unittest.TestCase):
     def test_af_ret(self):
         proc = Processor()
         code = [0xaf]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.sp = 0xfe1d
         proc.memory[0xfe1d] = 0xcd # stack: return address low
         proc.memory[0xfe1e] = 0xab # stack: return address high
@@ -1105,7 +1114,7 @@ class ProcessorTests(unittest.TestCase):
     def test_22_push_psw(self):
         proc = Processor()
         code = [0x22]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.sp = 0xFE1F
         proc.write_psw(0x42)
         proc.step()
@@ -1117,7 +1126,7 @@ class ProcessorTests(unittest.TestCase):
     def test_23_pop_psw(self):
         proc = Processor()
         code = [0x23]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.sp = 0xFE1E
         proc.memory[0xFE1E] = 0x42 # stack: psw
         proc.write_psw(0)
@@ -1130,7 +1139,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_78_and_xor_a_x_result_nonzero(self):
         proc = Processor()
         code = [0x61, 0x78]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.X, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1143,7 +1152,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_78_and_xor_a_x_result_zero(self):
         proc = Processor()
         code = [0x61, 0x78]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xFF)
         proc.write_gp_reg(Registers.X, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1156,7 +1165,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_7a_and_xor_a_c(self):
         proc = Processor()
         code = [0x61, 0x7a]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.C, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1169,7 +1178,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_7b_and_xor_a_b(self):
         proc = Processor()
         code = [0x61, 0x7b]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.B, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1182,7 +1191,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_7c_and_xor_a_e(self):
         proc = Processor()
         code = [0x61, 0x7c]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.E, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1195,7 +1204,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_7d_and_xor_a_d(self):
         proc = Processor()
         code = [0x61, 0x7d]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.D, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1208,7 +1217,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_7e_and_xor_a_l(self):
         proc = Processor()
         code = [0x61, 0x7e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.L, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1221,7 +1230,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_7f_and_xor_a_h(self):
         proc = Processor()
         code = [0x61, 0x7f]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.H, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1234,7 +1243,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_70_and_xor_x_a(self):
         proc = Processor()
         code = [0x61, 0x70]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.X, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1247,7 +1256,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_71_and_xor_a_a(self):
         proc = Processor()
         code = [0x61, 0x71]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
@@ -1259,7 +1268,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_72_and_xor_c_a(self):
         proc = Processor()
         code = [0x61, 0x72]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.C, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1272,7 +1281,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_73_and_xor_b_a(self):
         proc = Processor()
         code = [0x61, 0x73]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.B, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1285,7 +1294,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_74_and_xor_e_a(self):
         proc = Processor()
         code = [0x61, 0x74]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.E, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1298,7 +1307,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_75_and_xor_d_a(self):
         proc = Processor()
         code = [0x61, 0x75]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.D, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1311,7 +1320,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_76_and_xor_l_a(self):
         proc = Processor()
         code = [0x61, 0x76]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.L, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1324,7 +1333,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_77_and_xor_h_a(self):
         proc = Processor()
         code = [0x61, 0x77]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.H, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1337,7 +1346,7 @@ class ProcessorTests(unittest.TestCase):
     def test_78_xor_a_addr16(self):
         proc = Processor()
         code = [0x78, 0xcd, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.memory[0xabcd] = 0xFF
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1350,7 +1359,7 @@ class ProcessorTests(unittest.TestCase):
     def test_7d_xor_a_imm(self):
         proc = Processor()
         code = [0x7d, 0xff]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.memory[0xabcd] = 0xFF
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1363,7 +1372,7 @@ class ProcessorTests(unittest.TestCase):
     def test_7e_xor_a_saddr(self):
         proc = Processor()
         code = [0x7e, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0x55)
         proc.memory[0xfe20] = 0xFF
         proc.write_psw(proc.read_psw() | Flags.Z)
@@ -1376,7 +1385,7 @@ class ProcessorTests(unittest.TestCase):
     def test_f8_xor_saddr_imm(self):
         proc = Processor()
         code = [0xf8, 0x20, 0xff]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0x55
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
@@ -1388,7 +1397,7 @@ class ProcessorTests(unittest.TestCase):
     def test_0a_set1_saddr_bit0(self):
         proc = Processor()
         code = [0x0a, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111110
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1398,7 +1407,7 @@ class ProcessorTests(unittest.TestCase):
     def test_0a_set1_psw_bit0(self):
         proc = Processor()
         code = [0x0a, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111110)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1408,7 +1417,7 @@ class ProcessorTests(unittest.TestCase):
     def test_1a_set1_saddr_bit1(self):
         proc = Processor()
         code = [0x1a, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111101
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1418,7 +1427,7 @@ class ProcessorTests(unittest.TestCase):
     def test_1a_set1_psw_bit1(self):
         proc = Processor()
         code = [0x1a, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111101)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1428,7 +1437,7 @@ class ProcessorTests(unittest.TestCase):
     def test_2a_set1_saddr_bit2(self):
         proc = Processor()
         code = [0x2a, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111011
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1438,7 +1447,7 @@ class ProcessorTests(unittest.TestCase):
     def test_2a_set1_psw_bit2(self):
         proc = Processor()
         code = [0x2a, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111011)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1448,7 +1457,7 @@ class ProcessorTests(unittest.TestCase):
     def test_3a_set1_saddr_bit3(self):
         proc = Processor()
         code = [0x3a, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11110111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1458,7 +1467,7 @@ class ProcessorTests(unittest.TestCase):
     def test_3a_set1_psw_bit3(self):
         proc = Processor()
         code = [0x3a, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11110111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1468,7 +1477,7 @@ class ProcessorTests(unittest.TestCase):
     def test_4a_set1_saddr_bit4(self):
         proc = Processor()
         code = [0x4a, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11101111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1478,7 +1487,7 @@ class ProcessorTests(unittest.TestCase):
     def test_4a_set1_psw_bit4(self):
         proc = Processor()
         code = [0x4a, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11101111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1488,7 +1497,7 @@ class ProcessorTests(unittest.TestCase):
     def test_5a_set1_saddr_bit5(self):
         proc = Processor()
         code = [0x5a, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11011111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1498,7 +1507,7 @@ class ProcessorTests(unittest.TestCase):
     def test_5a_set1_psw_bit5(self):
         proc = Processor()
         code = [0x5a, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11011111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1508,7 +1517,7 @@ class ProcessorTests(unittest.TestCase):
     def test_6a_set1_saddr_bit6(self):
         proc = Processor()
         code = [0x6a, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b10111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1518,7 +1527,7 @@ class ProcessorTests(unittest.TestCase):
     def test_6a_set1_psw_bit6(self):
         proc = Processor()
         code = [0x6a, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b10111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1528,7 +1537,7 @@ class ProcessorTests(unittest.TestCase):
     def test_7a_set1_saddr_bit7(self):
         proc = Processor()
         code = [0x7a, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b01111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1539,7 +1548,7 @@ class ProcessorTests(unittest.TestCase):
     def test_7a_set1_psw_bit7(self):
         proc = Processor()
         code = [0x7a, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b01111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1549,7 +1558,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_8a_set1_a_bit0(self):
         proc = Processor()
         code = [0x61, 0x8a]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111110)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1559,7 +1568,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_9a_set1_a_bit1(self):
         proc = Processor()
         code = [0x61, 0x9a]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111101)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1569,7 +1578,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_aa_set1_a_bit2(self):
         proc = Processor()
         code = [0x61, 0xaa]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111011)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1579,7 +1588,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_ba_set1_a_bit3(self):
         proc = Processor()
         code = [0x61, 0xba]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11110111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1589,7 +1598,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_ca_set1_a_bit4(self):
         proc = Processor()
         code = [0x61, 0xca]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11101111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1599,7 +1608,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_da_set1_a_bit5(self):
         proc = Processor()
         code = [0x61, 0xda]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11011111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1609,7 +1618,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_ea_set1_a_bit6(self):
         proc = Processor()
         code = [0x61, 0xea]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b10111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1619,7 +1628,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_fa_set1_a_bit7(self):
         proc = Processor()
         code = [0x61, 0xfa]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b01111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1629,7 +1638,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_0a_set1_sfr_bit0(self):
         proc = Processor()
         code = [0x71, 0x0a, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111110
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1639,7 +1648,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_1a_set1_sfr_bit1(self):
         proc = Processor()
         code = [0x71, 0x1a, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111101
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1649,7 +1658,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_2a_set1_sfr_bit2(self):
         proc = Processor()
         code = [0x71, 0x2a, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111011
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1659,7 +1668,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_3a_set1_sfr_bit3(self):
         proc = Processor()
         code = [0x71, 0x3a, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11110111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1669,7 +1678,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_4a_set1_sfr_bit4(self):
         proc = Processor()
         code = [0x71, 0x4a, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11101111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1679,7 +1688,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_5a_set1_sfr_bit5(self):
         proc = Processor()
         code = [0x71, 0x5a, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11011111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1689,7 +1698,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_6a_set1_sfr_bit6(self):
         proc = Processor()
         code = [0x71, 0x6a, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b10111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1699,7 +1708,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_7a_set1_sfr_bit7(self):
         proc = Processor()
         code = [0x71, 0x7a, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b01111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1798,7 +1807,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_8b_clr1_a_bit0(self):
         proc = Processor()
         code = [0x61, 0x8b]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1808,7 +1817,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_9b_clr1_a_bit1(self):
         proc = Processor()
         code = [0x61, 0x9b]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1818,7 +1827,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_ab_clr1_a_bit2(self):
         proc = Processor()
         code = [0x61, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1828,7 +1837,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_bb_clr1_a_bit3(self):
         proc = Processor()
         code = [0x61, 0xbb]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1838,7 +1847,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_cb_clr1_a_bit4(self):
         proc = Processor()
         code = [0x61, 0xcb]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1848,7 +1857,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_db_clr1_a_bit5(self):
         proc = Processor()
         code = [0x61, 0xdb]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1858,7 +1867,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_eb_clr1_a_bit6(self):
         proc = Processor()
         code = [0x61, 0xeb]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1868,7 +1877,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_fb_clr1_a_bit7(self):
         proc = Processor()
         code = [0x61, 0xfb]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1878,7 +1887,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_0b_clr1_sfr_bit0(self):
         proc = Processor()
         code = [0x71, 0x0b, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1888,7 +1897,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_1b_clr1_sfr_bit1(self):
         proc = Processor()
         code = [0x71, 0x1b, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1898,7 +1907,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_2b_clr1_sfr_bit2(self):
         proc = Processor()
         code = [0x71, 0x2b, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1908,7 +1917,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_3b_clr1_sfr_bit3(self):
         proc = Processor()
         code = [0x71, 0x3b, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1918,7 +1927,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_4b_clr1_sfr_bit4(self):
         proc = Processor()
         code = [0x71, 0x4b, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1928,7 +1937,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_5b_clr1_sfr_bit5(self):
         proc = Processor()
         code = [0x71, 0x5b, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1938,7 +1947,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_6b_clr1_sfr_bit6(self):
         proc = Processor()
         code = [0x71, 0x6b, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1948,7 +1957,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_7b_clr1_sfr_bit7(self):
         proc = Processor()
         code = [0x71, 0x7b, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1958,7 +1967,7 @@ class ProcessorTests(unittest.TestCase):
     def test_0b_clr1_saddr_bit0(self):
         proc = Processor()
         code = [0x0b, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1968,7 +1977,7 @@ class ProcessorTests(unittest.TestCase):
     def test_0b_clr1_psw_bit0(self):
         proc = Processor()
         code = [0x0b, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1978,7 +1987,7 @@ class ProcessorTests(unittest.TestCase):
     def test_1b_clr1_saddr_bit1(self):
         proc = Processor()
         code = [0x1b, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1988,7 +1997,7 @@ class ProcessorTests(unittest.TestCase):
     def test_1b_clr1_psw_bit1(self):
         proc = Processor()
         code = [0x1b, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -1998,7 +2007,7 @@ class ProcessorTests(unittest.TestCase):
     def test_2b_clr1_saddr_bit2(self):
         proc = Processor()
         code = [0x2b, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2008,7 +2017,7 @@ class ProcessorTests(unittest.TestCase):
     def test_2b_clr1_psw_bit2(self):
         proc = Processor()
         code = [0x2b, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2018,7 +2027,7 @@ class ProcessorTests(unittest.TestCase):
     def test_3b_clr1_saddr_bit3(self):
         proc = Processor()
         code = [0x3b, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2028,7 +2037,7 @@ class ProcessorTests(unittest.TestCase):
     def test_3b_clr1_psw_bit3(self):
         proc = Processor()
         code = [0x3b, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2038,7 +2047,7 @@ class ProcessorTests(unittest.TestCase):
     def test_4b_clr1_saddr_bit4(self):
         proc = Processor()
         code = [0x4b, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2048,7 +2057,7 @@ class ProcessorTests(unittest.TestCase):
     def test_4b_clr1_psw_bit4(self):
         proc = Processor()
         code = [0x4b, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2058,7 +2067,7 @@ class ProcessorTests(unittest.TestCase):
     def test_5b_clr1_saddr_bit5(self):
         proc = Processor()
         code = [0x5b, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2068,7 +2077,7 @@ class ProcessorTests(unittest.TestCase):
     def test_5b_clr1_psw_bit5(self):
         proc = Processor()
         code = [0x5b, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2078,7 +2087,7 @@ class ProcessorTests(unittest.TestCase):
     def test_6b_clr1_saddr_bit6(self):
         proc = Processor()
         code = [0x6b, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2088,7 +2097,7 @@ class ProcessorTests(unittest.TestCase):
     def test_6b_clr1_psw_bit6(self):
         proc = Processor()
         code = [0x6b, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2098,7 +2107,7 @@ class ProcessorTests(unittest.TestCase):
     def test_7b_clr1_saddr_bit6(self):
         proc = Processor()
         code = [0x7b, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b11111111
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2109,7 +2118,7 @@ class ProcessorTests(unittest.TestCase):
     def test_7b_clr1_psw_bit7(self):
         proc = Processor()
         code = [0x7b, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2119,7 +2128,7 @@ class ProcessorTests(unittest.TestCase):
     def test_ee_movw_sp_imm16(self):
         proc = Processor()
         code = [0xee, 0x1c, 0xcd, 0xab]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.sp = 0
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2129,7 +2138,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_8c_mov1_cy_a_bit0_set(self):
         proc = Processor()
         code = [0x61, 0x8c]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111110)
         proc.write_gp_reg(Registers.A, 0b01010101) # bit 0 = 1
         proc.step()
@@ -2140,7 +2149,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_8c_mov1_cy_a_bit0_clear(self):
         proc = Processor()
         code = [0x61, 0x8c]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.write_gp_reg(Registers.A, 0b10101010) # bit 0 = 0
         proc.step()
@@ -2151,7 +2160,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_9c_mov1_cy_a_bit1(self):
         proc = Processor()
         code = [0x61, 0x9c]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.write_gp_reg(Registers.A, 0b11111101) # bit 1 = 0
         proc.step()
@@ -2162,7 +2171,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_ac_mov1_cy_a_bit2(self):
         proc = Processor()
         code = [0x61, 0xac]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.write_gp_reg(Registers.A, 0b11111011) # bit 2 = 0
         proc.step()
@@ -2173,7 +2182,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_bc_mov1_cy_a_bit3(self):
         proc = Processor()
         code = [0x61, 0xbc]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.write_gp_reg(Registers.A, 0b11110111) # bit 3 = 0
         proc.step()
@@ -2184,7 +2193,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_cc_mov1_cy_a_bit3(self):
         proc = Processor()
         code = [0x61, 0xcc]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.write_gp_reg(Registers.A, 0b11101111) # bit 4 = 0
         proc.step()
@@ -2195,7 +2204,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_dc_mov1_cy_a_bit4(self):
         proc = Processor()
         code = [0x61, 0xdc]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.write_gp_reg(Registers.A, 0b11011111) # bit 5 = 0
         proc.step()
@@ -2206,7 +2215,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_ec_mov1_cy_a_bit5(self):
         proc = Processor()
         code = [0x61, 0xec]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.write_gp_reg(Registers.A, 0b10111111) # bit 6 = 0
         proc.step()
@@ -2217,7 +2226,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_fc_mov1_cy_a_bit7(self):
         proc = Processor()
         code = [0x61, 0xfc]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b11111111)
         proc.write_gp_reg(Registers.A, 0b01111111) # bit 7 = 0
         proc.step()
@@ -2228,7 +2237,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_89_mov1_a_bit0_cy(self):
         proc = Processor()
         code = [0x61, 0x89]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
@@ -2239,7 +2248,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_99_mov1_a_bit1_cy(self):
         proc = Processor()
         code = [0x61, 0x99]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
@@ -2250,7 +2259,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_a9_mov1_a_bit2_cy(self):
         proc = Processor()
         code = [0x61, 0xa9]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
@@ -2261,7 +2270,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_b9_mov1_a_bit3_cy(self):
         proc = Processor()
         code = [0x61, 0xb9]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
@@ -2272,7 +2281,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_c9_mov1_a_bit4_cy(self):
         proc = Processor()
         code = [0x61, 0xc9]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
@@ -2283,7 +2292,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_d9_mov1_a_bit5_cy(self):
         proc = Processor()
         code = [0x61, 0xd9]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
@@ -2294,7 +2303,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_e9_mov1_a_bit6_cy(self):
         proc = Processor()
         code = [0x61, 0xe9]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
@@ -2305,7 +2314,7 @@ class ProcessorTests(unittest.TestCase):
     def test_61_f9_mov1_a_bit7_cy(self):
         proc = Processor()
         code = [0x61, 0xf9]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
@@ -2316,7 +2325,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_0c_mov1_cy_sfr_bit0(self):
         proc = Processor()
         code = [0x71, 0x0c, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b00000001
         proc.write_psw(0)
         proc.step()
@@ -2327,7 +2336,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_1c_mov1_cy_sfr_bit1(self):
         proc = Processor()
         code = [0x71, 0x1c, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b00000010
         proc.write_psw(0)
         proc.step()
@@ -2338,7 +2347,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_2c_mov1_cy_sfr_bit2(self):
         proc = Processor()
         code = [0x71, 0x2c, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b00000100
         proc.write_psw(0)
         proc.step()
@@ -2349,7 +2358,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_3c_mov1_cy_sfr_bit3(self):
         proc = Processor()
         code = [0x71, 0x3c, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b00001000
         proc.write_psw(0)
         proc.step()
@@ -2360,7 +2369,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_4c_mov1_cy_sfr_bit4(self):
         proc = Processor()
         code = [0x71, 0x4c, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b00010000
         proc.write_psw(0)
         proc.step()
@@ -2371,7 +2380,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_5c_mov1_cy_sfr_bit5(self):
         proc = Processor()
         code = [0x71, 0x5c, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b00100000
         proc.write_psw(0)
         proc.step()
@@ -2382,7 +2391,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_6c_mov1_cy_sfr_bit6(self):
         proc = Processor()
         code = [0x71, 0x6c, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b01000000
         proc.write_psw(0)
         proc.step()
@@ -2393,7 +2402,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_7c_mov1_cy_sfr_bit7(self):
         proc = Processor()
         code = [0x71, 0x7c, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0b10000000
         proc.write_psw(0)
         proc.step()
@@ -2404,7 +2413,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_09_mov1_sfr_bit_0_cy(self):
         proc = Processor()
         code = [0x71, 0x09, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2415,7 +2424,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_19_mov1_sfr_bit_1_cy(self):
         proc = Processor()
         code = [0x71, 0x19, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2426,7 +2435,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_29_mov1_sfr_bit_2_cy(self):
         proc = Processor()
         code = [0x71, 0x29, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2437,7 +2446,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_39_mov1_sfr_bit_3_cy(self):
         proc = Processor()
         code = [0x71, 0x39, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2448,7 +2457,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_49_mov1_sfr_bit_4_cy(self):
         proc = Processor()
         code = [0x71, 0x49, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2459,7 +2468,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_59_mov1_sfr_bit_5_cy(self):
         proc = Processor()
         code = [0x71, 0x59, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2470,7 +2479,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_69_mov1_sfr_bit_6_cy(self):
         proc = Processor()
         code = [0x71, 0x69, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2481,7 +2490,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_79_mov1_sfr_bit_7_cy(self):
         proc = Processor()
         code = [0x71, 0x79, 0xfe]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfffe] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2492,7 +2501,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_01_mov1_saddr_bit0_cy(self):
         proc = Processor()
         code = [0x71, 0x01, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2503,7 +2512,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_11_mov1_saddr_bit1_cy(self):
         proc = Processor()
         code = [0x71, 0x11, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2514,7 +2523,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_21_mov1_saddr_bit2_cy(self):
         proc = Processor()
         code = [0x71, 0x21, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2525,7 +2534,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_31_mov1_saddr_bit3_cy(self):
         proc = Processor()
         code = [0x71, 0x31, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2536,7 +2545,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_41_mov1_saddr_bit4_cy(self):
         proc = Processor()
         code = [0x71, 0x41, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2547,7 +2556,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_51_mov1_saddr_bit5_cy(self):
         proc = Processor()
         code = [0x71, 0x51, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2558,7 +2567,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_61_mov1_saddr_bit6_cy(self):
         proc = Processor()
         code = [0x71, 0x61, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2569,7 +2578,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_71_mov1_saddr_bit7_cy(self):
         proc = Processor()
         code = [0x71, 0x71, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.CY)
         proc.step()
@@ -2580,7 +2589,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_01_mov1_psw_bit0_cy(self):
         proc = Processor()
         code = [0x71, 0x01, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2590,7 +2599,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_11_mov1_psw_bit1_cy(self):
         proc = Processor()
         code = [0x71, 0x11, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2600,7 +2609,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_21_mov1_psw_bit2_cy(self):
         proc = Processor()
         code = [0x71, 0x21, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2610,7 +2619,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_31_mov1_psw_bit3_cy(self):
         proc = Processor()
         code = [0x71, 0x31, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2620,7 +2629,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_41_mov1_psw_bit4_cy(self):
         proc = Processor()
         code = [0x71, 0x41, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2630,7 +2639,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_51_mov1_psw_bit5_cy(self):
         proc = Processor()
         code = [0x71, 0x51, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2640,7 +2649,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_61_mov1_psw_bit6_cy(self):
         proc = Processor()
         code = [0x71, 0x61, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2650,7 +2659,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_71_mov1_psw_bit7_cy(self):
         proc = Processor()
         code = [0x71, 0x71, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2660,7 +2669,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_04_mov1_cy_saddr_bit0(self):
         proc = Processor()
         code = [0x71, 0x04, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b00000001
         proc.write_psw(0)
         proc.step()
@@ -2671,7 +2680,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_14_mov1_cy_saddr_bit1(self):
         proc = Processor()
         code = [0x71, 0x14, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b00000010
         proc.write_psw(0)
         proc.step()
@@ -2682,7 +2691,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_24_mov1_cy_saddr_bit2(self):
         proc = Processor()
         code = [0x71, 0x24, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b00000100
         proc.write_psw(0)
         proc.step()
@@ -2693,7 +2702,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_34_mov1_cy_saddr_bit3(self):
         proc = Processor()
         code = [0x71, 0x34, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b00001000
         proc.write_psw(0)
         proc.step()
@@ -2704,7 +2713,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_44_mov1_cy_saddr_bit4(self):
         proc = Processor()
         code = [0x71, 0x44, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b00010000
         proc.write_psw(0)
         proc.step()
@@ -2715,7 +2724,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_54_mov1_cy_saddr_bit5(self):
         proc = Processor()
         code = [0x71, 0x54, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b00100000
         proc.write_psw(0)
         proc.step()
@@ -2726,7 +2735,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_64_mov1_cy_saddr_bit6(self):
         proc = Processor()
         code = [0x71, 0x64, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b01000000
         proc.write_psw(0)
         proc.step()
@@ -2737,7 +2746,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_74_mov1_cy_saddr_bit7(self):
         proc = Processor()
         code = [0x71, 0x74, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0b10000000
         proc.write_psw(0)
         proc.step()
@@ -2748,7 +2757,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_04_mov1_cy_psw_bit0(self):
         proc = Processor()
         code = [0x71, 0x04, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b00000001)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2758,7 +2767,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_14_mov1_cy_psw_bit1(self):
         proc = Processor()
         code = [0x71, 0x14, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b00000010)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2768,7 +2777,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_24_mov1_cy_psw_bit2(self):
         proc = Processor()
         code = [0x71, 0x24, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b00000100)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2778,7 +2787,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_34_mov1_cy_psw_bit3(self):
         proc = Processor()
         code = [0x71, 0x34, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b00001000)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2788,7 +2797,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_44_mov1_cy_psw_bit4(self):
         proc = Processor()
         code = [0x71, 0x44, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b00010000)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2798,7 +2807,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_54_mov1_cy_psw_bit5(self):
         proc = Processor()
         code = [0x71, 0x54, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b00100000)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2808,7 +2817,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_64_mov1_cy_psw_bit6(self):
         proc = Processor()
         code = [0x71, 0x64, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b01000000)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2818,7 +2827,7 @@ class ProcessorTests(unittest.TestCase):
     def test_71_74_mov1_cy_psw_bit7(self):
         proc = Processor()
         code = [0x71, 0x74, 0x1e]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_psw(0b10000000)
         proc.step()
         self.assertEqual(proc.pc, len(code))
@@ -2828,7 +2837,7 @@ class ProcessorTests(unittest.TestCase):
     def test_40_inc_x_result_0_to_1_clears_z_ac(self):
         proc = Processor()
         code = [0x40]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -2840,7 +2849,7 @@ class ProcessorTests(unittest.TestCase):
     def test_40_inc_x_result_ff_to_0_wraps_and_sets_z(self):
         proc = Processor()
         code = [0x40]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0xFF)
         proc.write_psw(Flags.Z)
         proc.step()
@@ -2852,7 +2861,7 @@ class ProcessorTests(unittest.TestCase):
     def test_40_inc_x_result_0f_to_10_sets_ac(self):
         proc = Processor()
         code = [0x40]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0b00001111)
         proc.write_psw(Flags.Z)
         proc.step()
@@ -2864,7 +2873,7 @@ class ProcessorTests(unittest.TestCase):
     def test_41_inc_a(self):
         proc = Processor()
         code = [0x41]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -2876,7 +2885,7 @@ class ProcessorTests(unittest.TestCase):
     def test_42_inc_c(self):
         proc = Processor()
         code = [0x42]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.C, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -2888,7 +2897,7 @@ class ProcessorTests(unittest.TestCase):
     def test_43_inc_b(self):
         proc = Processor()
         code = [0x43]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.B, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -2900,7 +2909,7 @@ class ProcessorTests(unittest.TestCase):
     def test_44_inc_e(self):
         proc = Processor()
         code = [0x44]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.E, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -2912,7 +2921,7 @@ class ProcessorTests(unittest.TestCase):
     def test_45_inc_d(self):
         proc = Processor()
         code = [0x45]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.D, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -2924,7 +2933,7 @@ class ProcessorTests(unittest.TestCase):
     def test_46_inc_l(self):
         proc = Processor()
         code = [0x46]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.L, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -2936,7 +2945,7 @@ class ProcessorTests(unittest.TestCase):
     def test_47_inc_h(self):
         proc = Processor()
         code = [0x47]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.H, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -2948,7 +2957,7 @@ class ProcessorTests(unittest.TestCase):
     def test_81_inc_saddr(self):
         proc = Processor()
         code = [0x81, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 0
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -3106,7 +3115,7 @@ class ProcessorTests(unittest.TestCase):
         for original_psw, original_a, rotated_psw, rotated_a in tests:
             proc = Processor()
             code = [0x27]
-            proc.write_memory(0x0000, code)
+            proc.write_memory(0, code)
             proc.write_psw(original_psw)
             proc.write_gp_reg(Registers.A, original_a)
             proc.step()
@@ -3124,7 +3133,7 @@ class ProcessorTests(unittest.TestCase):
         for original_psw, original_a, rotated_psw, rotated_a in tests:
             proc = Processor()
             code = [0x25]
-            proc.write_memory(0x0000, code)
+            proc.write_memory(0, code)
             proc.write_psw(original_psw)
             proc.write_gp_reg(Registers.A, original_a)
             proc.step()
@@ -3142,7 +3151,7 @@ class ProcessorTests(unittest.TestCase):
         for original_psw, original_a, rotated_psw, rotated_a in tests:
             proc = Processor()
             code = [0x26]
-            proc.write_memory(0x0000, code)
+            proc.write_memory(0, code)
             proc.write_psw(original_psw)
             proc.write_gp_reg(Registers.A, original_a)
             proc.step()
@@ -3160,7 +3169,7 @@ class ProcessorTests(unittest.TestCase):
         for original_psw, original_a, rotated_psw, rotated_a in tests:
             proc = Processor()
             code = [0x24]
-            proc.write_memory(0x0000, code)
+            proc.write_memory(0, code)
             proc.write_psw(original_psw)
             proc.write_gp_reg(Registers.A, original_a)
             proc.step()
@@ -3172,7 +3181,7 @@ class ProcessorTests(unittest.TestCase):
     def test_50_dec_x_0_to_ff_wraps_clears_z_ac(self):
         proc = Processor()
         code = [0x50]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -3184,7 +3193,7 @@ class ProcessorTests(unittest.TestCase):
     def test_50_dec_x_1_to_0_sets_z_clears_ac(self):
         proc = Processor()
         code = [0x50]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 1)
         proc.write_psw(Flags.AC)
         proc.step()
@@ -3196,7 +3205,7 @@ class ProcessorTests(unittest.TestCase):
     def test_dec_x_10_to_0f_clears_z_sets_ac(self):
         proc = Processor()
         code = [0x50]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0x10)
         proc.write_psw(Flags.Z)
         proc.step()
@@ -3208,7 +3217,7 @@ class ProcessorTests(unittest.TestCase):
     def test_dec_x_ff_to_fe_clears_z_clears_ac(self):
         proc = Processor()
         code = [0x50]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0xff)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
@@ -3220,7 +3229,7 @@ class ProcessorTests(unittest.TestCase):
     def test_51_dec_a(self):
         proc = Processor()
         code = [0x51]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 1)
         proc.write_psw(Flags.AC)
         proc.step()
@@ -3232,7 +3241,7 @@ class ProcessorTests(unittest.TestCase):
     def test_52_dec_c(self):
         proc = Processor()
         code = [0x52]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.C, 1)
         proc.write_psw(Flags.AC)
         proc.step()
@@ -3244,7 +3253,7 @@ class ProcessorTests(unittest.TestCase):
     def test_53_dec_b(self):
         proc = Processor()
         code = [0x53]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.B, 1)
         proc.write_psw(Flags.AC)
         proc.step()
@@ -3256,7 +3265,7 @@ class ProcessorTests(unittest.TestCase):
     def test_54_dec_e(self):
         proc = Processor()
         code = [0x54]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.E, 1)
         proc.write_psw(Flags.AC)
         proc.step()
@@ -3268,7 +3277,7 @@ class ProcessorTests(unittest.TestCase):
     def test_55_dec_d(self):
         proc = Processor()
         code = [0x55]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.D, 1)
         proc.write_psw(Flags.AC)
         proc.step()
@@ -3280,7 +3289,7 @@ class ProcessorTests(unittest.TestCase):
     def test_56_dec_d(self):
         proc = Processor()
         code = [0x56]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.L, 1)
         proc.write_psw(Flags.AC)
         proc.step()
@@ -3292,7 +3301,7 @@ class ProcessorTests(unittest.TestCase):
     def test_57_dec_h(self):
         proc = Processor()
         code = [0x57]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.write_gp_reg(Registers.H, 1)
         proc.write_psw(Flags.AC)
         proc.step()
@@ -3304,7 +3313,7 @@ class ProcessorTests(unittest.TestCase):
     def test_91_dec_saddr(self):
         proc = Processor()
         code = [0x91, 0x20]
-        proc.write_memory(0x0000, code)
+        proc.write_memory(0, code)
         proc.memory[0xfe20] = 1
         proc.write_psw(Flags.AC)
         proc.step()
