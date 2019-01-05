@@ -89,10 +89,14 @@ class Processor(object):
                 f = self._opcode_0xe8 # or 0fe20h,#0abh             ;e8 20 ab
             elif opcode == 0x68:
                 f = self._opcode_0x68 # or a,!0abcdh                ;68 cd ab
+            elif opcode == 0x59:
+                f = self._opcode_0x59 # and a,[hl+0abh]             ;59 ab
             elif opcode == 0x5d:
                 f = self._opcode_0x5d # and a,#0abh                 ;5d ab
             elif opcode == 0x5e:
                 f = self._opcode_0x5e # and a,0fe20h                ;5e 20          saddr
+            elif opcode == 0x5f:
+                f = self._opcode_0x5f # and a,[hl]                  ;5f
             elif opcode == 0x58:
                 f = self._opcode_0x58 # and a,!0abcdh               ;58 cd ab
             elif opcode == 0xd8:
@@ -483,6 +487,22 @@ class Processor(object):
             value = self.memory[address]
             self._operation_bt(value, bit, displacement)
 
+        # and a,[hl+c]                ;31 5a
+        elif opcode2 == 0x5a:
+            address = self._based_hl_c()
+            b = self.memory[address]
+            a = self.read_gp_reg(Registers.A)
+            result = self._operation_and(a, b)
+            self.write_gp_reg(Registers.A, result)
+
+        # and a,[hl+b]                ;31 5b
+        elif opcode2 == 0x5b:
+            address = self._based_hl_b()
+            b = self.memory[address]
+            a = self.read_gp_reg(Registers.A)
+            result = self._operation_and(a, b)
+            self.write_gp_reg(Registers.A, result)
+
         # mulu x                      ;31 88
         elif opcode2 == 0x88:
             a = self.read_gp_reg(Registers.A)
@@ -715,6 +735,15 @@ class Processor(object):
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # and a,[hl+0abh]             ;59 ab
+    def _opcode_0x59(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        imm = self._consume_byte()
+        address = self._based_hl_imm(imm)
+        b = self.memory[address]
+        result = self._operation_and(a, b)
+        self.write_gp_reg(Registers.A, result)
+
     # and a,#0abh                 ;5d ab
     def _opcode_0x5d(self, opcode):
         a = self.read_gp_reg(Registers.A)
@@ -726,6 +755,14 @@ class Processor(object):
     def _opcode_0x5e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
+        b = self.memory[address]
+        result = self._operation_and(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # and a,[hl]                  ;5f
+    def _opcode_0x5f(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self.read_gp_regpair(RegisterPairs.HL)
         b = self.memory[address]
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)

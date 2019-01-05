@@ -485,3 +485,7 @@ label31:
     br ax                       ;31 98
     xch a,[hl+c]                ;31 8a
     xch a,[hl+b]                ;31 8b
+    and a,[hl]                  ;5f
+    and a,[hl+0abh]             ;59 ab
+    and a,[hl+c]                ;31 5a
+    and a,[hl+b]                ;31 5b

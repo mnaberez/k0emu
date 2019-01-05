@@ -852,12 +852,70 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
 
+    # and a,[hl+0abh]             ;59 ab
+    def test_59_and_a_based_hl_imm(self):
+        proc = Processor()
+        code = [0x59, 0xcd]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.memory[0xabcd] = 0xff
+        proc.write_gp_reg(Registers.A, 0xf0)
+        proc.write_psw(proc.read_psw() | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
+        self.assertEqual(proc.read_psw() & Flags.Z, 0)
+
     # and a,0fe20h                ;5e 20          saddr
     def test_5e_and_a_saddr(self):
         proc = Processor()
         code = [0x5e, 0x20]
         proc.write_memory(0, code)
         proc.memory[0xfe20] = 0xff
+        proc.write_gp_reg(Registers.A, 0xf0)
+        proc.write_psw(proc.read_psw() | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
+        self.assertEqual(proc.read_psw() & Flags.Z, 0)
+
+    # and a,[hl]                  ;5f
+    def test_5f_and_a_hl(self):
+        proc = Processor()
+        code = [0x5f]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0xff
+        proc.write_gp_reg(Registers.A, 0xf0)
+        proc.write_psw(proc.read_psw() | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
+        self.assertEqual(proc.read_psw() & Flags.Z, 0)
+
+    # and a,[hl+c]                ;31 5a
+    def test_31_5a_and_a_based_hl_c(self):
+        proc = Processor()
+        code = [0x31, 0x5a]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.write_gp_reg(Registers.C, 0xcd)
+        proc.memory[0xabcd] = 0xff
+        proc.write_gp_reg(Registers.A, 0xf0)
+        proc.write_psw(proc.read_psw() | Flags.Z)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
+        self.assertEqual(proc.read_psw() & Flags.Z, 0)
+
+    # and a,[hl+b]                ;31 5b
+    def test_31_5b_and_a_based_hl_b(self):
+        proc = Processor()
+        code = [0x31, 0x5b]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.write_gp_reg(Registers.B, 0xcd)
+        proc.memory[0xabcd] = 0xff
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
@@ -4791,6 +4849,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.memory[0xABCD], 0x55)
+
 
 
 def test_suite():

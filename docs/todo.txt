@@ -23,8 +23,6 @@
     sub a,[hl+c]                ;31 1a
     subc a,[hl+b]               ;31 3b
     subc a,[hl+c]               ;31 3a
-    and a,[hl+b]                ;31 5b
-    and a,[hl+c]                ;31 5a
     or a,[hl+b]                 ;31 6b
     or a,[hl+c]                 ;31 6a
     xor a,[hl+b]                ;31 7b
@@ -232,8 +230,6 @@ label127:
     cmp a,#0abh                 ;4d ab
     cmp a,0fe20h                ;4e 20          saddr
     cmp a,[hl]                  ;4f
-    and a,[hl+0abh]             ;59 ab
-    and a,[hl]                  ;5f
 
     adjba                       ;61 80
     adjbs                       ;61 90
