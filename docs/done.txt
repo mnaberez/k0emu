@@ -524,3 +524,12 @@ label31:
     mov1 [hl].5,cy              ;71 d1
     mov1 [hl].6,cy              ;71 e1
     mov1 [hl].7,cy              ;71 f1
+
+    bt [hl].0,$label40          ;31 86 fd
+    bt [hl].1,$label41          ;31 96 fd
+    bt [hl].2,$label42          ;31 a6 fd
+    bt [hl].3,$label43          ;31 b6 fd
+    bt [hl].4,$label44          ;31 c6 fd
+    bt [hl].5,$label45          ;31 d6 fd
+    bt [hl].6,$label46          ;31 e6 fd
+    bt [hl].7,$label47          ;31 f6 fd

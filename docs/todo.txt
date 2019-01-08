@@ -29,23 +29,6 @@
     ror4 [hl]                   ;31 90
     rol4 [hl]                   ;31 80
 
-label40:
-    bt [hl].0,$label40          ;31 86 fd
-label41:
-    bt [hl].1,$label41          ;31 96 fd
-label42:
-    bt [hl].2,$label42          ;31 a6 fd
-label43:
-    bt [hl].3,$label43          ;31 b6 fd
-label44:
-    bt [hl].4,$label44          ;31 c6 fd
-label45:
-    bt [hl].5,$label45          ;31 d6 fd
-label46:
-    bt [hl].6,$label46          ;31 e6 fd
-label47:
-    bt [hl].7,$label47          ;31 f6 fd
-
 label48:
     bf 0fe20h.0,$label48        ;31 03 20 fc    saddr
 label49:

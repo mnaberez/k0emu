@@ -3507,6 +3507,198 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x55) # unchanged
 
+    # bt [hl].0,$label40          ;31 86 fd
+    def test_31_86_bt_hl_bit0_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x86, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b11111110
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].0,$label40          ;31 86 fd
+    def test_31_86_bt_hl_bit0_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x86, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00000001
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].1,$label41          ;31 96 fd
+    def test_31_96_bt_hl_bit1_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x96, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b11111101
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].1,$label41          ;31 96 fd
+    def test_31_96_bt_hl_bit1_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x96, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00000010
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].2,$label42          ;31 a6 fd
+    def test_31_a6_bt_hl_bit2_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0xa6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b11111011
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].2,$label42          ;31 a6 fd
+    def test_31_a6_bt_hl_bit2_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0xa6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00000100
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].3,$label43          ;31 b6 fd
+    def test_31_b6_bt_hl_bit3_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0xb6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b11110111
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].3,$label43          ;31 b6 fd
+    def test_31_b6_bt_hl_bit3_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0xb6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00001000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].4,$label44          ;31 c6 fd
+    def test_31_c6_bt_hl_bit4_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0xc6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b11101111
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].4,$label44          ;31 c6 fd
+    def test_31_c6_bt_hl_bit4_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0xc6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00010000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].5,$label45          ;31 d6 fd
+    def test_31_d6_bt_hl_bit5_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0xd6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b11011111
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].5,$label45          ;31 d6 fd
+    def test_31_d6_bt_hl_bit5_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0xd6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b00100000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].6,$label46          ;31 e6 fd
+    def test_31_e6_bt_hl_bit6_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0xe6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b10111111
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].6,$label46          ;31 e6 fd
+    def test_31_e6_bt_hl_bit6_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0xe6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b01000000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].7,$label47          ;31 f6 fd
+    def test_31_f6_bt_hl_bit7_doesnt_branch_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0xf6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b01111111
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bt [hl].7,$label47          ;31 f6 fd
+    def test_31_f6_bt_hl_bit7_branches_if_set(self):
+        proc = Processor()
+        code = [0x31, 0xf6, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0b10000000
+        proc.write_psw(0x55)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
     # bt a.0,$label32             ;31 0e fd
     def test_31_0e_bt_a_bit0_doesnt_branch_if_clear(self):
         proc = Processor()

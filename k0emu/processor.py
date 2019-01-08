@@ -499,6 +499,13 @@ class Processor(object):
             value = self.memory[address]
             self._operation_bt(value, bit, displacement)
 
+        elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            displacement = self._consume_byte()
+            value = self.memory[address]
+            self._operation_bt(value, bit, displacement)
+
         # and a,[hl+c]                ;31 5a
         elif opcode2 == 0x5a:
             address = self._based_hl_c()
