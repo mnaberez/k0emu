@@ -148,23 +148,6 @@ label102:
 label103:
     btclr 0fffeh.7,$label103    ;31 75 fe fc    sfr
 
-label104:
-    btclr a.0,$label104         ;31 0d fd
-label105:
-    btclr a.1,$label105         ;31 1d fd
-label106:
-    btclr a.2,$label106         ;31 2d fd
-label107:
-    btclr a.3,$label107         ;31 3d fd
-label108:
-    btclr a.4,$label108         ;31 4d fd
-label109:
-    btclr a.5,$label109         ;31 5d fd
-label110:
-    btclr a.6,$label110         ;31 6d fd
-label111:
-    btclr a.7,$label111         ;31 7d fd
-
 label112:
     btclr psw.0,$label112       ;31 01 1e fc
 label113:

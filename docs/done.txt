@@ -533,3 +533,12 @@ label31:
     bt [hl].5,$label45          ;31 d6 fd
     bt [hl].6,$label46          ;31 e6 fd
     bt [hl].7,$label47          ;31 f6 fd
+
+    btclr a.0,$label104         ;31 0d fd
+    btclr a.1,$label105         ;31 1d fd
+    btclr a.2,$label106         ;31 2d fd
+    btclr a.3,$label107         ;31 3d fd
+    btclr a.4,$label108         ;31 4d fd
+    btclr a.5,$label109         ;31 5d fd
+    btclr a.6,$label110         ;31 6d fd
+    btclr a.7,$label111         ;31 7d fd

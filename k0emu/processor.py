@@ -491,6 +491,14 @@ class Processor(object):
             value = self.read_gp_reg(Registers.A)
             self._operation_bt(value, bit, displacement)
 
+        # btclr a.bit,$label104         ;31 0d fd
+        elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
+            bit = _bit(opcode2)
+            displacement = self._consume_byte()
+            value = self.read_gp_reg(Registers.A)
+            result = self._operation_btclr(value, bit, displacement)
+            self.write_gp_reg(Registers.A, result)
+
         # bt 0fffeh.bit,$label24        ;31 06 fe fc    sfr
         elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
             bit = _bit(opcode2)
@@ -1193,6 +1201,14 @@ class Processor(object):
         if value & bitweight:
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
+
+    def _operation_btclr(self, value, bit, displacement):
+        bitweight = 2 ** bit
+        if value & bitweight:
+            address = _resolve_rel(self.pc, displacement)
+            self.pc = address
+        result = value & ~bitweight
+        return result
 
     def _operation_mov1(self, src, src_bit, dest, dest_bit):
         src_bitweight = 2 ** src_bit
