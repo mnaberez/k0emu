@@ -516,6 +516,15 @@ class Processor(object):
             result = self._operation_btclr(value, bit, displacement)
             self.memory[address] = result
 
+        # btclr [hl].0,$label120      ;31 85 fd
+        elif opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            displacement = self._consume_byte()
+            value = self.memory[address]
+            result = self._operation_btclr(value, bit, displacement)
+            self.memory[address] = result
+
         elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
             bit = _bit(opcode2)
             address = self.read_gp_regpair(RegisterPairs.HL)

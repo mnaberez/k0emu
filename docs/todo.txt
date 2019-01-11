@@ -148,23 +148,6 @@ label118:
 label119:
     btclr psw.7,$label119       ;31 71 1e fc
 
-label120:
-    btclr [hl].0,$label120      ;31 85 fd
-label121:
-    btclr [hl].1,$label121      ;31 95 fd
-label122:
-    btclr [hl].2,$label122      ;31 a5 fd
-label123:
-    btclr [hl].3,$label123      ;31 b5 fd
-label124:
-    btclr [hl].4,$label124      ;31 c5 fd
-label125:
-    btclr [hl].5,$label125      ;31 d5 fd
-label126:
-    btclr [hl].6,$label126      ;31 e5 fd
-label127:
-    btclr [hl].7,$label127      ;31 f5 fd
-
     subc a,!0abcdh              ;38 cd ab
     subc a,[hl+0abh]            ;39 ab
     subc a,#0abh                ;3d ab

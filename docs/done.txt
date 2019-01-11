@@ -551,3 +551,12 @@ label31:
     btclr 0fffeh.5,$label101    ;31 55 fe fc    sfr
     btclr 0fffeh.6,$label102    ;31 65 fe fc    sfr
     btclr 0fffeh.7,$label103    ;31 75 fe fc    sfr
+
+    btclr [hl].0,$label120      ;31 85 fd
+    btclr [hl].1,$label121      ;31 95 fd
+    btclr [hl].2,$label122      ;31 a5 fd
+    btclr [hl].3,$label123      ;31 b5 fd
+    btclr [hl].4,$label124      ;31 c5 fd
+    btclr [hl].5,$label125      ;31 d5 fd
+    btclr [hl].6,$label126      ;31 e5 fd
+    btclr [hl].7,$label127      ;31 f5 fd
