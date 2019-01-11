@@ -131,23 +131,6 @@ label94:
 label95:
     btclr 0fe20h.7,$label95     ;31 71 20 fc    saddr
 
-label96:
-    btclr 0fffeh.0,$label96     ;31 05 fe fc    sfr
-label97:
-    btclr 0fffeh.1,$label97     ;31 15 fe fc    sfr
-label98:
-    btclr 0fffeh.2,$label98     ;31 25 fe fc    sfr
-label99:
-    btclr 0fffeh.3,$label99     ;31 35 fe fc    sfr
-label100:
-    btclr 0fffeh.4,$label100    ;31 45 fe fc    sfr
-label101:
-    btclr 0fffeh.5,$label101    ;31 55 fe fc    sfr
-label102:
-    btclr 0fffeh.6,$label102    ;31 65 fe fc    sfr
-label103:
-    btclr 0fffeh.7,$label103    ;31 75 fe fc    sfr
-
 label112:
     btclr psw.0,$label112       ;31 01 1e fc
 label113:

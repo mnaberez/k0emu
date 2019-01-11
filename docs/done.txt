@@ -542,3 +542,12 @@ label31:
     btclr a.5,$label109         ;31 5d fd
     btclr a.6,$label110         ;31 6d fd
     btclr a.7,$label111         ;31 7d fd
+
+    btclr 0fffeh.0,$label96     ;31 05 fe fc    sfr
+    btclr 0fffeh.1,$label97     ;31 15 fe fc    sfr
+    btclr 0fffeh.2,$label98     ;31 25 fe fc    sfr
+    btclr 0fffeh.3,$label99     ;31 35 fe fc    sfr
+    btclr 0fffeh.4,$label100    ;31 45 fe fc    sfr
+    btclr 0fffeh.5,$label101    ;31 55 fe fc    sfr
+    btclr 0fffeh.6,$label102    ;31 65 fe fc    sfr
+    btclr 0fffeh.7,$label103    ;31 75 fe fc    sfr
