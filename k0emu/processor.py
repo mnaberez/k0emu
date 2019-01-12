@@ -705,6 +705,14 @@ class Processor(object):
             result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
             self.write_gp_reg(Registers.A, result)
 
+        # and1 cy,a.0                 ;61 8d
+        elif opcode2 in (0x8d, 0x9d, 0xad, 0xbd, 0xcd, 0xdd, 0xed, 0xfd):
+            bit = _bit(opcode2)
+            src = self.read_gp_reg(Registers.A)
+            dest = self.read_psw()
+            result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            self.write_psw(result)
+
         else:
             raise NotImplementedError()
 
@@ -796,6 +804,15 @@ class Processor(object):
             dest = self.memory[address]
             result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
             self.memory[address] = result
+
+        # and1 cy,[hl].0              ;71 85
+        elif opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            self.write_psw(result)
 
         else:
             raise NotImplementedError()
@@ -1237,12 +1254,22 @@ class Processor(object):
         result = value & ~bitweight
         return result
 
+    def _operation_and1(self, src, src_bit, dest, dest_bit):
+        src_bitweight = 2 ** src_bit
+        dest_bitweight = 2 ** dest_bit
+        if (src & src_bitweight) and (dest & dest_bitweight):
+            result = dest | dest_bitweight
+        else:
+            result = dest & ~dest_bitweight
+        return result
+
     def _operation_mov1(self, src, src_bit, dest, dest_bit):
         src_bitweight = 2 ** src_bit
         dest_bitweight = 2 ** dest_bit
-        result = dest & ~dest_bitweight
         if src & src_bitweight:
-            result |= dest_bitweight
+            result = dest | dest_bitweight
+        else:
+            result = dest & ~dest_bitweight
         return result
 
     def _operation_inc(self, value):

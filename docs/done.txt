@@ -578,3 +578,21 @@ label31:
     btclr psw.5,$label117       ;31 51 1e fc
     btclr psw.6,$label118       ;31 61 1e fc
     btclr psw.7,$label119       ;31 71 1e fc
+
+    and1 cy,a.0                 ;61 8d
+    and1 cy,a.1                 ;61 9d
+    and1 cy,a.2                 ;61 ad
+    and1 cy,a.3                 ;61 bd
+    and1 cy,a.4                 ;61 cd
+    and1 cy,a.5                 ;61 dd
+    and1 cy,a.6                 ;61 ed
+    and1 cy,a.7                 ;61 fd
+
+    and1 cy,[hl].0              ;71 85
+    and1 cy,[hl].1              ;71 95
+    and1 cy,[hl].2              ;71 a5
+    and1 cy,[hl].3              ;71 b5
+    and1 cy,[hl].4              ;71 c5
+    and1 cy,[hl].5              ;71 d5
+    and1 cy,[hl].6              ;71 e5
+    and1 cy,[hl].7              ;71 f5

@@ -128,15 +128,6 @@ label87:
     adjba                       ;61 80
     adjbs                       ;61 90
 
-    and1 cy,a.0                 ;61 8d
-    and1 cy,a.1                 ;61 9d
-    and1 cy,a.2                 ;61 ad
-    and1 cy,a.3                 ;61 bd
-    and1 cy,a.4                 ;61 cd
-    and1 cy,a.5                 ;61 dd
-    and1 cy,a.6                 ;61 ed
-    and1 cy,a.7                 ;61 fd
-
     or1 cy,a.0                  ;61 8e
     or1 cy,a.1                  ;61 9e
     or1 cy,a.2                  ;61 ae
@@ -271,15 +262,6 @@ label87:
     and1 cy,psw.5               ;71 55 1e
     and1 cy,psw.6               ;71 65 1e
     and1 cy,psw.7               ;71 75 1e
-
-    and1 cy,[hl].0              ;71 85
-    and1 cy,[hl].1              ;71 95
-    and1 cy,[hl].2              ;71 a5
-    and1 cy,[hl].3              ;71 b5
-    and1 cy,[hl].4              ;71 c5
-    and1 cy,[hl].5              ;71 d5
-    and1 cy,[hl].6              ;71 e5
-    and1 cy,[hl].7              ;71 f5
 
     or1 cy,0fe20h.0             ;71 06 20       saddr
     or1 cy,0fe20h.1             ;71 16 20       saddr
