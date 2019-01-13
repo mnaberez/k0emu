@@ -596,3 +596,12 @@ label31:
     and1 cy,[hl].5              ;71 d5
     and1 cy,[hl].6              ;71 e5
     and1 cy,[hl].7              ;71 f5
+
+    and1 cy,0fffeh.0            ;71 0d fe       sfr
+    and1 cy,0fffeh.1            ;71 1d fe       sfr
+    and1 cy,0fffeh.2            ;71 2d fe       sfr
+    and1 cy,0fffeh.3            ;71 3d fe       sfr
+    and1 cy,0fffeh.4            ;71 4d fe       sfr
+    and1 cy,0fffeh.5            ;71 5d fe       sfr
+    and1 cy,0fffeh.6            ;71 6d fe       sfr
+    and1 cy,0fffeh.7            ;71 7d fe       sfr

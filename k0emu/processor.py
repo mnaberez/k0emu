@@ -814,6 +814,15 @@ class Processor(object):
             result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
             self.write_psw(result)
 
+        # and1 cy,0fffeh.0            ;71 0d fe       sfr
+        elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            self.write_psw(result)
+
         else:
             raise NotImplementedError()
 

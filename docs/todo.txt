@@ -245,15 +245,6 @@ label87:
     and1 cy,0fe20h.6            ;71 65 20       saddr
     and1 cy,0fe20h.7            ;71 75 20       saddr
 
-    and1 cy,0fffeh.0            ;71 0d fe       sfr
-    and1 cy,0fffeh.1            ;71 1d fe       sfr
-    and1 cy,0fffeh.2            ;71 2d fe       sfr
-    and1 cy,0fffeh.3            ;71 3d fe       sfr
-    and1 cy,0fffeh.4            ;71 4d fe       sfr
-    and1 cy,0fffeh.5            ;71 5d fe       sfr
-    and1 cy,0fffeh.6            ;71 6d fe       sfr
-    and1 cy,0fffeh.7            ;71 7d fe       sfr
-
     and1 cy,psw.0               ;71 05 1e
     and1 cy,psw.1               ;71 15 1e
     and1 cy,psw.2               ;71 25 1e

@@ -7126,6 +7126,183 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
+    # and1 cy,0fffeh.0            ;71 0d fe       sfr
+    def test_71_0d_and1_cy_sfr_bit0_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x0d, 0xfe]
+        proc.write_memory(0, code)
+        proc.memory[0xfffe] = 0b11111110
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, 0)
+
+    # and1 cy,0fffeh.0            ;71 0d fe       sfr
+    def test_71_0d_and1_cy_sfr_bit0_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x0d, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0xfffe] = 0b00000001
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
+
+    # and1 cy,0fffeh.1            ;71 1d fe       sfr
+    def test_71_1d_and1_cy_sfr_bit1_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x1d, 0xfe]
+        proc.write_memory(0, code)
+        proc.memory[0xfffe] = 0b11111101
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, 0)
+
+    # and1 cy,0fffeh.1            ;71 1d fe       sfr
+    def test_71_1d_and1_cy_sfr_bit1_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x1d, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0xfffe] = 0b00000010
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
+
+    # and1 cy,0fffeh.2            ;71 2d fe       sfr
+    def test_71_2d_and1_cy_sfr_bit2_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x2d, 0xfe]
+        proc.write_memory(0, code)
+        proc.memory[0xfffe] = 0b11111011
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, 0)
+
+    # and1 cy,0fffeh.2            ;71 2d fe       sfr
+    def test_71_2d_and1_cy_sfr_bit2_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x2d, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0xfffe] = 0b00000100
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
+
+    # and1 cy,0fffeh.3            ;71 3d fe       sfr
+    def test_71_3d_and1_cy_sfr_bit3_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x3d, 0xfe]
+        proc.write_memory(0, code)
+        proc.memory[0xfffe] = 0b11110111
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, 0)
+
+    # and1 cy,0fffeh.3            ;71 3d fe       sfr
+    def test_71_3d_and1_cy_sfr_bit3_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x3d, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0xfffe] = 0b00001000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
+
+    # and1 cy,0fffeh.4            ;71 4d fe       sfr
+    def test_71_4d_and1_cy_sfr_bit4_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x4d, 0xfe]
+        proc.write_memory(0, code)
+        proc.memory[0xfffe] = 0b11101111
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, 0)
+
+    # and1 cy,0fffeh.4            ;71 4d fe       sfr
+    def test_71_4d_and1_cy_sfr_bit4_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x4d, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0xfffe] = 0b00010000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
+
+    # and1 cy,0fffeh.5            ;71 5d fe       sfr
+    def test_71_5d_and1_cy_sfr_bit5_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x5d, 0xfe]
+        proc.write_memory(0, code)
+        proc.memory[0xfffe] = 0b11011111
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, 0)
+
+    # and1 cy,0fffeh.5            ;71 5d fe       sfr
+    def test_71_5d_and1_cy_sfr_bit5_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x5d, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0xfffe] = 0b00100000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
+
+    # and1 cy,0fffeh.6            ;71 6d fe       sfr
+    def test_71_6d_and1_cy_sfr_bit6_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x6d, 0xfe]
+        proc.write_memory(0, code)
+        proc.memory[0xfffe] = 0b10111111
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, 0)
+
+    # and1 cy,0fffeh.6            ;71 6d fe       sfr
+    def test_71_6d_and1_cy_sfr_bit6_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x6d, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0xfffe] = 0b01000000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
+
+    # and1 cy,0fffeh.7            ;71 7d fe       sfr
+    def test_71_7d_and1_cy_sfr_bit7_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x7d, 0xfe]
+        proc.write_memory(0, code)
+        proc.memory[0xfffe] = 0b01111111
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, 0)
+
+    # and1 cy,0fffeh.7            ;71 7d fe       sfr
+    def test_71_7d_and1_cy_sfr_bit7_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x7d, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0xfffe] = 0b10000000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
+
+
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])
 
