@@ -7479,12 +7479,166 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
     # and1 cy,psw.0               ;71 05 1e
+    def test_71_05_and0_cy_psw_bit0_unchanged_since_cy_is_bit0(self):
+        proc = Processor()
+        code = [0x71, 0x05, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # and1 cy,psw.0               ;71 05 1e
+    def test_71_05_and1_cy_psw_bit0_unchanged_since_cy_is_bit0(self):
+        proc = Processor()
+        code = [0x71, 0x05, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
     # and1 cy,psw.1               ;71 15 1e
+    def test_71_15_and1_cy_psw_bit1_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x15, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY) # carry on, bit 1 off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # and1 cy,psw.1               ;71 15 1e
+    def test_71_15_and1_cy_psw_bit1_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x15, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00000011) # carry on, bit 1 on
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00000011)
+
     # and1 cy,psw.2               ;71 25 1e
+    def test_71_25_and1_cy_psw_bit2_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x25, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY) # carry on, bit 2 off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # and1 cy,psw.2               ;71 25 1e
+    def test_71_25_and1_cy_psw_bit2_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x25, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00000101) # carry on, bit 2 on
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00000101)
+
     # and1 cy,psw.3               ;71 35 1e
+    def test_71_35_and1_cy_psw_bit3_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x35, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY) # carry on, bit 3 off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # and1 cy,psw.3               ;71 35 1e
+    def test_71_35_and1_cy_psw_bit3_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x35, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00001001) # carry on, bit 3 on
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00001001)
+
     # and1 cy,psw.4               ;71 45 1e
+    def test_71_45_and1_cy_psw_bit4_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x45, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY) # carry on, bit 4 off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # and1 cy,psw.4               ;71 45 1e
+    def test_71_45_and1_cy_psw_bit4_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x45, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00010001) # carry on, bit 4 on
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00010001)
+
     # and1 cy,psw.5               ;71 55 1e
+    def test_71_55_and1_cy_psw_bit5_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x55, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY) # carry on, bit 5 off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # and1 cy,psw.5               ;71 55 1e
+    def test_71_55_and1_cy_psw_bit5_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x55, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(0b00100001) # carry on, bit 5 on
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b00100001)
+
     # and1 cy,psw.6               ;71 65 1e
+    def test_71_65_and1_cy_psw_bit6_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x65, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY) # carry on, bit 6 off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # and1 cy,psw.6               ;71 65 1e
+    def test_71_65_and1_cy_psw_bit6_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x65, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(0b01000001) # carry on, bit 6 on
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b01000001)
+
+    # and1 cy,psw.7               ;71 75 1e
+    def test_71_75_and1_cy_psw_bit7_turns_cy_off(self):
+        proc = Processor()
+        code = [0x71, 0x75, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY) # carry on, bit 7 off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # and1 cy,psw.7               ;71 75 1e
+    def test_71_75_and1_cy_psw_bit7_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x71, 0x75, 0x1e]
+        proc.write_memory(0, code)
+        proc.write_psw(0b10000001) # carry on, bit 7 on
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0b10000001)
+
+
     # and1 cy,psw.7               ;71 75 1e
 
 def test_suite():
