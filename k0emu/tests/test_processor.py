@@ -7638,8 +7638,115 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10000001)
 
+    # or1 cy,a.0                  ;61 8e
+    def test_61_8e_or1_cy_a_bit0_leaves_cy_off(self):
+        proc = Processor()
+        code = [0x61, 0x8e]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00000000)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0) # unchanged
 
-    # and1 cy,psw.7               ;71 75 1e
+    # or1 cy,a.0                  ;61 8e
+    def test_61_8e_or1_cy_a_bit0_leaves_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0x8e]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00000000)
+        proc.write_psw(Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY) # unchanged
+
+    # or1 cy,a.0                  ;61 8e
+    def test_61_8e_or1_cy_a_bit0_turns_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0x8e]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00000001)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # or1 cy,a.1                  ;61 9e
+    def test_61_9e_or1_cy_a_bit1_turns_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0x9e]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00000010)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # or1 cy,a.2                  ;61 ae
+    def test_61_ae_or1_cy_a_bit2_turns_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0xae]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00000100)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # or1 cy,a.3                  ;61 be
+    def test_61_be_or1_cy_a_bit3_turns_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0xbe]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00001000)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # or1 cy,a.4                  ;61 ce
+    def test_61_ce_or1_cy_a_bit4_turns_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0xce]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00010000)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # or1 cy,a.5                  ;61 de
+    def test_61_de_or1_cy_a_bit5_turns_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0xde]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b00100000)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # or1 cy,a.6                  ;61 ee
+    def test_61_ee_or1_cy_a_bit6_turns_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0xee]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b01000000)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # or1 cy,a.7                  ;61 fe
+    def test_61_fe_or1_cy_a_bit7_turns_cy_on(self):
+        proc = Processor()
+        code = [0x61, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 0b10000000)
+        proc.write_psw(0) # carry off
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

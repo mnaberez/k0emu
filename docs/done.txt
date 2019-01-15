@@ -614,3 +614,12 @@ label31:
     and1 cy,0fe20h.5            ;71 55 20       saddr
     and1 cy,0fe20h.6            ;71 65 20       saddr
     and1 cy,0fe20h.7            ;71 75 20       saddr
+
+    or1 cy,a.0                  ;61 8e
+    or1 cy,a.1                  ;61 9e
+    or1 cy,a.2                  ;61 ae
+    or1 cy,a.3                  ;61 be
+    or1 cy,a.4                  ;61 ce
+    or1 cy,a.5                  ;61 de
+    or1 cy,a.6                  ;61 ee
+    or1 cy,a.7                  ;61 fe

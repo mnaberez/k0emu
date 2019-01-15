@@ -713,6 +713,15 @@ class Processor(object):
             result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
             self.write_psw(result)
 
+
+        # or1 cy,a.0                  ;61 8e
+        elif opcode2 in (0x8e, 0x9e, 0xae, 0xbe, 0xce, 0xde, 0xee, 0xfe):
+            bit = _bit(opcode2)
+            src = self.read_gp_reg(Registers.A)
+            dest = self.read_psw()
+            result = self._operation_or1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            self.write_psw(result)
+
         else:
             raise NotImplementedError()
 
@@ -1270,6 +1279,15 @@ class Processor(object):
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
         result = value & ~bitweight
+        return result
+
+    def _operation_or1(self, src, src_bit, dest, dest_bit):
+        src_bitweight = 2 ** src_bit
+        dest_bitweight = 2 ** dest_bit
+        if (src & src_bitweight) or (dest & dest_bitweight):
+            result = dest | dest_bitweight
+        else:
+            result = dest
         return result
 
     def _operation_and1(self, src, src_bit, dest, dest_bit):

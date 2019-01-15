@@ -128,15 +128,6 @@ label87:
     adjba                       ;61 80
     adjbs                       ;61 90
 
-    or1 cy,a.0                  ;61 8e
-    or1 cy,a.1                  ;61 9e
-    or1 cy,a.2                  ;61 ae
-    or1 cy,a.3                  ;61 be
-    or1 cy,a.4                  ;61 ce
-    or1 cy,a.5                  ;61 de
-    or1 cy,a.6                  ;61 ee
-    or1 cy,a.7                  ;61 fe
-
     xor1 cy,a.0                 ;61 8f
     xor1 cy,a.1                 ;61 9f
     xor1 cy,a.2                 ;61 af
