@@ -694,7 +694,7 @@ class Processor(object):
             bit = _bit(opcode2)
             src = self.read_gp_reg(Registers.A)
             dest = self.read_psw()
-            result = self._operation_mov1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_mov1(src, bit, dest, 0)
             self.write_psw(result)
 
         # mov1 a.bit,cy                 ;61 89
@@ -702,7 +702,7 @@ class Processor(object):
             bit = _bit(opcode2)
             src = self.read_psw()
             dest = self.read_gp_reg(Registers.A)
-            result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_mov1(src, 0, dest, bit)
             self.write_gp_reg(Registers.A, result)
 
         # and1 cy,a.0                 ;61 8d
@@ -710,7 +710,7 @@ class Processor(object):
             bit = _bit(opcode2)
             src = self.read_gp_reg(Registers.A)
             dest = self.read_psw()
-            result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_and1(src, bit, dest, 0)
             self.write_psw(result)
 
 
@@ -719,7 +719,7 @@ class Processor(object):
             bit = _bit(opcode2)
             src = self.read_gp_reg(Registers.A)
             dest = self.read_psw()
-            result = self._operation_or1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_or1(src, bit, dest, 0)
             self.write_psw(result)
 
         else:
@@ -766,7 +766,7 @@ class Processor(object):
             address = self._consume_sfr()
             src = self.memory[address]
             dest = self.read_gp_reg(Registers.A)
-            result = self._operation_mov1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_mov1(src, bit, dest, 0)
             self.write_psw(result)
 
         # mov1 0fffeh.bit,cy            ;71 09 fe       sfr
@@ -775,7 +775,7 @@ class Processor(object):
             address = self._consume_sfr()
             src = self.read_psw()
             dest = self.memory[address]
-            result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_mov1(src, 0, dest, bit)
             self.memory[address] = result
 
         # mov1 0fe20h.bit,cy            ;71 01 20       saddr
@@ -784,7 +784,7 @@ class Processor(object):
             address = self._consume_saddr()
             src = self.read_psw()
             dest = self.memory[address]
-            result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_mov1(src, 0, dest, bit)
             self.memory[address] = result
 
         # mov1 cy,0fe20h.bit            ;71 04 20       saddr
@@ -793,7 +793,7 @@ class Processor(object):
             address = self._consume_saddr()
             src = self.memory[address]
             dest = self.read_psw()
-            result = self._operation_mov1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_mov1(src, bit, dest, 0)
             self.write_psw(result)
 
         # mov1 cy,[hl].bit              ;71 84
@@ -802,7 +802,7 @@ class Processor(object):
             address = self.read_gp_regpair(RegisterPairs.HL)
             src = self.memory[address]
             dest = self.read_psw()
-            result = self._operation_mov1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_mov1(src, bit, dest, 0)
             self.write_psw(result)
 
         # mov1 [hl].bit,cy              ;71 81
@@ -811,7 +811,7 @@ class Processor(object):
             address = self.read_gp_regpair(RegisterPairs.HL)
             src = self.read_psw()
             dest = self.memory[address]
-            result = self._operation_mov1(src, 0, dest, bit) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_mov1(src, 0, dest, bit)
             self.memory[address] = result
 
         # and1 cy,[hl].0              ;71 85
@@ -820,7 +820,7 @@ class Processor(object):
             address = self.read_gp_regpair(RegisterPairs.HL)
             src = self.memory[address]
             dest = self.read_psw()
-            result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_and1(src, bit, dest, 0)
             self.write_psw(result)
 
         # and1 cy,0fffeh.0            ;71 0d fe       sfr
@@ -829,7 +829,7 @@ class Processor(object):
             address = self._consume_sfr()
             src = self.memory[address]
             dest = self.read_psw()
-            result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_and1(src, bit, dest, 0)
             self.write_psw(result)
 
         # and1 cy,0fffeh.0            ;71 0d fe       sfr
@@ -838,7 +838,34 @@ class Processor(object):
             address = self._consume_saddr()
             src = self.memory[address]
             dest = self.read_psw()
-            result = self._operation_and1(src, bit, dest, 0) # TODO remove hardcoded bit 0 for CY
+            result = self._operation_and1(src, bit, dest, 0)
+            self.write_psw(result)
+
+        # or1 cy,0fffeh.0             ;71 0e fe       sfr
+        elif opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_or1(src, bit, dest, 0)
+            self.write_psw(result)
+
+        # or1 cy,[hl].0               ;71 86
+        elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_or1(src, bit, dest, 0)
+            self.write_psw(result)
+
+        # or1 cy,0fe20h.0             ;71 06 20       saddr
+        elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
+            bit = _bit(opcode2)
+            address = self._consume_saddr()
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_or1(src, bit, dest, 0)
             self.write_psw(result)
 
         else:
