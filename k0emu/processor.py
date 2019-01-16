@@ -498,6 +498,14 @@ class Processor(object):
             value = self.read_gp_reg(Registers.A)
             self._operation_bf(value, bit, displacement)
 
+        # bf [hl].0,$label80          ;31 87 fd
+        elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
+            bit = _bit(opcode2)
+            displacement = self._consume_byte()
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            value = self.memory[address]
+            self._operation_bf(value, bit, displacement)
+
         # btclr a.bit,$label104         ;31 0d fd
         elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
             bit = _bit(opcode2)

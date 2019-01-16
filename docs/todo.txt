@@ -80,23 +80,6 @@ label78:
 label79:
     bf psw.7,$label79           ;31 73 1e fc
 
-label80:
-    bf [hl].0,$label80          ;31 87 fd
-label81:
-    bf [hl].1,$label81          ;31 97 fd
-label82:
-    bf [hl].2,$label82          ;31 a7 fd
-label83:
-    bf [hl].3,$label83          ;31 b7 fd
-label84:
-    bf [hl].4,$label84          ;31 c7 fd
-label85:
-    bf [hl].5,$label85          ;31 d7 fd
-label86:
-    bf [hl].6,$label86          ;31 e7 fd
-label87:
-    bf [hl].7,$label87          ;31 f7 fd
-
     subc a,!0abcdh              ;38 cd ab
     subc a,[hl+0abh]            ;39 ab
     subc a,#0abh                ;3d ab
