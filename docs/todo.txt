@@ -63,23 +63,6 @@ label62:
 label63:
     bf 0fffeh.7,$label63        ;31 77 fe fc    sfr
 
-label64:
-    bf a.0,$label64             ;31 0f fd
-label65:
-    bf a.1,$label65             ;31 1f fd
-label66:
-    bf a.2,$label66             ;31 2f fd
-label67:
-    bf a.3,$label67             ;31 3f fd
-label68:
-    bf a.4,$label68             ;31 4f fd
-label69:
-    bf a.5,$label69             ;31 5f fd
-label70:
-    bf a.6,$label70             ;31 6f fd
-label71:
-    bf a.7,$label71             ;31 7f fd
-
 label72:
     bf psw.0,$label72           ;31 03 1e fc
 label73:

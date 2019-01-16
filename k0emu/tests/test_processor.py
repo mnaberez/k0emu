@@ -3966,6 +3966,182 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x55) # unchanged
 
+    # bf a.0,$label32             ;31 0f fd
+    def test_31_0f_bf_a_bit0_branches_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x0f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b11111110)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.0,$label32             ;31 0f fd
+    def test_31_0f_bf_a_bit0_doesnt_branch_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x0f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b00000001)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.1,$label32             ;31 1f fd
+    def test_31_1f_bf_a_bit1_branches_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x1f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b11111101)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.1,$label32             ;31 1f fd
+    def test_31_1f_bf_a_bit1_doesnt_branch_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x1f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b00000010)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.2,$label32             ;31 2f fd
+    def test_31_2f_bf_a_bit2_branches_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x2f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b11111011)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.2,$label32             ;31 2f fd
+    def test_31_2f_bf_a_bit2_doesnt_branch_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x2f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b00000100)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.3,$label32             ;31 3f fd
+    def test_31_3f_bf_a_bit3_branches_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x3f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b11110111)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.3,$label32             ;31 3f fd
+    def test_31_3f_bf_a_bit3_doesnt_branch_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x3f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b00001000)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.4,$label32             ;31 4f fd
+    def test_31_4f_bf_a_bit4_branches_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x4f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b11101111)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.4,$label32             ;31 4f fd
+    def test_31_4f_bf_a_bit4_doesnt_branch_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x4f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b00010000)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.5,$label32             ;31 5f fd
+    def test_31_5f_bf_a_bit5_branches_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x5f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b11011111)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.5,$label32             ;31 5f fd
+    def test_31_5f_bf_a_bit5_doesnt_branch_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x5f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b00100000)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.6,$label32             ;31 6f fd
+    def test_31_6f_bf_a_bit6_branches_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x6f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b10111111)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.6,$label32             ;31 6f fd
+    def test_31_6f_bf_a_bit6_doesnt_branch_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x6f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b01000000)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.7,$label32             ;31 7f fd
+    def test_31_7f_bf_a_bit7_branches_if_clear(self):
+        proc = Processor()
+        code = [0x31, 0x7f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b01111111)
+        proc.step()
+        self.assertEqual(proc.pc, 0x23) # branch taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
+    # bf a.7,$label32             ;31 7f fd
+    def test_31_7f_bf_a_bit7_doesnt_branch_if_set(self):
+        proc = Processor()
+        code = [0x31, 0x7f, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0x55)
+        proc.write_gp_reg(Registers.A, 0b10000000)
+        proc.step()
+        self.assertEqual(proc.pc, len(code)) # branch not taken
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
+
     # bt a.0,$label32             ;31 0e fd
     def test_31_0e_bt_a_bit0_branches_if_set(self):
         proc = Processor()
@@ -3988,7 +4164,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x55) # unchanged
 
-    #  bt a.1,$label33             ;31 1e fd
+    # bt a.1,$label33             ;31 1e fd
     def test_31_1e_bt_a_bit1_branches_if_set(self):
         proc = Processor()
         code = [0x31, 0x1e, 0x20]
