@@ -668,3 +668,30 @@ label31:
     bf [hl].5,$label85          ;31 d7 fd
     bf [hl].6,$label86          ;31 e7 fd
     bf [hl].7,$label87          ;31 f7 fd
+
+    bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
+    bf 0fffeh.1,$label57        ;31 17 fe fc    sfr
+    bf 0fffeh.2,$label58        ;31 27 fe fc    sfr
+    bf 0fffeh.3,$label59        ;31 37 fe fc    sfr
+    bf 0fffeh.4,$label60        ;31 47 fe fc    sfr
+    bf 0fffeh.5,$label61        ;31 57 fe fc    sfr
+    bf 0fffeh.6,$label62        ;31 67 fe fc    sfr
+    bf 0fffeh.7,$label63        ;31 77 fe fc    sfr
+
+    bf 0fe20h.0,$label48        ;31 03 20 fc    saddr
+    bf 0fe20h.1,$label49        ;31 13 20 fc    saddr
+    bf 0fe20h.2,$label50        ;31 23 20 fc    saddr
+    bf 0fe20h.3,$label51        ;31 33 20 fc    saddr
+    bf 0fe20h.4,$label52        ;31 43 20 fc    saddr
+    bf 0fe20h.5,$label53        ;31 53 20 fc    saddr
+    bf 0fe20h.6,$label54        ;31 63 20 fc    saddr
+    bf 0fe20h.7,$label55        ;31 73 20 fc    saddr
+
+    bf psw.0,$label72           ;31 03 1e fc
+    bf psw.1,$label73           ;31 13 1e fc
+    bf psw.2,$label74           ;31 23 1e fc
+    bf psw.3,$label75           ;31 33 1e fc
+    bf psw.4,$label76           ;31 43 1e fc
+    bf psw.5,$label77           ;31 53 1e fc
+    bf psw.6,$label78           ;31 63 1e fc
+    bf psw.7,$label79           ;31 73 1e fc

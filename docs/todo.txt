@@ -29,57 +29,6 @@
     ror4 [hl]                   ;31 90
     rol4 [hl]                   ;31 80
 
-label48:
-    bf 0fe20h.0,$label48        ;31 03 20 fc    saddr
-label49:
-    bf 0fe20h.1,$label49        ;31 13 20 fc    saddr
-label50:
-    bf 0fe20h.2,$label50        ;31 23 20 fc    saddr
-label51:
-    bf 0fe20h.3,$label51        ;31 33 20 fc    saddr
-label52:
-    bf 0fe20h.4,$label52        ;31 43 20 fc    saddr
-label53:
-    bf 0fe20h.5,$label53        ;31 53 20 fc    saddr
-label54:
-    bf 0fe20h.6,$label54        ;31 63 20 fc    saddr
-label55:
-    bf 0fe20h.7,$label55        ;31 73 20 fc    saddr
-
-label56:
-    bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
-label57:
-    bf 0fffeh.1,$label57        ;31 17 fe fc    sfr
-label58:
-    bf 0fffeh.2,$label58        ;31 27 fe fc    sfr
-label59:
-    bf 0fffeh.3,$label59        ;31 37 fe fc    sfr
-label60:
-    bf 0fffeh.4,$label60        ;31 47 fe fc    sfr
-label61:
-    bf 0fffeh.5,$label61        ;31 57 fe fc    sfr
-label62:
-    bf 0fffeh.6,$label62        ;31 67 fe fc    sfr
-label63:
-    bf 0fffeh.7,$label63        ;31 77 fe fc    sfr
-
-label72:
-    bf psw.0,$label72           ;31 03 1e fc
-label73:
-    bf psw.1,$label73           ;31 13 1e fc
-label74:
-    bf psw.2,$label74           ;31 23 1e fc
-label75:
-    bf psw.3,$label75           ;31 33 1e fc
-label76:
-    bf psw.4,$label76           ;31 43 1e fc
-label77:
-    bf psw.5,$label77           ;31 53 1e fc
-label78:
-    bf psw.6,$label78           ;31 63 1e fc
-label79:
-    bf psw.7,$label79           ;31 73 1e fc
-
     subc a,!0abcdh              ;38 cd ab
     subc a,[hl+0abh]            ;39 ab
     subc a,#0abh                ;3d ab

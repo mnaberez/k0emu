@@ -506,6 +506,22 @@ class Processor(object):
             value = self.memory[address]
             self._operation_bf(value, bit, displacement)
 
+        # bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
+        elif opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
+            displacement = self._consume_byte()
+            value = self.memory[address]
+            self._operation_bf(value, bit, displacement)
+
+        # bf 0fe20h.0,$label48        ;31 03 20 fc    saddr
+        elif opcode2 in (0x03, 0x13, 0x23, 0x33, 0x43, 0x53, 0x63, 0x73):
+            bit = _bit(opcode2)
+            address = self._consume_saddr()
+            displacement = self._consume_byte()
+            value = self.memory[address]
+            self._operation_bf(value, bit, displacement)
+
         # btclr a.bit,$label104         ;31 0d fd
         elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
             bit = _bit(opcode2)
