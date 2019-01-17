@@ -1,15 +1,13 @@
 Unimplemented instructions needed by "SOFTWARE 23":
 
-09dd: 1e 2d        sub a,0fe2dh     !!! NOT IMPLEMENTED !!!
 09df: 0e 2e        add a,0fe2eh     !!! NOT IMPLEMENTED !!!
-3795: 4d 00        cmp a,#00h       !!! NOT IMPLEMENTED !!!
-0a10: da 06 f2     subw ax,#0f206h  !!! NOT IMPLEMENTED !!!
 0c1d: 61 00        add x,a          !!! NOT IMPLEMENTED !!!
-0c21: 2d 00        addc a,#00h      !!! NOT IMPLEMENTED !!!
-0c40: 4e dc        cmp a,0fedch     !!! NOT IMPLEMENTED !!!
 093e: 0e 2d        add a,0fe2dh     !!! NOT IMPLEMENTED !!!
 0940: 0e 2f        add a,0fe2fh     !!! NOT IMPLEMENTED !!!
 0947: 31 0b        add a,[hl+b]     !!! NOT IMPLEMENTED !!!
-094c: 31 0b        add a,[hl+b]     !!! NOT IMPLEMENTED !!!
-0950: 4e 2e        cmp a,0fe2eh     !!! NOT IMPLEMENTED !!!
+0c21: 2d 00        addc a,#00h      !!! NOT IMPLEMENTED !!!
+09dd: 1e 2d        sub a,0fe2dh     !!! NOT IMPLEMENTED !!!
+0a10: da 06 f2     subw ax,#0f206h  !!! NOT IMPLEMENTED !!!
+3795: 4d 00        cmp a,#00h       !!! NOT IMPLEMENTED !!!
+0c40: 4e dc        cmp a,0fedch     !!! NOT IMPLEMENTED !!!
 0e2d: ea cb fe     cmpw ax,#0fecbh  !!! NOT IMPLEMENTED !!!
