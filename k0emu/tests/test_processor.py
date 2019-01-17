@@ -2193,12 +2193,10 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_sp(), 0xabcd)
 
     # movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
-    # movw sp,ax                  ;99 1c
     def test_ee_movw_saddrp_imm16(self):
         proc = Processor()
         code = [0xee, 0x20, 0xcd, 0xab]
         proc.write_memory(0, code)
-        proc.write_sp(0)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.memory[0xfe20], 0xcd)
@@ -9035,6 +9033,39 @@ class ProcessorTests(unittest.TestCase):
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
+
+    # movw ax,0fffeh              ;a9 fe          sfrp
+    def test_a9_movw_ax_sfrp(self):
+        proc = Processor()
+        code = [0xa9, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_memory(0x0fffe, [0xcd, 0xab])
+        proc.write_gp_regpair(RegisterPairs.AX, 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
+
+    # movw 0fffeh,ax              ;b9 fe          sfrp
+    def test_b9_movw_sfrp_ax(self):
+        proc = Processor()
+        code = [0xb9, 0xfe]
+        proc.write_memory(0, code)
+        proc.write_memory(0x0fffe, [0, 0])
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0x0fffe], 0xcd)
+        self.assertEqual(proc.memory[0x0ffff], 0xab)
+
+    # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
+    def test_fe_movw_sfrp_imm16(self):
+        proc = Processor()
+        code = [0xfe, 0xfe, 0xcd, 0xab]
+        proc.write_memory(0, code)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0x0fffe], 0xcd)
+        self.assertEqual(proc.memory[0x0ffff], 0xab)
 
 
 def test_suite():

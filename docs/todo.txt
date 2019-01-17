@@ -1,5 +1,3 @@
-    movw ax,!0abceh             ;02 ce ab       addr16p
-    movw !0abceh,ax             ;03 ce ab       addr16p
     add a,!0abcdh               ;08 cd ab
     add a,[hl+0abh]             ;09 ab
     add a,#0abh                 ;0d ab
@@ -187,14 +185,14 @@ label3:
 label4:
     retb                        ;9f
     addc 0fe20h,#0abh           ;a8 20 ab       saddr
-    movw ax,0fffeh              ;a9 fe          sfrp
 label5:
     subc 0fe20h,#0abh           ;b8 20 ab       saddr
-    movw 0fffeh,ax              ;b9 fe          sfrp
 label6:
     brk                         ;bf
     cmp 0fe20h,#0abh            ;c8 20 ab       saddr
     addw ax,#0abcdh             ;ca cd ab
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
-    movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
+
+    movw ax,!0abceh             ;02 ce ab       addr16p
+    movw !0abceh,ax             ;03 ce ab       addr16p

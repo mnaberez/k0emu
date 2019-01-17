@@ -197,6 +197,10 @@ class Processor(object):
                 f = self._opcode_0x89 # movw ax,0fe20h              ;89 20          saddrp
             elif opcode == 0x99:
                 f = self._opcode_0x99 # movw 0fe20h,ax              ;99 20          saddrp
+            elif opcode == 0xb9:
+                f = self._opcode_0xb9 # movw 0fffeh,ax              ;b9 fe          sfrp
+            elif opcode == 0xa9:
+                f = self._opcode_0xa9 # movw ax,0fffeh              ;a9 fe          sfrp
             elif opcode == 0xaa:
                 f = self._opcode_0xaa # mov a,[hl+c]                ;aa
             elif opcode == 0xab:
@@ -215,6 +219,8 @@ class Processor(object):
                 f = self._opcode_0xd2_to_0xd6_movw # # movw bc..hl,ax                  ;d2..d6
             elif opcode == 0xde:
                 f = self._opcode_0xde # xch a,[hl+0abh]             ;de ab
+            elif opcode == 0xfe:
+                f = self._opcode_0xfe # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
             else:
                 f = self._opcode_not_implemented
 
@@ -418,6 +424,14 @@ class Processor(object):
     # movw 0fe20h,ax              ;99 20          saddrp
     def _opcode_0x99(self, opcode):
         address = self._consume_saddrp()
+        value_low = self.read_gp_reg(Registers.X)
+        self.memory[address] = value_low
+        value_high = self.read_gp_reg(Registers.A)
+        self.memory[address+1] = value_high
+
+    # movw 0fffeh,ax              ;b9 fe          sfrp
+    def _opcode_0xb9(self, opcode):
+        address = self._consume_sfrp()
         value_low = self.read_gp_reg(Registers.X)
         self.memory[address] = value_low
         value_high = self.read_gp_reg(Registers.A)
@@ -1267,6 +1281,14 @@ class Processor(object):
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
 
+    # movw ax,0fffeh              ;a9 fe          sfrp
+    def _opcode_0xa9(self, opcode):
+        address = self._consume_sfrp()
+        value_low = self.memory[address]
+        self.write_gp_reg(Registers.X, value_low)
+        value_high = self.memory[address + 1]
+        self.write_gp_reg(Registers.A, value_high)
+
     # mov a,[hl+c]                ;aa
     def _opcode_0xaa(self, opcode):
         address = self._based_hl_c()
@@ -1329,6 +1351,14 @@ class Processor(object):
         a_value = self.read_gp_reg(Registers.A)
         self.write_gp_reg(Registers.A, other_value)
         self.memory[address] = a_value
+
+    # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
+    def _opcode_0xfe(self, opcode):
+        address = self._consume_sfrp()
+        value_low = self._consume_byte()
+        self.memory[address] = value_low
+        value_high = self._consume_byte()
+        self.memory[address+1] = value_high
 
     # push ax                     ;b1
     # ...
@@ -1468,6 +1498,10 @@ class Processor(object):
     def _consume_sfr(self):
         offset = self._consume_byte()
         return _sfr(offset)
+
+    def _consume_sfrp(self):
+        offset = self._consume_byte()
+        return _sfrp(offset)
 
     def _consume_saddr(self):
         offset = self._consume_byte()
@@ -1609,6 +1643,12 @@ class Processor(object):
 def _sfr(low):
     sfr = 0xff00 + low
     return sfr
+
+def _sfrp(low):
+    sfrp = _sfr(low)
+    if sfrp & 1 != 0:
+        raise Exception("sfrp must be an even address")
+    return sfrp
 
 def _saddr(low):
     saddr = 0xfe00 + low

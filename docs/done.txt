@@ -205,9 +205,6 @@
     clr1 psw.7                  ;7b 1e
     di                          ;7b 1e          alias for clr1 psw.7
 
-    movw sp,#0abcdh             ;ee 1c cd ab
-    movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
-
     mov1 a.0,cy                 ;61 89
     mov1 a.1,cy                 ;61 99
     mov1 a.2,cy                 ;61 a9
@@ -697,8 +694,12 @@ label31:
     bf psw.6,$label78           ;31 63 1e fc
     bf psw.7,$label79           ;31 73 1e fc
 
+    movw sp,#0abcdh             ;ee 1c cd ab
+    movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
     movw 0fe20h,ax              ;99 20          saddrp
     movw sp,ax                  ;99 1c
-
     movw ax,0fe20h              ;89 20          saddrp
     movw ax,sp                  ;89 1c
+    movw ax,0fffeh              ;a9 fe          sfrp
+    movw 0fffeh,ax              ;b9 fe          sfrp
+    movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
