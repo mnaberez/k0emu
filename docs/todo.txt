@@ -180,19 +180,12 @@
     stop                        ;71 00
 
     add 0fe20h,#0abh            ;88 20 ab       saddr
-label3:
     sub 0fe20h,#0abh            ;98 20 ab       saddr
-label4:
     retb                        ;9f
     addc 0fe20h,#0abh           ;a8 20 ab       saddr
-label5:
     subc 0fe20h,#0abh           ;b8 20 ab       saddr
-label6:
     brk                         ;bf
     cmp 0fe20h,#0abh            ;c8 20 ab       saddr
     addw ax,#0abcdh             ;ca cd ab
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
-
-    movw ax,!0abceh             ;02 ce ab       addr16p
-    movw !0abceh,ax             ;03 ce ab       addr16p

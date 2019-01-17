@@ -31,6 +31,10 @@ class Processor(object):
                 f = self._opcode_0x00 # nop
             elif opcode == 0x01:
                 f = self._opcode_0x01 # not1 cy
+            elif opcode == 0x02:
+                f = self._opcode_0x02 # movw ax,!0abceh             ;02 ce ab       addr16p
+            elif opcode == 0x03:
+                f = self._opcode_0x03 # movw !0abceh,ax             ;03 ce ab       addr16p
             elif opcode == 0x05:
                 f = self._opcode_0x05 # xch a,[de]                  ;05
             elif opcode == 0x07:
@@ -413,6 +417,14 @@ class Processor(object):
         result = self._operation_decw(value)
         self.write_gp_regpair(regpair, result)
 
+    # movw ax,!0abceh             ;02 ce ab       addr16p
+    def _opcode_0x02(self, opcode):
+        address = self._consume_addr16p()
+        value_low = self.memory[address]
+        self.write_gp_reg(Registers.X, value_low)
+        value_high = self.memory[address+1]
+        self.write_gp_reg(Registers.A, value_high)
+
     # movw ax,0fe20h              ;89 20          saddrp
     def _opcode_0x89(self, opcode):
         address = self._consume_saddrp()
@@ -424,6 +436,14 @@ class Processor(object):
     # movw 0fe20h,ax              ;99 20          saddrp
     def _opcode_0x99(self, opcode):
         address = self._consume_saddrp()
+        value_low = self.read_gp_reg(Registers.X)
+        self.memory[address] = value_low
+        value_high = self.read_gp_reg(Registers.A)
+        self.memory[address+1] = value_high
+
+    # movw !0abceh,ax             ;03 ce ab       addr16p
+    def _opcode_0x03(self, opcode):
+        address = self._consume_addr16p()
         value_low = self.read_gp_reg(Registers.X)
         self.memory[address] = value_low
         value_high = self.read_gp_reg(Registers.A)
@@ -1494,6 +1514,11 @@ class Processor(object):
         low = self._consume_byte()
         high = self._consume_byte()
         return _addr16(low, high)
+
+    def _consume_addr16p(self):
+        low = self._consume_byte()
+        high = self._consume_byte()
+        return _addr16p(low, high)
 
     def _consume_sfr(self):
         offset = self._consume_byte()

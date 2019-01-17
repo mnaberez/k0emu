@@ -703,3 +703,5 @@ label31:
     movw ax,0fffeh              ;a9 fe          sfrp
     movw 0fffeh,ax              ;b9 fe          sfrp
     movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
+    movw ax,!0abceh             ;02 ce ab       addr16p
+    movw !0abceh,ax             ;03 ce ab       addr16p

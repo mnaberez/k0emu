@@ -28,3 +28,9 @@ Verify DBNZ wrap-around behavior.
 Verify all branch displacement calculations.
 
 Verify # mov a,[hl+0abh]             ;ae ab wrap-around behavior.
+
+
+Verify the address must really be even:
+    movw ax,!0abceh             ;02 ce ab       addr16p
+    movw !0abceh,ax             ;03 ce ab       addr16p
+
