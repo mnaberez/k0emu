@@ -193,6 +193,8 @@ class Processor(object):
                 f = self._opcode_0x80_to_0x86_incw # incw ax                     ;80
             elif opcode in (0x90, 0x92, 0x94, 0x96):
                 f = self._opcode_0x90_to_0x96_decw # decw ax                     ;90
+            elif opcode == 0x99:
+                f = self._opcode_0x99 # movw 0fe20h,ax              ;99 20          saddrp
             elif opcode == 0xaa:
                 f = self._opcode_0xaa # mov a,[hl+c]                ;aa
             elif opcode == 0xab:
@@ -402,6 +404,14 @@ class Processor(object):
         value = self.read_gp_regpair(regpair)
         result = self._operation_decw(value)
         self.write_gp_regpair(regpair, result)
+
+    # movw 0fe20h,ax              ;99 20          saddrp
+    def _opcode_0x99(self, opcode):
+        address = self._consume_saddrp()
+        value_low = self.read_gp_reg(Registers.X)
+        self.memory[address] = value_low
+        value_high = self.read_gp_reg(Registers.A)
+        self.memory[address+1] = value_high
 
     # br !0abcdh                  ;9b cd ab
     def _opcode_0x9b(self, opcode):

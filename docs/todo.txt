@@ -186,7 +186,6 @@
     movw ax,sp                  ;89 1c
 label3:
     sub 0fe20h,#0abh            ;98 20 ab       saddr
-    movw 0fe20h,ax              ;99 20          saddrp
     movw sp,ax                  ;99 1c
 label4:
     retb                        ;9f
