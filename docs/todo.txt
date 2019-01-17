@@ -182,11 +182,8 @@
     stop                        ;71 00
 
     add 0fe20h,#0abh            ;88 20 ab       saddr
-    movw ax,0fe20h              ;89 20          saddrp
-    movw ax,sp                  ;89 1c
 label3:
     sub 0fe20h,#0abh            ;98 20 ab       saddr
-    movw sp,ax                  ;99 1c
 label4:
     retb                        ;9f
     addc 0fe20h,#0abh           ;a8 20 ab       saddr
@@ -200,5 +197,4 @@ label6:
     addw ax,#0abcdh             ;ca cd ab
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
-    movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
     movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp

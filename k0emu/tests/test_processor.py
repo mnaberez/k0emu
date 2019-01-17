@@ -1149,9 +1149,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0xabcd)
@@ -1161,11 +1161,11 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0xaf]
         proc.write_memory(0, code)
-        proc.sp = 0xfe1d
+        proc.write_sp(0xfe1d)
         proc.memory[0xfe1d] = 0xcd # stack: return address low
         proc.memory[0xfe1e] = 0xab # stack: return address high
         proc.step()
-        self.assertEqual(proc.sp, 0xfe1f)
+        self.assertEqual(proc.read_sp(), 0xfe1f)
         self.assertEqual(proc.pc, 0xabcd)
 
     # push psw                    ;22
@@ -1173,10 +1173,10 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0x22]
         proc.write_memory(0, code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.write_psw(0x42)
         proc.step()
-        self.assertEqual(proc.sp, 0xfe1e)
+        self.assertEqual(proc.read_sp(), 0xfe1e)
         self.assertEqual(proc.memory[0xfe1e], 0x42)
         self.assertEqual(proc.pc, len(code))
 
@@ -1185,11 +1185,11 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0x23]
         proc.write_memory(0, code)
-        proc.sp = 0xFE1E
+        proc.write_sp(0xFE1E)
         proc.memory[0xFE1E] = 0x42 # stack: psw
         proc.write_psw(0)
         proc.step()
-        self.assertEqual(proc.sp, 0xfe1F)
+        self.assertEqual(proc.read_sp(), 0xfe1F)
         self.assertEqual(proc.read_psw(), 0x42)
         self.assertEqual(proc.pc, len(code))
 
@@ -2187,10 +2187,22 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0xee, 0x1c, 0xcd, 0xab]
         proc.write_memory(0, code)
-        proc.sp = 0
+        proc.write_sp(0)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xabcd)
+        self.assertEqual(proc.read_sp(), 0xabcd)
+
+    # movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
+    # movw sp,ax                  ;99 1c
+    def test_ee_movw_saddrp_imm16(self):
+        proc = Processor()
+        code = [0xee, 0x20, 0xcd, 0xab]
+        proc.write_memory(0, code)
+        proc.write_sp(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 0xcd)
+        self.assertEqual(proc.memory[0xfe21], 0xab)
 
     # mov1 cy,a.0                 ;61 8c
     def test_61_8c_mov1_cy_a_bit0_set(self):
@@ -3030,9 +3042,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0842)
@@ -3044,9 +3056,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0942)
@@ -3058,9 +3070,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0a42)
@@ -3072,9 +3084,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0b42)
@@ -3086,9 +3098,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0c42)
@@ -3100,9 +3112,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0d42)
@@ -3114,9 +3126,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0e42)
@@ -3128,9 +3140,9 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0123, code)
         proc.pc = 0x0123
         return_address = proc.pc + len(code)
-        proc.sp = 0xFE1F
+        proc.write_sp(0xFE1F)
         proc.step()
-        self.assertEqual(proc.sp, 0xFE1d)
+        self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
         self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
         self.assertEqual(proc.pc, 0x0f42)
@@ -3156,9 +3168,9 @@ class ProcessorTests(unittest.TestCase):
             proc.pc = 0x1000
             return_address = proc.pc + len(code)
 
-            proc.sp = 0xFE1F
+            proc.write_sp(0xFE1F)
             proc.step()
-            self.assertEqual(proc.sp, 0xFE1d)
+            self.assertEqual(proc.read_sp(), 0xFE1d)
             self.assertEqual(proc.memory[0xFE1d], (return_address & 0xFF))
             self.assertEqual(proc.memory[0xFE1e], (return_address >> 8))
             self.assertEqual(proc.pc, 0xabcd)
@@ -6682,11 +6694,11 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0xb1]
         proc.write_memory(0, code)
-        proc.sp = 0xfe12
+        proc.write_sp(0xfe12)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xfe10)
+        self.assertEqual(proc.read_sp(), 0xfe10)
         self.assertEqual(proc.memory[0xfe11], 0xab) # A
         self.assertEqual(proc.memory[0xfe10], 0xcd) # X
 
@@ -6695,11 +6707,11 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0xb3]
         proc.write_memory(0, code)
-        proc.sp = 0xfe12
+        proc.write_sp(0xfe12)
         proc.write_gp_regpair(RegisterPairs.BC, 0xabcd)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xfe10)
+        self.assertEqual(proc.read_sp(), 0xfe10)
         self.assertEqual(proc.memory[0xfe11], 0xab) # B
         self.assertEqual(proc.memory[0xfe10], 0xcd) # C
 
@@ -6708,11 +6720,11 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0xb5]
         proc.write_memory(0, code)
-        proc.sp = 0xfe12
+        proc.write_sp(0xfe12)
         proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xfe10)
+        self.assertEqual(proc.read_sp(), 0xfe10)
         self.assertEqual(proc.memory[0xfe11], 0xab) # D
         self.assertEqual(proc.memory[0xfe10], 0xcd) # E
 
@@ -6721,11 +6733,11 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0xb7]
         proc.write_memory(0, code)
-        proc.sp = 0xfe12
+        proc.write_sp(0xfe12)
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xfe10)
+        self.assertEqual(proc.read_sp(), 0xfe10)
         self.assertEqual(proc.memory[0xfe11], 0xab) # H
         self.assertEqual(proc.memory[0xfe10], 0xcd) # L
 
@@ -6735,12 +6747,12 @@ class ProcessorTests(unittest.TestCase):
         code = [0xb0]
         proc.write_memory(0, code)
         proc.write_gp_regpair(RegisterPairs.AX, 0)
-        proc.sp = 0xfe10
+        proc.write_sp(0xfe10)
         proc.memory[0xfe11] = 0xab # A
         proc.memory[0xfe10] = 0xcd # X
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xfe12)
+        self.assertEqual(proc.read_sp(), 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
 
     # pop bc                      ;b2
@@ -6749,12 +6761,12 @@ class ProcessorTests(unittest.TestCase):
         code = [0xb2]
         proc.write_memory(0, code)
         proc.write_gp_regpair(RegisterPairs.BC, 0)
-        proc.sp = 0xfe10
+        proc.write_sp(0xfe10)
         proc.memory[0xfe11] = 0xab # A
         proc.memory[0xfe10] = 0xcd # X
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xfe12)
+        self.assertEqual(proc.read_sp(), 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), 0xabcd)
 
     # pop de                      ;b4
@@ -6763,12 +6775,12 @@ class ProcessorTests(unittest.TestCase):
         code = [0xb4]
         proc.write_memory(0, code)
         proc.write_gp_regpair(RegisterPairs.DE, 0)
-        proc.sp = 0xfe10
+        proc.write_sp(0xfe10)
         proc.memory[0xfe11] = 0xab # A
         proc.memory[0xfe10] = 0xcd # X
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xfe12)
+        self.assertEqual(proc.read_sp(), 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), 0xabcd)
 
     # pop hl                      ;b6
@@ -6777,12 +6789,12 @@ class ProcessorTests(unittest.TestCase):
         code = [0xb6]
         proc.write_memory(0, code)
         proc.write_gp_regpair(RegisterPairs.HL, 0)
-        proc.sp = 0xfe10
+        proc.write_sp(0xfe10)
         proc.memory[0xfe11] = 0xab # A
         proc.memory[0xfe10] = 0xcd # X
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.sp, 0xfe12)
+        self.assertEqual(proc.read_sp(), 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0xabcd)
 
     # reti                        ;8f
@@ -6790,14 +6802,14 @@ class ProcessorTests(unittest.TestCase):
         proc = Processor()
         code = [0x8f]
         proc.write_memory(0, code)
-        proc.sp = 0xfe10
+        proc.write_sp(0xfe10)
         proc.memory[0xfe12] = 0x55 # psw
         proc.memory[0xfe11] = 0xab # pch
         proc.memory[0xfe10] = 0xcd # pcl
         proc.step()
         self.assertEqual(proc.pc, 0xabcd)
         self.assertEqual(proc.read_psw(), 0x55)
-        self.assertEqual(proc.sp, 0xfe13)
+        self.assertEqual(proc.read_sp(), 0xfe13)
 
     # set1 [hl].0                 ;71 82
     def test_71_82_set1_hl_bit_0(self):

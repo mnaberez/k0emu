@@ -11,7 +11,7 @@ class Processor(object):
         self.reset()
 
     def reset(self):
-        self.sp = 0
+        self.write_sp(0)
         low = self.memory[self.RESET_VECTOR_ADDRESS]
         high = self.memory[self.RESET_VECTOR_ADDRESS+1]
         self.pc = (high << 8) + low
@@ -765,7 +765,6 @@ class Processor(object):
             result = self._operation_and1(src, bit, dest, 0)
             self.write_psw(result)
 
-
         # or1 cy,a.0                  ;61 8e
         elif opcode2 in (0x8e, 0x9e, 0xae, 0xbe, 0xce, 0xde, 0xee, 0xfe):
             bit = _bit(opcode2)
@@ -1168,14 +1167,14 @@ class Processor(object):
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
 
+    # movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
     # movw sp,#0abcdh             ;ee 1c cd ab  (SP=0xFF1C)
     def _opcode_0xee(self, opcode):
         address = self._consume_saddrp()
-        if address != 0xff1c:
-            raise Exception("finish me") # TODO handle saddr's besides sp
-        low = self._consume_byte()
-        high = self._consume_byte()
-        self.sp = (high << 8) + low
+        value_low = self._consume_byte()
+        self.memory[address] = value_low
+        value_high = self._consume_byte()
+        self.memory[address+1] = value_high
 
     # inc x                       ;40
     # ...
@@ -1499,13 +1498,15 @@ class Processor(object):
 
     def _push(self, value):
         """Push a byte onto the stack"""
-        self.sp -= 1
-        self.memory[self.sp] = value
+        sp = self.read_sp() - 1
+        self.write_sp(sp)
+        self.memory[sp] = value
 
     def _pop(self):
         """Pop a byte off the stack"""
-        value = self.memory[self.sp]
-        self.sp += 1
+        sp = self.read_sp()
+        value = self.memory[sp]
+        self.write_sp(sp + 1)
         return value
 
     def _push_word(self, value):
@@ -1571,14 +1572,28 @@ class Processor(object):
         self.write_psw(self.read_psw() & ~(Flags.RBS0 + Flags.RBS1))
         self.write_psw(self.read_psw() | (rbs0 + rbs1))
 
+    # SP
+
+    def read_sp(self):
+        """Read the Stack Pointer"""
+        low = self.memory[self.SP_ADDRESS]
+        high = self.memory[self.SP_ADDRESS+1]
+        return _word(low, high)
+
+    def write_sp(self, value):
+        low = value & 0xFF
+        self.memory[self.SP_ADDRESS] = low
+        high = value >> 8
+        self.memory[self.SP_ADDRESS+1] = high
+
     # PSW
 
     def read_psw(self):
-        """Read the PSW"""
+        """Read the Processor Status Word"""
         return self.memory[self.PSW_ADDRESS]
 
     def write_psw(self, value):
-        """Write the PSW"""
+        """Write the Processor Status Word"""
         self.memory[self.PSW_ADDRESS] = value
 
     def _update_psw_z(self, value):
@@ -1677,7 +1692,7 @@ class RegisterTrace:
         s = ""
         for name, reg in klass.NamedRegisters:
             s += "%s=%02X " % (name, processor.read_gp_reg(reg))
-        s += "SP=%04X" % processor.sp
+        s += "SP=%04X" % processor.read_sp()
         s += " ["
         psw = processor.read_psw()
         for name, flag in klass.NamedFlags:
