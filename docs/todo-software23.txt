@@ -6,8 +6,6 @@ Unimplemented instructions needed by "SOFTWARE 23":
 0a10: da 06 f2     subw ax,#0f206h  !!! NOT IMPLEMENTED !!!
 0c1d: 61 00        add x,a          !!! NOT IMPLEMENTED !!!
 0c21: 2d 00        addc a,#00h      !!! NOT IMPLEMENTED !!!
-0c2f: 89 de        movw ax,0fedeh   !!! NOT IMPLEMENTED !!!
-0c3d: 89 dc        movw ax,0fedch   !!! NOT IMPLEMENTED !!!
 0c40: 4e dc        cmp a,0fedch     !!! NOT IMPLEMENTED !!!
 093e: 0e 2d        add a,0fe2dh     !!! NOT IMPLEMENTED !!!
 0940: 0e 2f        add a,0fe2fh     !!! NOT IMPLEMENTED !!!

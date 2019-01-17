@@ -9013,6 +9013,17 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.memory[0xfe20], 0xcd)
         self.assertEqual(proc.memory[0xfe21], 0xab)
 
+    # movw ax,0fe20h              ;89 20          saddrp
+    def test_89_movw_ax_saddrp(self):
+        proc = Processor()
+        code = [0x89, 0x20]
+        proc.write_memory(0, code)
+        proc.write_memory(0xfe20, [0xcd, 0xab])
+        proc.write_gp_regpair(RegisterPairs.AX, 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

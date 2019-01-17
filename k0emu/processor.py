@@ -193,6 +193,8 @@ class Processor(object):
                 f = self._opcode_0x80_to_0x86_incw # incw ax                     ;80
             elif opcode in (0x90, 0x92, 0x94, 0x96):
                 f = self._opcode_0x90_to_0x96_decw # decw ax                     ;90
+            elif opcode == 0x89:
+                f = self._opcode_0x89 # movw ax,0fe20h              ;89 20          saddrp
             elif opcode == 0x99:
                 f = self._opcode_0x99 # movw 0fe20h,ax              ;99 20          saddrp
             elif opcode == 0xaa:
@@ -404,6 +406,14 @@ class Processor(object):
         value = self.read_gp_regpair(regpair)
         result = self._operation_decw(value)
         self.write_gp_regpair(regpair, result)
+
+    # movw ax,0fe20h              ;89 20          saddrp
+    def _opcode_0x89(self, opcode):
+        address = self._consume_saddrp()
+        value_low = self.memory[address]
+        self.write_gp_reg(Registers.X, value_low)
+        value_high = self.memory[address+1]
+        self.write_gp_reg(Registers.A, value_high)
 
     # movw 0fe20h,ax              ;99 20          saddrp
     def _opcode_0x99(self, opcode):
@@ -1161,7 +1171,8 @@ class Processor(object):
     # movw sp,#0abcdh             ;ee 1c cd ab  (SP=0xFF1C)
     def _opcode_0xee(self, opcode):
         address = self._consume_saddrp()
-        address = address # TODO handle saddr's besides sp
+        if address != 0xff1c:
+            raise Exception("finish me") # TODO handle saddr's besides sp
         low = self._consume_byte()
         high = self._consume_byte()
         self.sp = (high << 8) + low

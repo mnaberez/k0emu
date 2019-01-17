@@ -697,3 +697,4 @@ label31:
     bf psw.7,$label79           ;31 73 1e fc
 
     movw 0fe20h,ax              ;99 20          saddrp
+    movw ax,0fe20h              ;89 20          saddrp
