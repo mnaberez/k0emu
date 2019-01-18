@@ -9656,6 +9656,182 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
+    # xor1 cy,0fe20h.0            ;71 07 20       saddr
+    def test_71_07_xor_cy_saddr_bit0_0_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x07, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.memory[0x0fe20] = 0b00000001
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # xor1 cy,0fe20h.0            ;71 07 20       saddr
+    def test_71_07_xor_cy_saddr_bit0_1_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x07, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0x0fe20] = 0b00000001
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # xor1 cy,0fe20h.1            ;71 17 20       saddr
+    def test_71_17_xor_cy_saddr_bit1_0_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x17, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.memory[0x0fe20] = 0b00000010
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # xor1 cy,0fe20h.1            ;71 17 20       saddr
+    def test_71_17_xor_cy_saddr_bit1_1_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x17, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0x0fe20] = 0b00000010
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # xor1 cy,0fe20h.2            ;71 27 20       saddr
+    def test_71_27_xor_cy_saddr_bit2_0_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x27, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.memory[0x0fe20] = 0b00000100
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # xor1 cy,0fe20h.2            ;71 27 20       saddr
+    def test_71_27_xor_cy_saddr_bit2_1_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x27, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0x0fe20] = 0b00000100
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # xor1 cy,0fe20h.3            ;71 37 20       saddr
+    def test_71_37_xor_cy_saddr_bit3_0_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x37, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.memory[0x0fe20] = 0b00001000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # xor1 cy,0fe20h.3            ;71 37 20       saddr
+    def test_71_37_xor_cy_saddr_bit3_1_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x37, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0x0fe20] = 0b00001000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # xor1 cy,0fe20h.4            ;71 47 20       saddr
+    def test_71_47_xor_cy_saddr_bit4_0_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x47, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.memory[0x0fe20] = 0b00010000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # xor1 cy,0fe20h.4            ;71 47 20       saddr
+    def test_71_47_xor_cy_saddr_bit4_1_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x47, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0x0fe20] = 0b00010000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # xor1 cy,0fe20h.5            ;71 57 20       saddr
+    def test_71_57_xor_cy_saddr_bit5_0_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x57, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.memory[0x0fe20] = 0b00100000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # xor1 cy,0fe20h.4            ;71 47 20       saddr
+    def test_71_57_xor_cy_saddr_bit5_1_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x57, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0x0fe20] = 0b00100000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # xor1 cy,0fe20h.6            ;71 67 20       saddr
+    def test_71_67_xor_cy_saddr_bit6_0_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x67, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.memory[0x0fe20] = 0b01000000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # xor1 cy,0fe20h.6            ;71 67 20       saddr
+    def test_71_67_xor_cy_saddr_bit6_1_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x67, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0x0fe20] = 0b01000000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
+    # xor1 cy,0fe20h.7            ;71 77 20       saddr
+    def test_71_77_xor_cy_saddr_bit7_0_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x77, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(0)
+        proc.memory[0x0fe20] = 0b10000000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # xor1 cy,0fe20h.7            ;71 77 20       saddr
+    def test_71_77_xor_cy_saddr_bit7_1_xor_1(self):
+        proc = Processor()
+        code = [0x71, 0x77, 0x20]
+        proc.write_memory(0, code)
+        proc.write_psw(Flags.CY)
+        proc.memory[0x0fe20] = 0b10000000
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0)
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

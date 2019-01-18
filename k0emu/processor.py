@@ -979,6 +979,15 @@ class Processor(object):
             result = self._operation_xor1(src, bit, dest, 0)
             self.write_psw(result)
 
+        # xor1 cy,0fe20h.0            ;71 07 20       saddr
+        elif opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
+            bit = _bit(opcode2)
+            address = self._consume_saddr()
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_xor1(src, bit, dest, 0)
+            self.write_psw(result)
+
         else:
             raise NotImplementedError()
 
