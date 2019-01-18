@@ -156,12 +156,3 @@
     addw ax,#0abcdh             ;ca cd ab
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
-
-    xor1 cy,psw.0               ;71 07 1e
-    xor1 cy,psw.1               ;71 17 1e
-    xor1 cy,psw.2               ;71 27 1e
-    xor1 cy,psw.3               ;71 37 1e
-    xor1 cy,psw.4               ;71 47 1e
-    xor1 cy,psw.5               ;71 57 1e
-    xor1 cy,psw.6               ;71 67 1e
-    xor1 cy,psw.7               ;71 77 1e
