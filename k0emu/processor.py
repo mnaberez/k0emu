@@ -961,6 +961,15 @@ class Processor(object):
             result = self._operation_or1(src, bit, dest, 0)
             self.write_psw(result)
 
+        # xor1 cy,[hl].0              ;71 87
+        elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
+            bit = _bit(opcode2)
+            address = self.read_gp_regpair(RegisterPairs.HL)
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_xor1(src, bit, dest, 0)
+            self.write_psw(result)
+
         else:
             raise NotImplementedError()
 

@@ -183,12 +183,3 @@
     xor1 cy,psw.5               ;71 57 1e
     xor1 cy,psw.6               ;71 67 1e
     xor1 cy,psw.7               ;71 77 1e
-
-    xor1 cy,[hl].0              ;71 87
-    xor1 cy,[hl].1              ;71 97
-    xor1 cy,[hl].2              ;71 a7
-    xor1 cy,[hl].3              ;71 b7
-    xor1 cy,[hl].4              ;71 c7
-    xor1 cy,[hl].5              ;71 d7
-    xor1 cy,[hl].6              ;71 e7
-    xor1 cy,[hl].7              ;71 f7
