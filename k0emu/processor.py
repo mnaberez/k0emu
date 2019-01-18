@@ -807,6 +807,14 @@ class Processor(object):
             result = self._operation_or1(src, bit, dest, 0)
             self.write_psw(result)
 
+        # xor1 cy,a.0                 ;61 8f
+        elif opcode2 in (0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0xff):
+            bit = _bit(opcode2)
+            src = self.read_gp_reg(Registers.A)
+            dest = self.read_psw()
+            result = self._operation_xor1(src, bit, dest, 0)
+            self.write_psw(result)
+
         else:
             raise NotImplementedError()
 
@@ -1416,13 +1424,24 @@ class Processor(object):
         result = value & ~bitweight
         return result
 
+    def _operation_xor1(self, src, src_bit, dest, dest_bit):
+        src_bitweight = 2 ** src_bit
+        dest_bitweight = 2 ** dest_bit
+        if (src & src_bitweight) and (dest & dest_bitweight):
+            result = dest & ~dest_bitweight # 1 xor 1 = 0
+        elif (src & src_bitweight == 0) and (dest & dest_bitweight == 0):
+            result = dest & ~dest_bitweight # 0 xor 0 = 0
+        else:
+            result = dest | dest_bitweight # 0 xor 1 = 1, 1 xor 0 = 1
+        return result
+
     def _operation_or1(self, src, src_bit, dest, dest_bit):
         src_bitweight = 2 ** src_bit
         dest_bitweight = 2 ** dest_bit
         if (src & src_bitweight) or (dest & dest_bitweight):
             result = dest | dest_bitweight
         else:
-            result = dest
+            result = dest # dest bit must already be off
         return result
 
     def _operation_and1(self, src, src_bit, dest, dest_bit):

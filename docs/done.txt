@@ -705,3 +705,12 @@ label31:
     movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
     movw ax,!0abceh             ;02 ce ab       addr16p
     movw !0abceh,ax             ;03 ce ab       addr16p
+
+    xor1 cy,a.0                 ;61 8f
+    xor1 cy,a.1                 ;61 9f
+    xor1 cy,a.2                 ;61 af
+    xor1 cy,a.3                 ;61 bf
+    xor1 cy,a.4                 ;61 cf
+    xor1 cy,a.5                 ;61 df
+    xor1 cy,a.6                 ;61 ef
+    xor1 cy,a.7                 ;61 ff
