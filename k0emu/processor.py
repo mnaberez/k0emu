@@ -226,6 +226,8 @@ class Processor(object):
                 f = self._opcode_0xde # xch a,[hl+0abh]             ;de ab
             elif opcode == 0xfe:
                 f = self._opcode_0xfe # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
+            else:
+                f = self._opcode_not_implemented
             self._opcode_map[opcode] = f
 
     def _init_opcode_map_prefix_0x31(self):
@@ -777,115 +779,159 @@ class Processor(object):
     def _opcode_0x31_0x98_br(self, opcode2):
         self.pc = self.read_gp_regpair(RegisterPairs.AX)
 
-    def _opcode_0x61(self, opcode):
-        opcode2 = self._consume_byte()
-
-        # sel rbn
-        if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
+    def _opcode_0x61_0x0d_to_0xf8_sel_rb(self, opcode2):
             banks_by_opcode2 = {0xD0: 0, 0xD8: 1, 0xF0: 2, 0xF8: 3}
             self.write_rb(banks_by_opcode2[opcode2])
 
-        # or a,reg (except: or a,reg=a)
-        elif opcode2 in (0x68, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f):
-            a = self.read_gp_reg(Registers.A)
-            reg = _reg(opcode2)
-            b = self.read_gp_reg(reg)
-            result = self._operation_or(a, b)
-            self.write_gp_reg(Registers.A, result)
+    def _opcode_0x61_0x68_to_0x6f_or(self, opcode2):
+        a = self.read_gp_reg(Registers.A)
+        reg = _reg(opcode2)
+        b = self.read_gp_reg(reg)
+        result = self._operation_or(a, b)
+        self.write_gp_reg(Registers.A, result)
 
-        # or reg,a
-        elif opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
-            a = self.read_gp_reg(Registers.A)
-            reg = _reg(opcode2)
-            b = self.read_gp_reg(reg)
-            result = self._operation_or(a, b)
-            self.write_gp_reg(reg, result)
+    def _opcode_0x61_to_0x67_or(self, opcode2):
+        a = self.read_gp_reg(Registers.A)
+        reg = _reg(opcode2)
+        b = self.read_gp_reg(reg)
+        result = self._operation_or(a, b)
+        self.write_gp_reg(reg, result)
 
-        # and a,reg (except: and a,reg=a)
-        elif opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
-            a = self.read_gp_reg(Registers.A)
-            reg = _reg(opcode2)
-            b = self.read_gp_reg(reg)
-            result = self._operation_and(a, b)
-            self.write_gp_reg(Registers.A, result)
+    def _opcode_0x61_0x58_to_0x5f_and(self, opcode2):
+        a = self.read_gp_reg(Registers.A)
+        reg = _reg(opcode2)
+        b = self.read_gp_reg(reg)
+        result = self._operation_and(a, b)
+        self.write_gp_reg(Registers.A, result)
 
-        # and reg,a
-        elif opcode2 in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
-            a = self.read_gp_reg(Registers.A)
-            reg = _reg(opcode2)
-            b = self.read_gp_reg(reg)
-            result = self._operation_and(a, b)
-            self.write_gp_reg(reg, result)
+    def _opcode_0x61_0x50_to_0x57_and(self, opcode2):
+        a = self.read_gp_reg(Registers.A)
+        reg = _reg(opcode2)
+        b = self.read_gp_reg(reg)
+        result = self._operation_and(a, b)
+        self.write_gp_reg(reg, result)
 
-        # xor a,reg (except: xor a,reg=a)
-        elif opcode2 in (0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f):
+    def _opcode_0x61_0x78_to_0x7f_xor(self, opcode2):
             a = self.read_gp_reg(Registers.A)
             reg = _reg(opcode2)
             b = self.read_gp_reg(reg)
             result = self._operation_xor(a, b)
             self.write_gp_reg(Registers.A, result)
 
-        # xor reg,a
-        elif opcode2 in (0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
-            a = self.read_gp_reg(Registers.A)
-            reg = _reg(opcode2)
-            b = self.read_gp_reg(reg)
-            result = self._operation_xor(a, b)
-            self.write_gp_reg(reg, result)
+    def _opcode_0x61_0x70_to_0x77_xor(self, opcode2):
+        a = self.read_gp_reg(Registers.A)
+        reg = _reg(opcode2)
+        b = self.read_gp_reg(reg)
+        result = self._operation_xor(a, b)
+        self.write_gp_reg(reg, result)
 
-        # set1 a.bit
-        elif opcode2 in (0x8a, 0x9a, 0xaa, 0xba, 0xca, 0xda, 0xea, 0xfa):
-            a = self.read_gp_reg(Registers.A)
-            bit = _bit(opcode2)
-            result = self._operation_set1(a, bit)
-            self.write_gp_reg(Registers.A, result)
+    def _opcode_0x61_0x8a_to_0xfa_set1(self, opcode2):
+        a = self.read_gp_reg(Registers.A)
+        bit = _bit(opcode2)
+        result = self._operation_set1(a, bit)
+        self.write_gp_reg(Registers.A, result)
 
-        # clr1 a.bit
-        elif opcode2 in (0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0xdb, 0xeb, 0xfb):
-            a = self.read_gp_reg(Registers.A)
-            bit = _bit(opcode2)
-            result = self._operation_clr1(a, bit)
-            self.write_gp_reg(Registers.A, result)
+    def _opcode_0x61_0x8b_to_0xfb_clr1(self, opcode2):
+        a = self.read_gp_reg(Registers.A)
+        bit = _bit(opcode2)
+        result = self._operation_clr1(a, bit)
+        self.write_gp_reg(Registers.A, result)
 
-        # mov1 cy,a.bit
-        elif opcode2 in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
+    def _opcode_0x61_0x8c_to_0xfc_mov1(self, opcode2):
             bit = _bit(opcode2)
             src = self.read_gp_reg(Registers.A)
             dest = self.read_psw()
             result = self._operation_mov1(src, bit, dest, 0)
             self.write_psw(result)
 
-        # mov1 a.bit,cy                 ;61 89
-        elif opcode2 in (0x89, 0x99, 0xa9, 0xb9, 0xc9, 0xd9, 0xe9, 0xf9):
+    def _opcode_0x61_0x89_to_0xf9_mov1(self, opcode2):
             bit = _bit(opcode2)
             src = self.read_psw()
             dest = self.read_gp_reg(Registers.A)
             result = self._operation_mov1(src, 0, dest, bit)
             self.write_gp_reg(Registers.A, result)
 
+    def _opcode_0x61_0x8d_to_0xfd_and1(self, opcode2):
+        bit = _bit(opcode2)
+        src = self.read_gp_reg(Registers.A)
+        dest = self.read_psw()
+        result = self._operation_and1(src, bit, dest, 0)
+        self.write_psw(result)
+
+    def _opcode_0x61_0x8e_to_0xfe_or1(self, opcode2):
+        bit = _bit(opcode2)
+        src = self.read_gp_reg(Registers.A)
+        dest = self.read_psw()
+        result = self._operation_or1(src, bit, dest, 0)
+        self.write_psw(result)
+
+    def _opcode_0x61_0x8f_to_0xff_xor1(self, opcode2):
+        bit = _bit(opcode2)
+        src = self.read_gp_reg(Registers.A)
+        dest = self.read_psw()
+        result = self._operation_xor1(src, bit, dest, 0)
+        self.write_psw(result)
+
+
+
+    def _opcode_0x61(self, opcode):
+        opcode2 = self._consume_byte()
+
+        # sel rbn
+        if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
+            self._opcode_0x61_0x0d_to_0xf8_sel_rb(opcode2)
+
+        # or a,reg (except: or a,reg=a)
+        elif opcode2 in (0x68, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f):
+            self._opcode_0x61_0x68_to_0x6f_or(opcode2)
+
+        # or reg,a
+        elif opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
+            self._opcode_0x61_to_0x67_or(opcode2)
+
+        # and a,reg (except: and a,reg=a)
+        elif opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
+            self._opcode_0x61_0x58_to_0x5f_and(opcode2)
+
+        # and reg,a
+        elif opcode2 in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
+            self._opcode_0x61_0x50_to_0x57_and(opcode2)
+
+        # xor a,reg (except: xor a,reg=a)
+        elif opcode2 in (0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f):
+            self._opcode_0x61_0x78_to_0x7f_xor(opcode2)
+
+        # xor reg,a
+        elif opcode2 in (0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
+            self._opcode_0x61_0x70_to_0x77_xor(opcode2)
+
+        # set1 a.bit
+        elif opcode2 in (0x8a, 0x9a, 0xaa, 0xba, 0xca, 0xda, 0xea, 0xfa):
+            self._opcode_0x61_0x8a_to_0xfa_set1(opcode2)
+
+        # clr1 a.bit
+        elif opcode2 in (0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0xdb, 0xeb, 0xfb):
+            self._opcode_0x61_0x8b_to_0xfb_clr1(opcode2)
+
+        # mov1 cy,a.bit
+        elif opcode2 in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
+            self._opcode_0x61_0x8c_to_0xfc_mov1(opcode2)
+
+        # mov1 a.bit,cy                 ;61 89
+        elif opcode2 in (0x89, 0x99, 0xa9, 0xb9, 0xc9, 0xd9, 0xe9, 0xf9):
+            self._opcode_0x61_0x89_to_0xf9_mov1(opcode2)
+
         # and1 cy,a.0                 ;61 8d
         elif opcode2 in (0x8d, 0x9d, 0xad, 0xbd, 0xcd, 0xdd, 0xed, 0xfd):
-            bit = _bit(opcode2)
-            src = self.read_gp_reg(Registers.A)
-            dest = self.read_psw()
-            result = self._operation_and1(src, bit, dest, 0)
-            self.write_psw(result)
+            self._opcode_0x61_0x8d_to_0xfd_and1(opcode2)
 
         # or1 cy,a.0                  ;61 8e
         elif opcode2 in (0x8e, 0x9e, 0xae, 0xbe, 0xce, 0xde, 0xee, 0xfe):
-            bit = _bit(opcode2)
-            src = self.read_gp_reg(Registers.A)
-            dest = self.read_psw()
-            result = self._operation_or1(src, bit, dest, 0)
-            self.write_psw(result)
+            self._opcode_0x61_0x8e_to_0xfe_or1(opcode2)
 
         # xor1 cy,a.0                 ;61 8f
         elif opcode2 in (0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0xff):
-            bit = _bit(opcode2)
-            src = self.read_gp_reg(Registers.A)
-            dest = self.read_psw()
-            result = self._operation_xor1(src, bit, dest, 0)
-            self.write_psw(result)
+            self._opcode_0x61_0x8f_to_0xff_xor1(opcode2)
 
         else:
             raise NotImplementedError()
