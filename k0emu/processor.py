@@ -7,7 +7,8 @@ class Processor(object):
 
     def __init__(self):
         self.memory = bytearray(0x10000)
-        self._init_opcode_map()
+        self._init_opcode_map_unprefixed()
+        self._init_opcode_map_prefix_0x31()
         self.reset()
 
     def reset(self):
@@ -24,8 +25,8 @@ class Processor(object):
     def __str__(self):
         return RegisterTrace.generate(self)
 
-    def _init_opcode_map(self):
-        self._opcode_map = {}
+    def _init_opcode_map_unprefixed(self):
+        self._opcode_map = [self._opcode_not_implemented] * 0x100
         for opcode in range(0x100):
             if opcode == 0x00:
                 f = self._opcode_0x00 # nop
@@ -225,10 +226,101 @@ class Processor(object):
                 f = self._opcode_0xde # xch a,[hl+0abh]             ;de ab
             elif opcode == 0xfe:
                 f = self._opcode_0xfe # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
+            self._opcode_map[opcode] = f
+
+    def _init_opcode_map_prefix_0x31(self):
+        self._opcode_0x31_map = [self._opcode_not_implemented] * 0x100
+
+        for opcode2 in range(0x100):
+            # bt a.bit,$label32             ;31 0e fd
+            if opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
+                f = self._opcode_0x31_0x0e_to_0x7e_bt
+
+            # bf a.0,$label64             ;31 0f fd
+            elif opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
+                f = self._opcode_0x31_0x0f_to_0x7f_bf
+
+            # bf [hl].0,$label80          ;31 87 fd
+            elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
+                f = self._opcode_0x31_0x87_to_0xf7_bf
+
+            # bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
+            elif opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
+                f = self._opcode_0x31_0x07_to_0x77_bf
+
+            # bf 0fe20h.0,$label48        ;31 03 20 fc    saddr
+            elif opcode2 in (0x03, 0x13, 0x23, 0x33, 0x43, 0x53, 0x63, 0x73):
+                f = self._opcode_0x31_0x03_to_0x73_bf
+
+            # btclr a.bit,$label104         ;31 0d fd
+            elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
+                f = self._opcode_0x31_0x0d_to_0x7d_btclr
+
+            # bt 0fffeh.bit,$label24        ;31 06 fe fc    sfr
+            elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
+                f = self._opcode_0x31_0x06_to_0x76_bt
+
+            # btclr 0fffeh.0,$label96     ;31 05 fe fc    sfr
+            elif opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
+                f = self._opcode_0x31_0x05_to_0x75_btclr
+
+            # btclr [hl].0,$label120      ;31 85 fd
+            elif opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
+                f = self._opcode_0x85_to_0xf5_btclr
+
+            # btclr 0fe20h.0,$label88     ;31 01 20 fc    saddr
+            elif opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
+                f = self._opcode_0x31_0x01_to_0x71_btclr
+
+            # bt [hl].0,$label40          ;31 86 fd
+            elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
+                f = self._opcode_0x31_0x86_to_0xf6_bt
+
+            # and a,[hl+c]                ;31 5a
+            elif opcode2 == 0x5a:
+                f = self._opcode_0x31_0x5a_and
+
+            # and a,[hl+b]                ;31 5b
+            elif opcode2 == 0x5b:
+                f = self._opcode_0x31_0x5b_and
+
+            # or a,[hl+c]                 ;31 6a
+            elif opcode2 == 0x6a:
+                f = self._opcode_0x31_0x6a_or
+
+            # or a,[hl+c]                 ;31 6b
+            elif opcode2 == 0x6b:
+                f = self._opcode_0x31_0x6b_or
+
+            # xor a,[hl+c]                ;31 7a
+            elif opcode2 == 0x7a:
+                f = self._opcode_0x31_0x7a_xor
+
+            # xor a,[hl+b]                ;31 7b
+            elif opcode2 == 0x7b:
+                f = self._opcode_0x31_0x7b_xor
+
+            # mulu x                      ;31 88
+            elif opcode2 == 0x88:
+                f = self._opcode_0x31_0x88_mulu
+
+            # xch a,[hl+c]                ;31 8a
+            elif opcode2 == 0x8a:
+                f = self._opcode_0x31_0x8a_xch
+
+            # xch a,[hl+b]                ;31 8b
+            elif opcode2 == 0x8b:
+                f = self._opcode_0x31_0x8b_xch
+
+            # br ax                       ;31 98
+            elif opcode2 == 0x98:
+                f = self._opcode_0x31_0x98_br
+
             else:
                 f = self._opcode_not_implemented
 
-            self._opcode_map[opcode] = f
+            self._opcode_0x31_map[opcode2] = f
+
 
     # not implemented
     def _opcode_not_implemented(self, opcode):
@@ -535,6 +627,11 @@ class Processor(object):
         value = self._consume_byte()
         self.memory[address] = value
 
+    def _opcode_0x31(self, opcode):
+        opcode2 = self._consume_byte()
+        handler = self._opcode_0x31_map[opcode2]
+        handler(opcode2)
+
     # bt a.bit,$label32             ;31 0e fd
     def _opcode_0x31_0x0e_to_0x7e_bt(self, opcode2):
         bit = _bit(opcode2)
@@ -679,98 +776,6 @@ class Processor(object):
 
     def _opcode_0x31_0x98_br(self, opcode2):
         self.pc = self.read_gp_regpair(RegisterPairs.AX)
-
-
-
-    def _opcode_0x31(self, opcode):
-        opcode2 = self._consume_byte()
-
-        # bt a.bit,$label32             ;31 0e fd
-        if opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
-            self._opcode_0x31_0x0e_to_0x7e_bt(opcode2)
-
-        # bf a.0,$label64             ;31 0f fd
-        elif opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
-            self._opcode_0x31_0x0f_to_0x7f_bf(opcode2)
-
-        # bf [hl].0,$label80          ;31 87 fd
-        elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
-            self._opcode_0x31_0x87_to_0xf7_bf(opcode2)
-
-        # bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
-        elif opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
-            self._opcode_0x31_0x07_to_0x77_bf(opcode2)
-
-        # bf 0fe20h.0,$label48        ;31 03 20 fc    saddr
-        elif opcode2 in (0x03, 0x13, 0x23, 0x33, 0x43, 0x53, 0x63, 0x73):
-            self._opcode_0x31_0x03_to_0x73_bf(opcode2)
-
-        # btclr a.bit,$label104         ;31 0d fd
-        elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
-            self._opcode_0x31_0x0d_to_0x7d_btclr(opcode2)
-
-        # bt 0fffeh.bit,$label24        ;31 06 fe fc    sfr
-        elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
-            self._opcode_0x31_0x06_to_0x76_bt(opcode2)
-
-        # btclr 0fffeh.0,$label96     ;31 05 fe fc    sfr
-        elif opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
-            self._opcode_0x31_0x05_to_0x75_btclr(opcode2)
-
-        # btclr [hl].0,$label120      ;31 85 fd
-        elif opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
-            self._opcode_0x85_to_0xf5_btclr(opcode2)
-
-        # btclr 0fe20h.0,$label88     ;31 01 20 fc    saddr
-        elif opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
-            self._opcode_0x31_0x01_to_0x71_btclr(opcode2)
-
-        # bt [hl].0,$label40          ;31 86 fd
-        elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
-            self._opcode_0x31_0x86_to_0xf6_bt(opcode2)
-
-        # and a,[hl+c]                ;31 5a
-        elif opcode2 == 0x5a:
-            self._opcode_0x31_0x5a_and(opcode2)
-
-        # and a,[hl+b]                ;31 5b
-        elif opcode2 == 0x5b:
-            self._opcode_0x31_0x5b_and(opcode2)
-
-        # or a,[hl+c]                 ;31 6a
-        elif opcode2 == 0x6a:
-            self._opcode_0x31_0x6a_or(opcode2)
-
-        # or a,[hl+c]                 ;31 6b
-        elif opcode2 == 0x6b:
-            self._opcode_0x31_0x6b_or(opcode2)
-
-        # xor a,[hl+c]                ;31 7a
-        elif opcode2 == 0x7a:
-            self._opcode_0x31_0x7a_xor(opcode2)
-
-        # xor a,[hl+b]                ;31 7b
-        elif opcode2 == 0x7b:
-            self._opcode_0x31_0x7b_xor(opcode2)
-
-        # mulu x                      ;31 88
-        elif opcode2 == 0x88:
-            self._opcode_0x31_0x88_mulu(opcode2)
-
-        # xch a,[hl+c]                ;31 8a
-        elif opcode2 == 0x8a:
-            self._opcode_0x31_0x8a_xch(opcode2)
-
-        # xch a,[hl+b]                ;31 8b
-        elif opcode2 == 0x8b:
-            self._opcode_0x31_0x8b_xch(opcode2)
-
-        # br ax                       ;31 98
-        elif opcode2 == 0x98:
-            self._opcode_0x31_0x98_br(opcode2)
-
-        else:
-            raise NotImplementedError
 
     def _opcode_0x61(self, opcode):
         opcode2 = self._consume_byte()
