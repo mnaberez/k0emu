@@ -9,6 +9,7 @@ class Processor(object):
         self.memory = bytearray(0x10000)
         self._init_opcode_map_unprefixed()
         self._init_opcode_map_prefix_0x31()
+        self._init_opcode_map_prefix_0x61()
         self.reset()
 
     def reset(self):
@@ -27,6 +28,7 @@ class Processor(object):
 
     def _init_opcode_map_unprefixed(self):
         self._opcode_map = [self._opcode_not_implemented] * 0x100
+
         for opcode in range(0x100):
             if opcode == 0x00:
                 f = self._opcode_0x00 # nop
@@ -323,10 +325,84 @@ class Processor(object):
 
             self._opcode_0x31_map[opcode2] = f
 
+    def _init_opcode_map_prefix_0x61(self):
+        self._opcode_0x61_map = [self._opcode_not_implemented] * 0x100
+
+        for opcode2 in range(0x100):
+            # sel rbn
+            if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
+                f = self._opcode_0x61_0x0d_to_0xf8_sel_rb
+
+            # or a,reg (except: or a,reg=a)
+            elif opcode2 in (0x68, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f):
+                f = self._opcode_0x61_0x68_to_0x6f_or
+
+            # or reg,a
+            elif opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
+                f = self._opcode_0x61_to_0x67_or
+
+            # and a,reg (except: and a,reg=a)
+            elif opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
+                f = self._opcode_0x61_0x58_to_0x5f_and
+
+            # and reg,a
+            elif opcode2 in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
+                f = self._opcode_0x61_0x50_to_0x57_and
+
+            # xor a,reg (except: xor a,reg=a)
+            elif opcode2 in (0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f):
+                f = self._opcode_0x61_0x78_to_0x7f_xor
+
+            # xor reg,a
+            elif opcode2 in (0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
+                f = self._opcode_0x61_0x70_to_0x77_xor
+
+            # set1 a.bit
+            elif opcode2 in (0x8a, 0x9a, 0xaa, 0xba, 0xca, 0xda, 0xea, 0xfa):
+                f = self._opcode_0x61_0x8a_to_0xfa_set1
+
+            # clr1 a.bit
+            elif opcode2 in (0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0xdb, 0xeb, 0xfb):
+                f = self._opcode_0x61_0x8b_to_0xfb_clr1
+
+            # mov1 cy,a.bit
+            elif opcode2 in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
+                f = self._opcode_0x61_0x8c_to_0xfc_mov1
+
+            # mov1 a.bit,cy                 ;61 89
+            elif opcode2 in (0x89, 0x99, 0xa9, 0xb9, 0xc9, 0xd9, 0xe9, 0xf9):
+                f = self._opcode_0x61_0x89_to_0xf9_mov1
+
+            # and1 cy,a.0                 ;61 8d
+            elif opcode2 in (0x8d, 0x9d, 0xad, 0xbd, 0xcd, 0xdd, 0xed, 0xfd):
+                f = self._opcode_0x61_0x8d_to_0xfd_and1
+
+            # or1 cy,a.0                  ;61 8e
+            elif opcode2 in (0x8e, 0x9e, 0xae, 0xbe, 0xce, 0xde, 0xee, 0xfe):
+                f = self._opcode_0x61_0x8e_to_0xfe_or1
+
+            # xor1 cy,a.0                 ;61 8f
+            elif opcode2 in (0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0xff):
+                f = self._opcode_0x61_0x8f_to_0xff_xor1
+
+            else:
+                f = self._opcode_not_implemented
+
+            self._opcode_0x61_map[opcode2] = f
 
     # not implemented
     def _opcode_not_implemented(self, opcode):
         raise NotImplementedError()
+
+    def _opcode_0x31(self, opcode):
+        opcode2 = self._consume_byte()
+        handler = self._opcode_0x31_map[opcode2]
+        handler(opcode2)
+
+    def _opcode_0x61(self, opcode):
+        opcode2 = self._consume_byte()
+        handler = self._opcode_0x61_map[opcode2]
+        handler(opcode2)
 
     # nop
     def _opcode_0x00(self, opcode):
@@ -629,11 +705,6 @@ class Processor(object):
         value = self._consume_byte()
         self.memory[address] = value
 
-    def _opcode_0x31(self, opcode):
-        opcode2 = self._consume_byte()
-        handler = self._opcode_0x31_map[opcode2]
-        handler(opcode2)
-
     # bt a.bit,$label32             ;31 0e fd
     def _opcode_0x31_0x0e_to_0x7e_bt(self, opcode2):
         bit = _bit(opcode2)
@@ -874,67 +945,6 @@ class Processor(object):
 
 
 
-    def _opcode_0x61(self, opcode):
-        opcode2 = self._consume_byte()
-
-        # sel rbn
-        if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
-            self._opcode_0x61_0x0d_to_0xf8_sel_rb(opcode2)
-
-        # or a,reg (except: or a,reg=a)
-        elif opcode2 in (0x68, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f):
-            self._opcode_0x61_0x68_to_0x6f_or(opcode2)
-
-        # or reg,a
-        elif opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
-            self._opcode_0x61_to_0x67_or(opcode2)
-
-        # and a,reg (except: and a,reg=a)
-        elif opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
-            self._opcode_0x61_0x58_to_0x5f_and(opcode2)
-
-        # and reg,a
-        elif opcode2 in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
-            self._opcode_0x61_0x50_to_0x57_and(opcode2)
-
-        # xor a,reg (except: xor a,reg=a)
-        elif opcode2 in (0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f):
-            self._opcode_0x61_0x78_to_0x7f_xor(opcode2)
-
-        # xor reg,a
-        elif opcode2 in (0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
-            self._opcode_0x61_0x70_to_0x77_xor(opcode2)
-
-        # set1 a.bit
-        elif opcode2 in (0x8a, 0x9a, 0xaa, 0xba, 0xca, 0xda, 0xea, 0xfa):
-            self._opcode_0x61_0x8a_to_0xfa_set1(opcode2)
-
-        # clr1 a.bit
-        elif opcode2 in (0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0xdb, 0xeb, 0xfb):
-            self._opcode_0x61_0x8b_to_0xfb_clr1(opcode2)
-
-        # mov1 cy,a.bit
-        elif opcode2 in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
-            self._opcode_0x61_0x8c_to_0xfc_mov1(opcode2)
-
-        # mov1 a.bit,cy                 ;61 89
-        elif opcode2 in (0x89, 0x99, 0xa9, 0xb9, 0xc9, 0xd9, 0xe9, 0xf9):
-            self._opcode_0x61_0x89_to_0xf9_mov1(opcode2)
-
-        # and1 cy,a.0                 ;61 8d
-        elif opcode2 in (0x8d, 0x9d, 0xad, 0xbd, 0xcd, 0xdd, 0xed, 0xfd):
-            self._opcode_0x61_0x8d_to_0xfd_and1(opcode2)
-
-        # or1 cy,a.0                  ;61 8e
-        elif opcode2 in (0x8e, 0x9e, 0xae, 0xbe, 0xce, 0xde, 0xee, 0xfe):
-            self._opcode_0x61_0x8e_to_0xfe_or1(opcode2)
-
-        # xor1 cy,a.0                 ;61 8f
-        elif opcode2 in (0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0xff):
-            self._opcode_0x61_0x8f_to_0xff_xor1(opcode2)
-
-        else:
-            raise NotImplementedError()
 
     def _opcode_0x71(self, opcode):
         opcode2 = self._consume_byte()
