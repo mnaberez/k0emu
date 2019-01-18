@@ -714,3 +714,12 @@ label31:
     xor1 cy,a.5                 ;61 df
     xor1 cy,a.6                 ;61 ef
     xor1 cy,a.7                 ;61 ff
+
+    xor1 cy,0fffeh.0            ;71 0f fe       sfr
+    xor1 cy,0fffeh.1            ;71 1f fe       sfr
+    xor1 cy,0fffeh.2            ;71 2f fe       sfr
+    xor1 cy,0fffeh.3            ;71 3f fe       sfr
+    xor1 cy,0fffeh.4            ;71 4f fe       sfr
+    xor1 cy,0fffeh.5            ;71 5f fe       sfr
+    xor1 cy,0fffeh.6            ;71 6f fe       sfr
+    xor1 cy,0fffeh.7            ;71 7f fe       sfr

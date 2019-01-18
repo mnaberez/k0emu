@@ -925,7 +925,7 @@ class Processor(object):
             result = self._operation_and1(src, bit, dest, 0)
             self.write_psw(result)
 
-        # and1 cy,0fffeh.0            ;71 0d fe       sfr
+        # and1 cy,0fe20h.0            ;71 05 20       saddr
         elif opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
             bit = _bit(opcode2)
             address = self._consume_saddr()
@@ -965,6 +965,15 @@ class Processor(object):
         elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
             bit = _bit(opcode2)
             address = self.read_gp_regpair(RegisterPairs.HL)
+            src = self.memory[address]
+            dest = self.read_psw()
+            result = self._operation_xor1(src, bit, dest, 0)
+            self.write_psw(result)
+
+        # xor1 cy,0fffeh.0            ;71 0f fe       sfr
+        elif opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
+            bit = _bit(opcode2)
+            address = self._consume_sfr()
             src = self.memory[address]
             dest = self.read_psw()
             result = self._operation_xor1(src, bit, dest, 0)
