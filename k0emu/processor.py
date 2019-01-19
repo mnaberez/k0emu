@@ -639,10 +639,7 @@ class Processor(object):
     def _opcode_0x11(self, opcode):
         address = self._consume_saddr()
         value = self._consume_byte()
-        if address == 0xff1e: # psw
-            self.write_psw(value) # TODO also write it to memory?
-        else:
-            self.memory[address] = value
+        self.memory[address] = value
 
     # mov 0fffeh, #0abh           ;13 fe ab       sfr
     def _opcode_0x13(self, opcode):
