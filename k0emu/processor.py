@@ -10,6 +10,7 @@ class Processor(object):
         self._init_opcode_map_unprefixed()
         self._init_opcode_map_prefix_0x31()
         self._init_opcode_map_prefix_0x61()
+        self._init_opcode_map_prefix_0x71()
         self.reset()
 
     def reset(self):
@@ -20,14 +21,14 @@ class Processor(object):
 
     def step(self):
         opcode = self._consume_byte()
-        handler = self._opcode_map[opcode]
+        handler = self._opcode_map_unprefixed[opcode]
         handler(opcode)
 
     def __str__(self):
         return RegisterTrace.generate(self)
 
     def _init_opcode_map_unprefixed(self):
-        self._opcode_map = [self._opcode_not_implemented] * 0x100
+        self._opcode_map_unprefixed = {}
 
         for opcode in range(0x100):
             if opcode == 0x00:
@@ -230,10 +231,10 @@ class Processor(object):
                 f = self._opcode_0xfe # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
             else:
                 f = self._opcode_not_implemented
-            self._opcode_map[opcode] = f
+            self._opcode_map_unprefixed[opcode] = f
 
     def _init_opcode_map_prefix_0x31(self):
-        self._opcode_0x31_map = [self._opcode_not_implemented] * 0x100
+        self._opcode_map_prefix_0x31 = {}
 
         for opcode2 in range(0x100):
             # bt a.bit,$label32             ;31 0e fd
@@ -321,12 +322,12 @@ class Processor(object):
                 f = self._opcode_0x31_0x98_br
 
             else:
-                f = self._opcode_not_implemented
+                continue
 
-            self._opcode_0x31_map[opcode2] = f
+            self._opcode_map_prefix_0x31[opcode2] = f
 
     def _init_opcode_map_prefix_0x61(self):
-        self._opcode_0x61_map = [self._opcode_not_implemented] * 0x100
+        self._opcode_map_prefix_0x61 = {}
 
         for opcode2 in range(0x100):
             # sel rbn
@@ -386,9 +387,94 @@ class Processor(object):
                 f = self._opcode_0x61_0x8f_to_0xff_xor1
 
             else:
-                f = self._opcode_not_implemented
+                continue
 
-            self._opcode_0x61_map[opcode2] = f
+            self._opcode_map_prefix_0x61[opcode2] = f
+
+    def _init_opcode_map_prefix_0x71(self):
+        self._opcode_map_prefix_0x71 = {}
+
+        for opcode2 in range(0x100):
+            # set1 sfr.bit
+            if opcode2 in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
+                f = self._opcode_0x71_0x0a_to_0x7a_set1
+
+            # set1 [hl].bit
+            elif opcode2 in (0x82, 0x92, 0xa2, 0xb2, 0xc2, 0xd2, 0xe2, 0xf2):
+                f = self._opcode_0x71_0x82_to_0xf2_set1
+
+            # clr1 sfr.bit
+            elif opcode2 in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
+                f = self._opcode_0x71_0x0b_to_0x7b_clr1
+
+            # clr1 [hl].bit
+            elif opcode2 in (0x83, 0x93, 0xa3, 0xb3, 0xc3, 0xd3, 0xe3, 0xf3):
+                f = self._opcode2_0x71_0x83_to_0xf3_clr1
+
+            # mov1 cy,0fffeh.bit            ;71 0c fe       sfr
+            elif opcode2 in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
+                f = self._opcode_0x71_0x0c_to_0x7c_mov1
+
+            # mov1 0fffeh.bit,cy            ;71 09 fe       sfr
+            elif opcode2 in (0x09, 0x19, 0x29, 0x39, 0x49, 0x59, 0x69, 0x79):
+                f = self._opcode_0x71_0x09_to_0x79_mov1
+
+            # mov1 0fe20h.bit,cy            ;71 01 20       saddr
+            elif opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
+                f = self._opcode_0x71_0x01_to_0x71_mov1
+
+            # mov1 cy,0fe20h.bit            ;71 04 20       saddr
+            elif opcode2 in (0x04, 0x14, 0x24, 0x34, 0x44, 0x54, 0x64, 0x74):
+                f = self._opcode_0x71_0x04_to_0x74_mov1
+
+            # mov1 cy,[hl].bit              ;71 84
+            elif opcode2 in (0x84, 0x94, 0xa4, 0xb4, 0xc4, 0xd4, 0xe4, 0xf4):
+                f = self._opcode_0x71_0x84_to_0xf4_mov1
+
+            # mov1 [hl].bit,cy              ;71 81
+            elif opcode2 in (0x81, 0x91, 0xa1, 0xb1, 0xc1, 0xd1, 0xe1, 0xf1):
+                f = self._opcode_0x71_0x81_to_0xf1_mov1
+
+            # and1 cy,[hl].0              ;71 85
+            elif opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
+                f = self._opcode_0x71_0x85_to_0xf5_and1
+
+            # and1 cy,0fffeh.0            ;71 0d fe       sfr
+            elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
+                f = self._opcode_0x71_0x0d_to_0x7d_and1
+
+            # and1 cy,0fe20h.0            ;71 05 20       saddr
+            elif opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
+                f = self._opcode_0x71_0x05_to_0x75_and1
+
+            # or1 cy,0fffeh.0             ;71 0e fe       sfr
+            elif opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
+                f = self._opcode_0x71_0x0e_to_0x7e_or1
+
+            # or1 cy,[hl].0               ;71 86
+            elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
+                f = self._opcode_0x71_0x86_to_0xf6_or1
+
+            # or1 cy,0fe20h.0             ;71 06 20       saddr
+            elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
+                f = self._opcode_0x71_0x06_to_0x76_or1
+
+            # xor1 cy,[hl].0              ;71 87
+            elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
+                f = self._opcode_0x71_0x87_to_0xf7_xor1
+
+            # xor1 cy,0fffeh.0            ;71 0f fe       sfr
+            elif opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
+                f = self._opcode_0x71_0x0f_to_0x7f
+
+            # xor1 cy,0fe20h.0            ;71 07 20       saddr
+            elif opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
+                f = self._opcode_0x71_0x07_to_0x77_xor1
+
+            else:
+                continue
+
+            self._opcode_map_prefix_0x71[opcode2] = f
 
     # not implemented
     def _opcode_not_implemented(self, opcode):
@@ -396,12 +482,17 @@ class Processor(object):
 
     def _opcode_0x31(self, opcode):
         opcode2 = self._consume_byte()
-        handler = self._opcode_0x31_map[opcode2]
+        handler = self._opcode_map_prefix_0x31[opcode2]
         handler(opcode2)
 
     def _opcode_0x61(self, opcode):
         opcode2 = self._consume_byte()
-        handler = self._opcode_0x61_map[opcode2]
+        handler = self._opcode_map_prefix_0x61[opcode2]
+        handler(opcode2)
+
+    def _opcode_0x71(self, opcode):
+        opcode2 = self._consume_byte()
+        handler = self._opcode_map_prefix_0x71[opcode2]
         handler(opcode2)
 
     # nop
@@ -1090,88 +1181,6 @@ class Processor(object):
         dest = self.read_psw()
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
-
-    def _opcode_0x71(self, opcode):
-        opcode2 = self._consume_byte()
-
-        # set1 sfr.bit
-        if opcode2 in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
-            self._opcode_0x71_0x0a_to_0x7a_set1(opcode2)
-
-        # set1 [hl].bit
-        elif opcode2 in (0x82, 0x92, 0xa2, 0xb2, 0xc2, 0xd2, 0xe2, 0xf2):
-            self._opcode_0x71_0x82_to_0xf2_set1(opcode2)
-
-        # clr1 sfr.bit
-        elif opcode2 in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
-            self._opcode_0x71_0x0b_to_0x7b_clr1(opcode2)
-
-        # clr1 [hl].bit
-        elif opcode2 in (0x83, 0x93, 0xa3, 0xb3, 0xc3, 0xd3, 0xe3, 0xf3):
-            self._opcode2_0x71_0x83_to_0xf3_clr1(opcode2)
-
-        # mov1 cy,0fffeh.bit            ;71 0c fe       sfr
-        elif opcode2 in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
-            self._opcode_0x71_0x0c_to_0x7c_mov1(opcode2)
-
-        # mov1 0fffeh.bit,cy            ;71 09 fe       sfr
-        elif opcode2 in (0x09, 0x19, 0x29, 0x39, 0x49, 0x59, 0x69, 0x79):
-            self._opcode_0x71_0x09_to_0x79_mov1(opcode2)
-
-        # mov1 0fe20h.bit,cy            ;71 01 20       saddr
-        elif opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
-            self._opcode_0x71_0x01_to_0x71_mov1(opcode2)
-
-        # mov1 cy,0fe20h.bit            ;71 04 20       saddr
-        elif opcode2 in (0x04, 0x14, 0x24, 0x34, 0x44, 0x54, 0x64, 0x74):
-            self._opcode_0x71_0x04_to_0x74_mov1(opcode2)
-
-        # mov1 cy,[hl].bit              ;71 84
-        elif opcode2 in (0x84, 0x94, 0xa4, 0xb4, 0xc4, 0xd4, 0xe4, 0xf4):
-            self._opcode_0x71_0x84_to_0xf4_mov1(opcode2)
-
-        # mov1 [hl].bit,cy              ;71 81
-        elif opcode2 in (0x81, 0x91, 0xa1, 0xb1, 0xc1, 0xd1, 0xe1, 0xf1):
-            self._opcode_0x71_0x81_to_0xf1_mov1(opcode2)
-
-        # and1 cy,[hl].0              ;71 85
-        elif opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
-            self._opcode_0x71_0x85_to_0xf5_and1(opcode2)
-
-        # and1 cy,0fffeh.0            ;71 0d fe       sfr
-        elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
-            self._opcode_0x71_0x0d_to_0x7d_and1(opcode2)
-
-        # and1 cy,0fe20h.0            ;71 05 20       saddr
-        elif opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
-            self._opcode_0x71_0x05_to_0x75_and1(opcode2)
-
-        # or1 cy,0fffeh.0             ;71 0e fe       sfr
-        elif opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
-            self._opcode_0x71_0x0e_to_0x7e_or1(opcode2)
-
-        # or1 cy,[hl].0               ;71 86
-        elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
-            self._opcode_0x71_0x86_to_0xf6_or1(opcode2)
-
-        # or1 cy,0fe20h.0             ;71 06 20       saddr
-        elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
-            self._opcode_0x71_0x06_to_0x76_or1(opcode2)
-
-        # xor1 cy,[hl].0              ;71 87
-        elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
-            self._opcode_0x71_0x87_to_0xf7_xor1(opcode2)
-
-        # xor1 cy,0fffeh.0            ;71 0f fe       sfr
-        elif opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
-            self._opcode_0x71_0x0f_to_0x7f(opcode2)
-
-        # xor1 cy,0fe20h.0            ;71 07 20       saddr
-        elif opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
-            self._opcode_0x71_0x07_to_0x77_xor1(opcode2)
-
-        else:
-            raise NotImplementedError()
 
     # or a,[hl+0abh]              ;69 ab
     def _opcode_0x69(self, opcode):
