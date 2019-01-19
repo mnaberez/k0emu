@@ -237,25 +237,101 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.memory[0xfffe], 0x55)
         self.assertEqual(proc.pc, len(code))
 
-    # mov r,#byte
+    # mov x,#0abh                 ;a0 ab
     def test_a0_mov_x_imm_byte(self):
         proc = Processor()
-        code = [0xA0, 0x42] # mov x, #42
+        code = [0xA0, 0x42] # mov x, #42h
         proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.X, 0)
+        proc.write_psw(0xAA)
         proc.step()
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x42)
         self.assertEqual(proc.pc, len(code))
-        # TODO FLAGS
+        self.assertEqual(proc.read_psw(), 0xAA) # unchanged
 
-    # mov r,#byte
+    # mov a,#0abh                 ;a1 ab
+    def test_a1_mov_a_imm_byte(self):
+        proc = Processor()
+        code = [0xA1, 0x42] # mov a, #42h
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.X, 0)
+        proc.write_psw(0xAA)
+        proc.step()
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0xAA) # unchanged
+
+    # mov c,#0abh                 ;a2 ab
+    def test_a2_mov_c_imm_byte(self):
+        proc = Processor()
+        code = [0xA2, 0x42] # mov c, #42h
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.C, 0)
+        proc.write_psw(0xAA)
+        proc.step()
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0x42)
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0xAA) # unchanged
+
+    # mov b,#0abh                 ;a3 ab
+    def test_a3_mov_c_imm_byte(self):
+        proc = Processor()
+        code = [0xA3, 0x42] # mov b, #42h
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.B, 0)
+        proc.write_psw(0xAA)
+        proc.step()
+        self.assertEqual(proc.read_gp_reg(Registers.B), 0x42)
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0xAA) # unchanged
+
+    # mov e,#0abh                 ;a4 ab
+    def test_a4_mov_e_imm_byte(self):
+        proc = Processor()
+        code = [0xA4, 0x42] # mov b, #42h
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.E, 0)
+        proc.write_psw(0xAA)
+        proc.step()
+        self.assertEqual(proc.read_gp_reg(Registers.E), 0x42)
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0xAA) # unchanged
+
+    # mov d,#0abh                 ;a5 ab
+    def test_a5_mov_d_imm_byte(self):
+        proc = Processor()
+        code = [0xA5, 0x42] # mov d, #42h
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.D, 0)
+        proc.write_psw(0xAA)
+        proc.step()
+        self.assertEqual(proc.read_gp_reg(Registers.D), 0x42)
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0xAA) # unchanged
+
+    # mov l,#0abh                 ;a6 ab
+    def test_a6_mov_l_imm_byte(self):
+        proc = Processor()
+        code = [0xA6, 0x42] # mov l, #42h
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.L, 0)
+        proc.write_psw(0xAA)
+        proc.step()
+        self.assertEqual(proc.read_gp_reg(Registers.L), 0x42)
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_psw(), 0xAA) # unchanged
+
+    # mov h,#0abh                 ;a7 ab
     def test_a7_mov_l_imm_byte(self):
         proc = Processor()
-        code = [0xA7, 0x42] # mov h, #42
+        code = [0xA7, 0x42] # mov h, #42h
         proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.L, 0)
+        proc.write_psw(0x55)
         proc.step()
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
         self.assertEqual(proc.pc, len(code))
-        # TODO FLAGS
+        self.assertEqual(proc.read_psw(), 0x55) # unchanged
 
     # br !0abcdh                  ;9b cd ab
     def test_9b_br_addr16(self):
