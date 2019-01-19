@@ -29,7 +29,7 @@ class Processor(object):
 
     def _init_opcode_map_unprefixed(self):
         D = {
-            0x00: self._opcode_0x00, # nop,
+            0x00: self._opcode_0x00, # nop
             0x01: self._opcode_0x01, # not1 cy
             0x02: self._opcode_0x02, # movw ax,!0abceh             ;02 ce ab       addr16p
             0x03: self._opcode_0x03, # movw !0abceh,ax             ;03 ce ab       addr16p
@@ -128,8 +128,10 @@ class Processor(object):
         # bt 0fe20h.bit,$label8         ;8c 20 fd       saddr
         for opcode in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
             D[opcode] = self._opcode_0x8c_to_0xfc_bt
+        # movw ax,#0abcdh             ;10 cd ab
         for opcode in (0x10, 0x12, 0x14, 0x16):
             D[opcode] = self._opcode_0x10_to_0x16_movw
+        # xchw ax,bc                  ;e2
         for opcode in (0xe2, 0xe4, 0xe6):
             D[opcode] = self._opcode_0xe2_to_0xe6_xchw
         # push ax                     ;b1
@@ -205,7 +207,7 @@ class Processor(object):
             D[opcode2] = self._opcode_0x31_0x05_to_0x75_btclr
         # btclr [hl].0,$label120      ;31 85 fd
         for opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
-            D[opcode2] = self._opcode_0x85_to_0xf5_btclr
+            D[opcode2] = self._opcode_0x31_0x85_to_0xf5_btclr
         # btclr 0fe20h.0,$label88     ;31 01 20 fc    saddr
         for opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
             D[opcode2] = self._opcode_0x31_0x01_to_0x71_btclr
@@ -220,13 +222,13 @@ class Processor(object):
 
         # sel rbn
         for opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
-            D[opcode2] = self._opcode_0x61_0x0d_to_0xf8_sel_rb
+            D[opcode2] = self._opcode_0x61_0xd0_to_0xf8_sel_rb
         # or a,reg (except: or a,reg=a)
         for opcode2 in (0x68, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f):
             D[opcode2] = self._opcode_0x61_0x68_to_0x6f_or
         # or reg,a
         for opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
-            D[opcode2] = self._opcode_0x61_to_0x67_or
+            D[opcode2] = self._opcode_0x61_0x61_to_0x67_or
         # and a,reg (except: and a,reg=a)
         for opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
             D[opcode2] = self._opcode_0x61_0x58_to_0x5f_and
@@ -329,16 +331,19 @@ class Processor(object):
     def _opcode_not_implemented(self, opcode):
         raise NotImplementedError()
 
+    # prefix 0x31
     def _opcode_0x31(self, opcode):
         opcode2 = self._consume_byte()
         handler = self._opcode_map_prefix_0x31.get(opcode2, self._opcode_not_implemented)
         handler(opcode2)
 
+    # prefix 0x61
     def _opcode_0x61(self, opcode):
         opcode2 = self._consume_byte()
         handler = self._opcode_map_prefix_0x61.get(opcode2, self._opcode_not_implemented)
         handler(opcode2)
 
+    # prefix 0x71
     def _opcode_0x71(self, opcode):
         opcode2 = self._consume_byte()
         handler = self._opcode_map_prefix_0x71.get(opcode2, self._opcode_not_implemented)
@@ -659,6 +664,7 @@ class Processor(object):
         value = self.read_gp_reg(Registers.A)
         self._operation_bf(value, bit, displacement)
 
+    # bf [hl].0,$label80          ;31 87 fd
     def _opcode_0x31_0x87_to_0xf7_bf(self, opcode2):
         bit = _bit(opcode2)
         displacement = self._consume_byte()
@@ -666,6 +672,7 @@ class Processor(object):
         value = self.memory[address]
         self._operation_bf(value, bit, displacement)
 
+    # bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
     def _opcode_0x31_0x07_to_0x77_bf(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -673,6 +680,7 @@ class Processor(object):
         value = self.memory[address]
         self._operation_bf(value, bit, displacement)
 
+    # bf psw.0,$label72           ;31 03 1e fc
     def _opcode_0x31_0x03_to_0x73_bf(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
@@ -680,6 +688,7 @@ class Processor(object):
         value = self.memory[address]
         self._operation_bf(value, bit, displacement)
 
+    # btclr a.0,$label104         ;31 0d fd
     def _opcode_0x31_0x0d_to_0x7d_btclr(self, opcode2):
         bit = _bit(opcode2)
         displacement = self._consume_byte()
@@ -687,6 +696,7 @@ class Processor(object):
         result = self._operation_btclr(value, bit, displacement)
         self.write_gp_reg(Registers.A, result)
 
+    # bt 0fffeh.0,$label24        ;31 06 fe fc    sfr
     def _opcode_0x31_0x06_to_0x76_bt(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -694,6 +704,7 @@ class Processor(object):
         value = self.memory[address]
         self._operation_bt(value, bit, displacement)
 
+    # btclr [hl].0,$label120      ;31 85 fd
     def _opcode_0x31_0x05_to_0x75_btclr(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -702,7 +713,8 @@ class Processor(object):
         result = self._operation_btclr(value, bit, displacement)
         self.memory[address] = result
 
-    def _opcode_0x85_to_0xf5_btclr(self, opcode2):
+    # btclr [hl].0,$label120      ;31 85 fd
+    def _opcode_0x31_0x85_to_0xf5_btclr(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
         displacement = self._consume_byte()
@@ -710,6 +722,7 @@ class Processor(object):
         result = self._operation_btclr(value, bit, displacement)
         self.memory[address] = result
 
+    # btclr 0fe20h.0,$label88     ;31 01 20 fc    saddr
     def _opcode_0x31_0x01_to_0x71_btclr(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
@@ -718,6 +731,7 @@ class Processor(object):
         result = self._operation_btclr(value, bit, displacement)
         self.memory[address] = result
 
+    # bt [hl].0,$label40          ;31 86 fd
     def _opcode_0x31_0x86_to_0xf6_bt(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
@@ -725,6 +739,7 @@ class Processor(object):
         value = self.memory[address]
         self._operation_bt(value, bit, displacement)
 
+    # and a,[hl+c]                ;31 5a
     def _opcode_0x31_0x5a_and(self, opcode2):
         address = self._based_hl_c()
         b = self.memory[address]
@@ -732,6 +747,7 @@ class Processor(object):
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # and a,[hl+b]                ;31 5b
     def _opcode_0x31_0x5b_and(self, opcode2):
         address = self._based_hl_b()
         b = self.memory[address]
@@ -739,6 +755,7 @@ class Processor(object):
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # or a,[hl+c]                 ;31 6a
     def _opcode_0x31_0x6a_or(self, opcode2):
         address = self._based_hl_c()
         b = self.memory[address]
@@ -746,6 +763,7 @@ class Processor(object):
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # or a,[hl+b]                 ;31 6b
     def _opcode_0x31_0x6b_or(self, opcode2):
         address = self._based_hl_b()
         b = self.memory[address]
@@ -753,6 +771,7 @@ class Processor(object):
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # xor a,[hl+c]                ;31 7a
     def _opcode_0x31_0x7a_xor(self, opcode2):
         address = self._based_hl_c()
         b = self.memory[address]
@@ -760,6 +779,7 @@ class Processor(object):
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # xor a,[hl+b]                ;31 7b
     def _opcode_0x31_0x7b_xor(self, opcode2):
         address = self._based_hl_b()
         b = self.memory[address]
@@ -767,12 +787,14 @@ class Processor(object):
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # mulu x                      ;31 88
     def _opcode_0x31_0x88_mulu(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         x = self.read_gp_reg(Registers.X)
         result = a * x
         self.write_gp_regpair(RegisterPairs.AX, result)
 
+    # xch a,[hl+c]                ;31 8a
     def _opcode_0x31_0x8a_xch(self, opcode2):
         address = self._based_hl_c()
         other_value = self.memory[address]
@@ -780,6 +802,7 @@ class Processor(object):
         self.write_gp_reg(Registers.A, other_value)
         self.memory[address] = a_value
 
+    # xch a,[hl+b]                ;31 8b
     def _opcode_0x31_0x8b_xch(self, opcode2):
         address = self._based_hl_b()
         other_value = self.memory[address]
@@ -787,13 +810,16 @@ class Processor(object):
         self.write_gp_reg(Registers.A, other_value)
         self.memory[address] = a_value
 
+    # br ax                       ;31 98
     def _opcode_0x31_0x98_br(self, opcode2):
         self.pc = self.read_gp_regpair(RegisterPairs.AX)
 
-    def _opcode_0x61_0x0d_to_0xf8_sel_rb(self, opcode2):
+    # sel rb0                     ;61 d0
+    def _opcode_0x61_0xd0_to_0xf8_sel_rb(self, opcode2):
         banks_by_opcode2 = {0xD0: 0, 0xD8: 1, 0xF0: 2, 0xF8: 3}
         self.write_rb(banks_by_opcode2[opcode2])
 
+    # or a,x                      ;61 68
     def _opcode_0x61_0x68_to_0x6f_or(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         reg = _reg(opcode2)
@@ -801,13 +827,15 @@ class Processor(object):
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
 
-    def _opcode_0x61_to_0x67_or(self, opcode2):
+    # or a,a                      ;61 61
+    def _opcode_0x61_0x61_to_0x67_or(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         reg = _reg(opcode2)
         b = self.read_gp_reg(reg)
         result = self._operation_or(a, b)
         self.write_gp_reg(reg, result)
 
+    # and a,x                     ;61 58
     def _opcode_0x61_0x58_to_0x5f_and(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         reg = _reg(opcode2)
@@ -815,6 +843,7 @@ class Processor(object):
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # and x,a                     ;61 50
     def _opcode_0x61_0x50_to_0x57_and(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         reg = _reg(opcode2)
@@ -822,6 +851,7 @@ class Processor(object):
         result = self._operation_and(a, b)
         self.write_gp_reg(reg, result)
 
+    # xor a,x                     ;61 78
     def _opcode_0x61_0x78_to_0x7f_xor(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         reg = _reg(opcode2)
@@ -829,6 +859,7 @@ class Processor(object):
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # xor x,a                     ;61 70
     def _opcode_0x61_0x70_to_0x77_xor(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         reg = _reg(opcode2)
@@ -836,18 +867,21 @@ class Processor(object):
         result = self._operation_xor(a, b)
         self.write_gp_reg(reg, result)
 
+    # set1 a.0                    ;61 8a
     def _opcode_0x61_0x8a_to_0xfa_set1(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         bit = _bit(opcode2)
         result = self._operation_set1(a, bit)
         self.write_gp_reg(Registers.A, result)
 
+    # clr1 a.0                    ;61 8b
     def _opcode_0x61_0x8b_to_0xfb_clr1(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         bit = _bit(opcode2)
         result = self._operation_clr1(a, bit)
         self.write_gp_reg(Registers.A, result)
 
+    # mov1 cy,a.0                 ;61 8c
     def _opcode_0x61_0x8c_to_0xfc_mov1(self, opcode2):
         bit = _bit(opcode2)
         src = self.read_gp_reg(Registers.A)
@@ -855,6 +889,7 @@ class Processor(object):
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # mov1 a.0,cy                 ;61 89
     def _opcode_0x61_0x89_to_0xf9_mov1(self, opcode2):
         bit = _bit(opcode2)
         src = self.read_psw()
@@ -862,6 +897,7 @@ class Processor(object):
         result = self._operation_mov1(src, 0, dest, bit)
         self.write_gp_reg(Registers.A, result)
 
+    # and1 cy,a.0                 ;61 8d
     def _opcode_0x61_0x8d_to_0xfd_and1(self, opcode2):
         bit = _bit(opcode2)
         src = self.read_gp_reg(Registers.A)
@@ -869,6 +905,7 @@ class Processor(object):
         result = self._operation_and1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # or1 cy,a.0                  ;61 8e
     def _opcode_0x61_0x8e_to_0xfe_or1(self, opcode2):
         bit = _bit(opcode2)
         src = self.read_gp_reg(Registers.A)
@@ -876,6 +913,7 @@ class Processor(object):
         result = self._operation_or1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # xor1 cy,a.0                 ;61 8f
     def _opcode_0x61_0x8f_to_0xff_xor1(self, opcode2):
         bit = _bit(opcode2)
         src = self.read_gp_reg(Registers.A)
@@ -883,6 +921,7 @@ class Processor(object):
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # set1 [hl].0                 ;71 82
     def _opcode_0x71_0x82_to_0xf2_set1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
@@ -890,6 +929,7 @@ class Processor(object):
         result = self._operation_set1(value, bit)
         self.memory[address] = result
 
+    # clr1 0fffeh.0               ;71 0b fe       sfr
     def _opcode_0x71_0x0b_to_0x7b_clr1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -897,6 +937,7 @@ class Processor(object):
         result = self._operation_clr1(value, bit)
         self.memory[address] = result
 
+    # set1 0fffeh.0               ;71 0a fe       sfr
     def _opcode_0x71_0x0a_to_0x7a_set1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -904,6 +945,7 @@ class Processor(object):
         result = self._operation_set1(value, bit)
         self.memory[address] = result
 
+    # clr1 [hl].0                 ;71 83
     def _opcode2_0x71_0x83_to_0xf3_clr1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
@@ -911,6 +953,7 @@ class Processor(object):
         result = self._operation_clr1(value, bit)
         self.memory[address] = result
 
+    # mov1 cy,0fffeh.0            ;71 0c fe       sfr
     def _opcode_0x71_0x0c_to_0x7c_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -919,6 +962,7 @@ class Processor(object):
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # mov1 0fffeh.0,cy            ;71 09 fe       sfr
     def _opcode_0x71_0x09_to_0x79_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -927,6 +971,7 @@ class Processor(object):
         result = self._operation_mov1(src, 0, dest, bit)
         self.memory[address] = result
 
+    # mov1 0fe20h.0,cy            ;71 01 20       saddr
     def _opcode_0x71_0x01_to_0x71_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
@@ -935,6 +980,7 @@ class Processor(object):
         result = self._operation_mov1(src, 0, dest, bit)
         self.memory[address] = result
 
+    # mov1 cy,0fe20h.0            ;71 04 20       saddr
     def _opcode_0x71_0x04_to_0x74_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
@@ -943,6 +989,7 @@ class Processor(object):
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # mov1 cy,[hl].0              ;71 84
     def _opcode_0x71_0x84_to_0xf4_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
@@ -951,6 +998,7 @@ class Processor(object):
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # mov1 [hl].0,cy              ;71 81
     def _opcode_0x71_0x81_to_0xf1_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
@@ -959,6 +1007,7 @@ class Processor(object):
         result = self._operation_mov1(src, 0, dest, bit)
         self.memory[address] = result
 
+    # and1 cy,[hl].0              ;71 85
     def _opcode_0x71_0x85_to_0xf5_and1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
@@ -967,6 +1016,7 @@ class Processor(object):
         result = self._operation_and1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # and1 cy,0fffeh.0            ;71 0d fe       sfr
     def _opcode_0x71_0x0d_to_0x7d_and1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -975,6 +1025,7 @@ class Processor(object):
         result = self._operation_and1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # and1 cy,0fe20h.0            ;71 05 20       saddr
     def _opcode_0x71_0x05_to_0x75_and1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
@@ -983,6 +1034,7 @@ class Processor(object):
         result = self._operation_and1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # or1 cy,0fffeh.0             ;71 0e fe       sfr
     def _opcode_0x71_0x0e_to_0x7e_or1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -991,6 +1043,7 @@ class Processor(object):
         result = self._operation_or1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # or1 cy,[hl].0               ;71 86
     def _opcode_0x71_0x86_to_0xf6_or1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
@@ -999,6 +1052,7 @@ class Processor(object):
         result = self._operation_or1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # or1 cy,0fe20h.0             ;71 06 20       saddr
     def _opcode_0x71_0x06_to_0x76_or1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
@@ -1007,6 +1061,7 @@ class Processor(object):
         result = self._operation_or1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # xor1 cy,[hl].0              ;71 87
     def _opcode_0x71_0x87_to_0xf7_xor1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
@@ -1015,6 +1070,7 @@ class Processor(object):
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # xor1 cy,0fffeh.0            ;71 0f fe       sfr
     def _opcode_0x71_0x0f_to_0x7f(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
@@ -1023,6 +1079,7 @@ class Processor(object):
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
 
+    # xor1 cy,0fe20h.0            ;71 07 20       saddr
     def _opcode_0x71_0x07_to_0x77_xor1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
@@ -1471,6 +1528,8 @@ class Processor(object):
         value = self._pop_word()
         self.write_gp_regpair(regpair, value)
 
+    # Operations
+
     def _operation_bt(self, value, bit, displacement):
         bitweight = 2 ** bit
         if value & bitweight:
@@ -1585,6 +1644,8 @@ class Processor(object):
         result = a ^ b
         self._update_psw_z(result)
         return result
+
+    # Addressing Helpers
 
     def _consume_byte(self):
         value = self.memory[self.pc]
