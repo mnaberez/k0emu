@@ -150,17 +150,18 @@ class Processor(object):
         # movw bc..hl,ax                  ;d2..d6
         for opcode in (0xd2, 0xd4, 0xd6):
             D[opcode] = self._opcode_0xd2_to_0xd6_movw
+        # set1 0fe20h.0               ;0a 20          saddr
         for opcode in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
             D[opcode] = self._opcode_0x0a_to_0x7a_set1
+        # clr1 0fe20h.0               ;0b 20          saddr
         for opcode in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
             D[opcode] = self._opcode_0x0b_to_0x7b_clr
         # mov r,#byte                 ;a0..a7 xx
         for opcode in (0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7):
             D[opcode] = self._opcode_0xa0_to_0xa7
-
-        for opcode in range(0xc1, 0x100):
-            if opcode & 0b11000001 == 0b11000001:
-                D[opcode] = self._opcode_0xc1_to_0xff_callt
+        # callt [0040h] ... callt [007eh]
+        for opcode in range(0xc1, 0x100, 2):
+            D[opcode] = self._opcode_0xc1_to_0xff_callt
 
         self._opcode_map_unprefixed = D
 
