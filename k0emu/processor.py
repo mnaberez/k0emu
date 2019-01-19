@@ -21,460 +21,308 @@ class Processor(object):
 
     def step(self):
         opcode = self._consume_byte()
-        handler = self._opcode_map_unprefixed[opcode]
+        handler = self._opcode_map_unprefixed.get(opcode, self._opcode_not_implemented)
         handler(opcode)
 
     def __str__(self):
         return RegisterTrace.generate(self)
 
     def _init_opcode_map_unprefixed(self):
-        self._opcode_map_unprefixed = {}
+        D = {
+            0x00: self._opcode_0x00, # nop,
+            0x01: self._opcode_0x01, # not1 cy
+            0x02: self._opcode_0x02, # movw ax,!0abceh             ;02 ce ab       addr16p
+            0x03: self._opcode_0x03, # movw !0abceh,ax             ;03 ce ab       addr16p
+            0x04: self._opcode_0x04, # dbnz 0fe20h,$label0         ;04 20 fd       saddr
+            0x05: self._opcode_0x05, # xch a,[de]                  ;05
+            0x07: self._opcode_0x07, # xch a,[hl]                  ;07
+            0x11: self._opcode_0x11, # mov 0fe20h,#0abh            ;11 20 ab       saddr
+            0x13: self._opcode_0x13, # mov 0fffeh, #0abh           ;13 fe ab       sfr
+            0x20: self._opcode_0x20, # set1 cy
+            0x21: self._opcode_0x21, # clr1 cy
+            0x22: self._opcode_0x22, # push psw                    ;22
+            0x23: self._opcode_0x23, # pop psw                     ;23
+            0x24: self._opcode_0x24, # ror a,1                     ;24
+            0x25: self._opcode_0x25, # rorc a,1                    ;25
+            0x26: self._opcode_0x26, # rol a,1                     ;26
+            0x27: self._opcode_0x27, # rolc a,1                    ;27
+            0x31: self._opcode_0x31,
+            0x58: self._opcode_0x58, # and a,!0abcdh               ;58 cd ab
+            0x59: self._opcode_0x59, # and a,[hl+0abh]             ;59 ab
+            0x5d: self._opcode_0x5d, # and a,#0abh                 ;5d ab
+            0x5e: self._opcode_0x5e, # and a,0fe20h                ;5e 20          saddr
+            0x5f: self._opcode_0x5f, # and a,[hl]                  ;5f
+            0x61: self._opcode_0x61,
+            0x68: self._opcode_0x68, # or a,!0abcdh                ;68 cd ab
+            0x69: self._opcode_0x69, # or a,[hl+0abh]              ;69 ab
+            0x6d: self._opcode_0x6d, # or a,#0abh                  ;6d ab
+            0x6e: self._opcode_0x6e, # or a,0fe20h                 ;6e 20          saddr
+            0x6f: self._opcode_0x6f, # or a,[hl]                   ;6f
+            0x71: self._opcode_0x71,
+            0x78: self._opcode_0x78, # xor a,!0abcdh               ;78 cd ab
+            0x79: self._opcode_0x79, # xor a,[hl+0abh]             ;79 ab
+            0x7d: self._opcode_0x7d, # xor a,#0abh                 ;7d ab
+            0x7e: self._opcode_0x7e, # xor a,0fe20h                ;7e 20          saddr
+            0x7f: self._opcode_0x7f, # xor a,[hl]                  ;7f
+            0x81: self._opcode_0x81, # inc 0fe20h                  ;81 20          saddr
+            0x83: self._opcode_0x83, # xch a,0fe20h                ;83 20          saddr
+            0x85: self._opcode_0x85, # mov a,[de]                  ;85
+            0x87: self._opcode_0x87, # mov a,[hl]                  ;87
+            0x89: self._opcode_0x89, # movw ax,0fe20h              ;89 20          saddrp
+            0x8a: self._opcode_0x8a, # dbnz c,$label1              ;8a fe
+            0x8b: self._opcode_0x8b, # dbnz c,$label1              ;8a fe
+            0x8d: self._opcode_0x8d, # bc $label3                  ;8d fe
+            0x8e: self._opcode_0x8e, # mov a,!addr16                 ;8e
+            0x8f: self._opcode_0x8f, # reti                        ;8f
+            0x91: self._opcode_0x91, # dec 0fe20h                  ;91 20          saddr
+            0x93: self._opcode_0x93, # xch a,0fffeh                ;93 fe          sfr
+            0x95: self._opcode_0x95, # mov [de],a                  ;95
+            0x97: self._opcode_0x97, # mov [hl],a                  ;97
+            0x99: self._opcode_0x99, # movw 0fe20h,ax              ;99 20          saddrp
+            0x9a: self._opcode_0x9a, # call !0abcdh                ;9a cd ab
+            0x9b: self._opcode_0x9b, # br !0abcdh                  ;9b cd ab
+            0x9d: self._opcode_0x9d, # bnc $label3                 ;8d fe
+            0x9e: self._opcode_0x9e, # mov !addr16,a               ;9e cd ab
+            0xa9: self._opcode_0xa9, # movw ax,0fffeh              ;a9 fe          sfrp
+            0xaa: self._opcode_0xaa, # mov a,[hl+c]                ;aa
+            0xab: self._opcode_0xab, # mov a,[hl+b]                ;ab
+            0xad: self._opcode_0xad, # bz $label5                  ;ad fe
+            0xae: self._opcode_0xae, # mov a,[hl+0abh]             ;ae ab
+            0xaf: self._opcode_0xaf, # ret                         ;af
+            0xb9: self._opcode_0xb9, # movw 0fffeh,ax              ;b9 fe          sfrp
+            0xba: self._opcode_0xba, # mov [hl+c],a                ;ba
+            0xbb: self._opcode_0xbb, # mov [hl+b],a                ;bb
+            0xbd: self._opcode_0xbd, # bnz $label5                 ;bd fe
+            0xbe: self._opcode_0xbe, # mov [hl+0abh],a             ;be ab
+            0xce: self._opcode_0xce, # xch a,!abcd                 ;ce cd ab
+            0xd8: self._opcode_0xd8, # and 0fe20h,#0abh            ;d8 20 ab       saddr
+            0xde: self._opcode_0xde, # xch a,[hl+0abh]             ;de ab
+            0xe8: self._opcode_0xe8, # or 0fe20h,#0abh             ;e8 20 ab
+            0xee: self._opcode_0xee, # movw sp,#0abcdh             ;ee 1c cd ab
+            0xf0: self._opcode_0xf0, # mov a,0fe20h                ;F0 20          saddr
+            0xf2: self._opcode_0xf2, # mov 0fe20h,a                ;f2 20          saddr
+            0xf4: self._opcode_0xf4, # mov a,0fffeh                ;f4 fe          sfr
+            0xf6: self._opcode_0xf6, # mov 0fffeh,a                ;f6 fe          sfr
+            0xf8: self._opcode_0xf8, # xor 0fe20h,#0abh            ;f8 20 ab       saddr
+            0xfa: self._opcode_0xfa, # br $label7                  ;fa fe
+            0xfe: self._opcode_0xfe, # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
+        }
 
-        for opcode in range(0x100):
-            if opcode == 0x00:
-                f = self._opcode_0x00 # nop
-            elif opcode == 0x01:
-                f = self._opcode_0x01 # not1 cy
-            elif opcode == 0x02:
-                f = self._opcode_0x02 # movw ax,!0abceh             ;02 ce ab       addr16p
-            elif opcode == 0x03:
-                f = self._opcode_0x03 # movw !0abceh,ax             ;03 ce ab       addr16p
-            elif opcode == 0x05:
-                f = self._opcode_0x05 # xch a,[de]                  ;05
-            elif opcode == 0x07:
-                f = self._opcode_0x07 # xch a,[hl]                  ;07
-            elif opcode == 0x20:
-                f = self._opcode_0x20 # set1 cy
-            elif opcode == 0x21:
-                f = self._opcode_0x21 # clr1 cy
-            elif opcode == 0x22:
-                f = self._opcode_0x22 # push psw                    ;22
-            elif opcode == 0x23:
-                f = self._opcode_0x23 # pop psw                     ;23
-            elif opcode in (0x30, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37):
-                f = self._opcode_0x30_to_0x37_except_0x31 # xch a,REG                    ;32...37 except 31
-            elif opcode == 0xce:
-                f = self._opcode_0xce # xch a,!abcd                 ;ce cd ab
-            elif opcode == 0x83:
-                f = self._opcode_0x83 # xch a,0fe20h                ;83 20          saddr
-            elif opcode == 0x93:
-                f = self._opcode_0x93 # xch a,0fffeh                ;93 fe          sfr
-            elif opcode == 0x9b:
-                f = self._opcode_0x9b # br !0abcdh                  ;9b cd ab
-            elif opcode & 0b11111000 == 0b10100000:
-                f = self._opcode_0xa0_to_0xa7 # mov r,#byte                 ;a0..a7 xx
-            elif opcode in (0x60, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
-                f = self._opcode_0x60_to_0x67_except_0x61 # mov a,x ... mov a,h           ;60..67 except 61
-            elif opcode in (0x70, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
-                f = self._opcode_0x70_to_0x77_except_0x71 # mov x,a ... mov h,a           ;70..77 except 71
-            elif opcode == 0x8e:
-                f = self._opcode_0x8e # mov a,!addr16                 ;8e
-            elif opcode == 0x9e:
-                f = self._opcode_0x9e # mov !addr16,a               ;9e cd ab
-            elif opcode == 0xf0:
-                f = self._opcode_0xf0 # mov a,0fe20h                ;F0 20          saddr
-            elif opcode == 0xf2:
-                f = self._opcode_0xf2 # mov 0fe20h,a                ;f2 20          saddr
-            elif opcode == 0xf4:
-                f = self._opcode_0xf4 # mov a,0fffeh                ;f4 fe          sfr
-            elif opcode == 0xf6:
-                f = self._opcode_0xf6 # mov 0fffeh,a                ;f6 fe          sfr
-            elif opcode == 0x11:
-                f = self._opcode_0x11 # mov 0fe20h,#0abh            ;11 20 ab       saddr
-            elif opcode == 0x13:
-                f = self._opcode_0x13 # mov 0fffeh, #0abh           ;13 fe ab       sfr
-            elif opcode == 0x31:
-                f = self._opcode_0x31
-            elif opcode == 0x61:
-                f = self._opcode_0x61
-            elif opcode == 0x71:
-                f = self._opcode_0x71
-            elif opcode == 0x6d:
-                f = self._opcode_0x6d # or a,#0abh                  ;6d ab
-            elif opcode == 0x69:
-                f = self._opcode_0x69 # or a,[hl+0abh]              ;69 ab
-            elif opcode == 0x6e:
-                f = self._opcode_0x6e # or a,0fe20h                 ;6e 20          saddr
-            elif opcode == 0x6f:
-                f = self._opcode_0x6f # or a,[hl]                   ;6f
-            elif opcode == 0xe8:
-                f = self._opcode_0xe8 # or 0fe20h,#0abh             ;e8 20 ab
-            elif opcode == 0x68:
-                f = self._opcode_0x68 # or a,!0abcdh                ;68 cd ab
-            elif opcode == 0x59:
-                f = self._opcode_0x59 # and a,[hl+0abh]             ;59 ab
-            elif opcode == 0x5d:
-                f = self._opcode_0x5d # and a,#0abh                 ;5d ab
-            elif opcode == 0x5e:
-                f = self._opcode_0x5e # and a,0fe20h                ;5e 20          saddr
-            elif opcode == 0x5f:
-                f = self._opcode_0x5f # and a,[hl]                  ;5f
-            elif opcode == 0x58:
-                f = self._opcode_0x58 # and a,!0abcdh               ;58 cd ab
-            elif opcode == 0xd8:
-                f = self._opcode_0xd8 # and 0fe20h,#0abh            ;d8 20 ab       saddr
-            elif opcode == 0x9a:
-                f = self._opcode_0x9a # call !0abcdh                ;9a cd ab
-            elif opcode == 0xaf:
-                f = self._opcode_0xaf # ret                         ;af
-            elif opcode == 0x8f:
-                f = self._opcode_0x8f # reti                        ;8f
-            elif opcode == 0x7d:
-                f = self._opcode_0x7d # xor a,#0abh                 ;7d ab
-            elif opcode == 0x7e:
-                f = self._opcode_0x7e # xor a,0fe20h                ;7e 20          saddr
-            elif opcode == 0x7f:
-                f = self._opcode_0x7f # xor a,[hl]                  ;7f
-            elif opcode == 0x78:
-                f = self._opcode_0x78 # xor a,!0abcdh               ;78 cd ab
-            elif opcode == 0x79:
-                f = self._opcode_0x79 # xor a,[hl+0abh]             ;79 ab
-            elif opcode == 0xf8:
-                f = self._opcode_0xf8 # xor 0fe20h,#0abh            ;f8 20 ab       saddr
-            elif opcode in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
-                # SET1 0fe20h.7               ;7A 20          saddr
-                # SET1 PSW.7                  ;7A 1E
-                # EI                          ;7A 1E          alias for SET1 PSW.7
-                f = self._opcode_0x0a_to_0x7a_set1
-            elif opcode in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
-                # clr1 0fe20h.0               ;0b 20          saddr
-                # clr1 psw.0                  ;0b 1e
-                # di                          ;7b 1e          alias for clr1 psw.7
-                f = self._opcode_0x0b_to_0x7b_clr
-            elif opcode == 0xfa:
-                f = self._opcode_0xfa # br $label7                  ;fa fe
-            elif opcode == 0x8d:
-                f = self._opcode_0x8d # bc $label3                  ;8d fe
-            elif opcode == 0x9d:
-                f = self._opcode_0x9d # bnc $label3                 ;8d fe
-            elif opcode == 0xad:
-                f = self._opcode_0xad # bz $label5                  ;ad fe
-            elif opcode == 0xbd:
-                f = self._opcode_0xbd # bnz $label5                 ;bd fe
-            elif opcode == 0xee:
-                f = self._opcode_0xee # movw sp,#0abcdh             ;ee 1c cd ab
-            elif opcode in (0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47):
-                f = self._opcode_0x40_to_0x47_inc # inc x ;40 .. inc h ;47
-            elif opcode in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
-                f = self._opcode_0x50_to_0x57_dec # dec x ;50 .. dec h ;57
-            elif opcode == 0x81:
-                f = self._opcode_0x81  # inc 0fe20h                  ;81 20          saddr
-            elif opcode == 0x91:
-                f = self._opcode_0x91  # dec 0fe20h                  ;91 20          saddr
-            elif opcode in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
-                f = self._opcode_0x0c_to_0x7c_callf
-            elif opcode & 0b11000001 == 0b11000001:
-                f = self._opcode_0xc1_to_0xff_callt
-            elif opcode == 0x24:
-                f = self._opcode_0x24  # ror a,1                     ;24
-            elif opcode == 0x25:
-                f = self._opcode_0x25  # rorc a,1                    ;25
-            elif opcode == 0x26:
-                f = self._opcode_0x26  # rol a,1                     ;26
-            elif opcode == 0x27:
-                f = self._opcode_0x27  # rolc a,1                    ;27
-            elif opcode == 0x8a:
-                f = self._opcode_0x8a  # dbnz c,$label1              ;8a fe
-            elif opcode == 0x8b:
-                f = self._opcode_0x8b  # dbnz c,$label1              ;8a fe
-            elif opcode == 0x04:
-                f = self._opcode_0x04  # dbnz 0fe20h,$label0         ;04 20 fd       saddr
-            elif opcode in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
-                f = self._opcode_0x8c_to_0xfc_bt # bt 0fe20h.bit,$label8         ;8c 20 fd       saddr
-            elif opcode in (0x10, 0x12, 0x14, 0x16):
-                f = self._opcode_0x10_to_0x16_movw
-            elif opcode in (0xe2, 0xe4, 0xe6):
-                f = self._opcode_0xe2_to_0xe6_xchw
-            elif opcode == 0x85:
-                f = self._opcode_0x85 # mov a,[de]                  ;85
-            elif opcode == 0x95:
-                f = self._opcode_0x95 # mov [de],a                  ;95
-            elif opcode == 0x87:
-                f = self._opcode_0x87 # mov a,[hl]                  ;87
-            elif opcode == 0x97:
-                f = self._opcode_0x97 # mov [hl],a                  ;97
-            elif opcode in (0xb1, 0xb3, 0xb5, 0xb7):
-                f = self._opcode_0xb1_to_0xb7_push_rp # push ax                     ;b1
-            elif opcode in (0xb0, 0xb2, 0xb4, 0xb6):
-                f = self._opcode_0xb0_to_0xb6_pop_rp # pop ax                      ;b0
-            elif opcode in (0x80, 0x82, 0x84, 0x86):
-                f = self._opcode_0x80_to_0x86_incw # incw ax                     ;80
-            elif opcode in (0x90, 0x92, 0x94, 0x96):
-                f = self._opcode_0x90_to_0x96_decw # decw ax                     ;90
-            elif opcode == 0x89:
-                f = self._opcode_0x89 # movw ax,0fe20h              ;89 20          saddrp
-            elif opcode == 0x99:
-                f = self._opcode_0x99 # movw 0fe20h,ax              ;99 20          saddrp
-            elif opcode == 0xb9:
-                f = self._opcode_0xb9 # movw 0fffeh,ax              ;b9 fe          sfrp
-            elif opcode == 0xa9:
-                f = self._opcode_0xa9 # movw ax,0fffeh              ;a9 fe          sfrp
-            elif opcode == 0xaa:
-                f = self._opcode_0xaa # mov a,[hl+c]                ;aa
-            elif opcode == 0xab:
-                f = self._opcode_0xab # mov a,[hl+b]                ;ab
-            elif opcode == 0xae:
-                f = self._opcode_0xae # mov a,[hl+0abh]             ;ae ab
-            elif opcode == 0xbe:
-                f = self._opcode_0xbe # mov [hl+0abh],a             ;be ab
-            elif opcode == 0xba:
-                f = self._opcode_0xba # mov [hl+c],a                ;ba
-            elif opcode == 0xbb:
-                f = self._opcode_0xbb # mov [hl+b],a                ;bb
-            elif opcode in (0xc2, 0xc4, 0xc6):
-                f = self._opcode_0xc2_to_0xc6_movw # movw ax,bc..hl                  ;c2..c6
-            elif opcode in (0xd2, 0xd4, 0xd6):
-                f = self._opcode_0xd2_to_0xd6_movw # # movw bc..hl,ax                  ;d2..d6
-            elif opcode == 0xde:
-                f = self._opcode_0xde # xch a,[hl+0abh]             ;de ab
-            elif opcode == 0xfe:
-                f = self._opcode_0xfe # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
-            else:
-                f = self._opcode_not_implemented
-            self._opcode_map_unprefixed[opcode] = f
+        # xch a,REG                    ;32...37 except 31
+        for opcode in (0x30, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37):
+            D[opcode] = self._opcode_0x30_to_0x37_except_0x31
+        # mov a,x ... mov a,h           ;60..67 except 61
+        for opcode in (0x60, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
+            D[opcode] = self._opcode_0x60_to_0x67_except_0x61
+        # inc x ;40 .. inc h ;47
+        for opcode in (0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47):
+            D[opcode] = self._opcode_0x40_to_0x47_inc
+        # dec x ;50 .. dec h ;57
+        for opcode in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
+            D[opcode] = self._opcode_0x50_to_0x57_dec
+        # mov x,a ... mov h,a           ;70..77 except 71
+        for opcode in (0x70, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
+            D[opcode] = self._opcode_0x70_to_0x77_except_0x71
+        for opcode in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
+            D[opcode] = self._opcode_0x0c_to_0x7c_callf
+        # bt 0fe20h.bit,$label8         ;8c 20 fd       saddr
+        for opcode in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
+            D[opcode] = self._opcode_0x8c_to_0xfc_bt
+        for opcode in (0x10, 0x12, 0x14, 0x16):
+            D[opcode] = self._opcode_0x10_to_0x16_movw
+        for opcode in (0xe2, 0xe4, 0xe6):
+            D[opcode] = self._opcode_0xe2_to_0xe6_xchw
+        # push ax                     ;b1
+        for opcode in (0xb1, 0xb3, 0xb5, 0xb7):
+            D[opcode] = self._opcode_0xb1_to_0xb7_push_rp
+        # pop ax                      ;b0
+        for opcode in (0xb0, 0xb2, 0xb4, 0xb6):
+            D[opcode] = self._opcode_0xb0_to_0xb6_pop_rp
+        # incw ax                     ;80
+        for opcode in (0x80, 0x82, 0x84, 0x86):
+            D[opcode] = self._opcode_0x80_to_0x86_incw
+        # decw ax                     ;90
+        for opcode in (0x90, 0x92, 0x94, 0x96):
+            D[opcode] = self._opcode_0x90_to_0x96_decw
+        # movw ax,bc..hl                  ;c2..c6
+        for opcode in (0xc2, 0xc4, 0xc6):
+            D[opcode] = self._opcode_0xc2_to_0xc6_movw
+        # movw bc..hl,ax                  ;d2..d6
+        for opcode in (0xd2, 0xd4, 0xd6):
+            D[opcode] = self._opcode_0xd2_to_0xd6_movw
+        for opcode in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
+            D[opcode] = self._opcode_0x0a_to_0x7a_set1
+        for opcode in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
+            D[opcode] = self._opcode_0x0b_to_0x7b_clr
+        # mov r,#byte                 ;a0..a7 xx
+        for opcode in (0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7):
+            D[opcode] = self._opcode_0xa0_to_0xa7
+
+        for opcode in range(0xc1, 0x100):
+            if opcode & 0b11000001 == 0b11000001:
+                D[opcode] = self._opcode_0xc1_to_0xff_callt
+
+        self._opcode_map_unprefixed = D
 
     def _init_opcode_map_prefix_0x31(self):
-        self._opcode_map_prefix_0x31 = {}
+        D = {
+            0x5a: self._opcode_0x31_0x5a_and,   # and a,[hl+c]                ;31 5a
+            0x5b: self._opcode_0x31_0x5b_and,   # and a,[hl+b]                ;31 5b
+            0x6a: self._opcode_0x31_0x6a_or,    # or a,[hl+c]                 ;31 6a
+            0x6b: self._opcode_0x31_0x6b_or,    # or a,[hl+c]                 ;31 6b
+            0x7a: self._opcode_0x31_0x7a_xor,   # xor a,[hl+c]                ;31 7a
+            0x7b: self._opcode_0x31_0x7b_xor,   # xor a,[hl+b]                ;31 7b
+            0x88: self._opcode_0x31_0x88_mulu,  # mulu x                      ;31 88
+            0x8a: self._opcode_0x31_0x8a_xch,   # xch a,[hl+c]                ;31 8a
+            0x8b: self._opcode_0x31_0x8b_xch,   # xch a,[hl+b]                ;31 8b
+            0x98: self._opcode_0x31_0x98_br,    # br ax                       ;31 98
+        }
 
-        for opcode2 in range(0x100):
-            # bt a.bit,$label32             ;31 0e fd
-            if opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
-                f = self._opcode_0x31_0x0e_to_0x7e_bt
+        # bt a.bit,$label32             ;31 0e fd
+        for opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
+            D[opcode2] = self._opcode_0x31_0x0e_to_0x7e_bt
+        # bf a.0,$label64             ;31 0f fd
+        for opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
+            D[opcode2] = self._opcode_0x31_0x0f_to_0x7f_bf
+        # bf [hl].0,$label80          ;31 87 fd
+        for opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
+            D[opcode2] = self._opcode_0x31_0x87_to_0xf7_bf
+        # bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
+        for opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
+            D[opcode2] = self._opcode_0x31_0x07_to_0x77_bf
+        # bf 0fe20h.0,$label48        ;31 03 20 fc    saddr
+        for opcode2 in (0x03, 0x13, 0x23, 0x33, 0x43, 0x53, 0x63, 0x73):
+            D[opcode2] = self._opcode_0x31_0x03_to_0x73_bf
+        # btclr a.bit,$label104         ;31 0d fd
+        for opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
+            D[opcode2] = self._opcode_0x31_0x0d_to_0x7d_btclr
+        # bt 0fffeh.bit,$label24        ;31 06 fe fc    sfr
+        for opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
+            D[opcode2] = self._opcode_0x31_0x06_to_0x76_bt
+        # btclr 0fffeh.0,$label96     ;31 05 fe fc    sfr
+        for opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
+            D[opcode2] = self._opcode_0x31_0x05_to_0x75_btclr
+        # btclr [hl].0,$label120      ;31 85 fd
+        for opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
+            D[opcode2] = self._opcode_0x85_to_0xf5_btclr
+        # btclr 0fe20h.0,$label88     ;31 01 20 fc    saddr
+        for opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
+            D[opcode2] = self._opcode_0x31_0x01_to_0x71_btclr
+        # bt [hl].0,$label40          ;31 86 fd
+        for opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
+            D[opcode2] = self._opcode_0x31_0x86_to_0xf6_bt
 
-            # bf a.0,$label64             ;31 0f fd
-            elif opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
-                f = self._opcode_0x31_0x0f_to_0x7f_bf
-
-            # bf [hl].0,$label80          ;31 87 fd
-            elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
-                f = self._opcode_0x31_0x87_to_0xf7_bf
-
-            # bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
-            elif opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
-                f = self._opcode_0x31_0x07_to_0x77_bf
-
-            # bf 0fe20h.0,$label48        ;31 03 20 fc    saddr
-            elif opcode2 in (0x03, 0x13, 0x23, 0x33, 0x43, 0x53, 0x63, 0x73):
-                f = self._opcode_0x31_0x03_to_0x73_bf
-
-            # btclr a.bit,$label104         ;31 0d fd
-            elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
-                f = self._opcode_0x31_0x0d_to_0x7d_btclr
-
-            # bt 0fffeh.bit,$label24        ;31 06 fe fc    sfr
-            elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
-                f = self._opcode_0x31_0x06_to_0x76_bt
-
-            # btclr 0fffeh.0,$label96     ;31 05 fe fc    sfr
-            elif opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
-                f = self._opcode_0x31_0x05_to_0x75_btclr
-
-            # btclr [hl].0,$label120      ;31 85 fd
-            elif opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
-                f = self._opcode_0x85_to_0xf5_btclr
-
-            # btclr 0fe20h.0,$label88     ;31 01 20 fc    saddr
-            elif opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
-                f = self._opcode_0x31_0x01_to_0x71_btclr
-
-            # bt [hl].0,$label40          ;31 86 fd
-            elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
-                f = self._opcode_0x31_0x86_to_0xf6_bt
-
-            # and a,[hl+c]                ;31 5a
-            elif opcode2 == 0x5a:
-                f = self._opcode_0x31_0x5a_and
-
-            # and a,[hl+b]                ;31 5b
-            elif opcode2 == 0x5b:
-                f = self._opcode_0x31_0x5b_and
-
-            # or a,[hl+c]                 ;31 6a
-            elif opcode2 == 0x6a:
-                f = self._opcode_0x31_0x6a_or
-
-            # or a,[hl+c]                 ;31 6b
-            elif opcode2 == 0x6b:
-                f = self._opcode_0x31_0x6b_or
-
-            # xor a,[hl+c]                ;31 7a
-            elif opcode2 == 0x7a:
-                f = self._opcode_0x31_0x7a_xor
-
-            # xor a,[hl+b]                ;31 7b
-            elif opcode2 == 0x7b:
-                f = self._opcode_0x31_0x7b_xor
-
-            # mulu x                      ;31 88
-            elif opcode2 == 0x88:
-                f = self._opcode_0x31_0x88_mulu
-
-            # xch a,[hl+c]                ;31 8a
-            elif opcode2 == 0x8a:
-                f = self._opcode_0x31_0x8a_xch
-
-            # xch a,[hl+b]                ;31 8b
-            elif opcode2 == 0x8b:
-                f = self._opcode_0x31_0x8b_xch
-
-            # br ax                       ;31 98
-            elif opcode2 == 0x98:
-                f = self._opcode_0x31_0x98_br
-
-            else:
-                continue
-
-            self._opcode_map_prefix_0x31[opcode2] = f
+        self._opcode_map_prefix_0x31 = D
 
     def _init_opcode_map_prefix_0x61(self):
-        self._opcode_map_prefix_0x61 = {}
+        D = {}
 
-        for opcode2 in range(0x100):
-            # sel rbn
-            if opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
-                f = self._opcode_0x61_0x0d_to_0xf8_sel_rb
+        # sel rbn
+        for opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
+            D[opcode2] = self._opcode_0x61_0x0d_to_0xf8_sel_rb
+        # or a,reg (except: or a,reg=a)
+        for opcode2 in (0x68, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f):
+            D[opcode2] = self._opcode_0x61_0x68_to_0x6f_or
+        # or reg,a
+        for opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
+            D[opcode2] = self._opcode_0x61_to_0x67_or
+        # and a,reg (except: and a,reg=a)
+        for opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
+            D[opcode2] = self._opcode_0x61_0x58_to_0x5f_and
+        # and reg,a
+        for opcode2 in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
+            D[opcode2] = self._opcode_0x61_0x50_to_0x57_and
+        # xor a,reg (except: xor a,reg=a)
+        for opcode2 in (0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f):
+            D[opcode2] = self._opcode_0x61_0x78_to_0x7f_xor
+        # xor reg,a
+        for opcode2 in (0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
+            D[opcode2] = self._opcode_0x61_0x70_to_0x77_xor
+        # set1 a.bit
+        for opcode2 in (0x8a, 0x9a, 0xaa, 0xba, 0xca, 0xda, 0xea, 0xfa):
+            D[opcode2] = self._opcode_0x61_0x8a_to_0xfa_set1
+        # clr1 a.bit
+        for opcode2 in (0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0xdb, 0xeb, 0xfb):
+            D[opcode2] = self._opcode_0x61_0x8b_to_0xfb_clr1
+        # mov1 cy,a.bit
+        for opcode2 in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
+            D[opcode2] = self._opcode_0x61_0x8c_to_0xfc_mov1
+        # mov1 a.bit,cy                 ;61 89
+        for opcode2 in (0x89, 0x99, 0xa9, 0xb9, 0xc9, 0xd9, 0xe9, 0xf9):
+            D[opcode2] = self._opcode_0x61_0x89_to_0xf9_mov1
+        # and1 cy,a.0                 ;61 8d
+        for opcode2 in (0x8d, 0x9d, 0xad, 0xbd, 0xcd, 0xdd, 0xed, 0xfd):
+            D[opcode2] = self._opcode_0x61_0x8d_to_0xfd_and1
+        # or1 cy,a.0                  ;61 8e
+        for opcode2 in (0x8e, 0x9e, 0xae, 0xbe, 0xce, 0xde, 0xee, 0xfe):
+            D[opcode2] = self._opcode_0x61_0x8e_to_0xfe_or1
+        # xor1 cy,a.0                 ;61 8f
+        for opcode2 in (0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0xff):
+            D[opcode2] = self._opcode_0x61_0x8f_to_0xff_xor1
 
-            # or a,reg (except: or a,reg=a)
-            elif opcode2 in (0x68, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f):
-                f = self._opcode_0x61_0x68_to_0x6f_or
-
-            # or reg,a
-            elif opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
-                f = self._opcode_0x61_to_0x67_or
-
-            # and a,reg (except: and a,reg=a)
-            elif opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
-                f = self._opcode_0x61_0x58_to_0x5f_and
-
-            # and reg,a
-            elif opcode2 in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
-                f = self._opcode_0x61_0x50_to_0x57_and
-
-            # xor a,reg (except: xor a,reg=a)
-            elif opcode2 in (0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f):
-                f = self._opcode_0x61_0x78_to_0x7f_xor
-
-            # xor reg,a
-            elif opcode2 in (0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77):
-                f = self._opcode_0x61_0x70_to_0x77_xor
-
-            # set1 a.bit
-            elif opcode2 in (0x8a, 0x9a, 0xaa, 0xba, 0xca, 0xda, 0xea, 0xfa):
-                f = self._opcode_0x61_0x8a_to_0xfa_set1
-
-            # clr1 a.bit
-            elif opcode2 in (0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0xdb, 0xeb, 0xfb):
-                f = self._opcode_0x61_0x8b_to_0xfb_clr1
-
-            # mov1 cy,a.bit
-            elif opcode2 in (0x8c, 0x9c, 0xac, 0xbc, 0xcc, 0xdc, 0xec, 0xfc):
-                f = self._opcode_0x61_0x8c_to_0xfc_mov1
-
-            # mov1 a.bit,cy                 ;61 89
-            elif opcode2 in (0x89, 0x99, 0xa9, 0xb9, 0xc9, 0xd9, 0xe9, 0xf9):
-                f = self._opcode_0x61_0x89_to_0xf9_mov1
-
-            # and1 cy,a.0                 ;61 8d
-            elif opcode2 in (0x8d, 0x9d, 0xad, 0xbd, 0xcd, 0xdd, 0xed, 0xfd):
-                f = self._opcode_0x61_0x8d_to_0xfd_and1
-
-            # or1 cy,a.0                  ;61 8e
-            elif opcode2 in (0x8e, 0x9e, 0xae, 0xbe, 0xce, 0xde, 0xee, 0xfe):
-                f = self._opcode_0x61_0x8e_to_0xfe_or1
-
-            # xor1 cy,a.0                 ;61 8f
-            elif opcode2 in (0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0xff):
-                f = self._opcode_0x61_0x8f_to_0xff_xor1
-
-            else:
-                continue
-
-            self._opcode_map_prefix_0x61[opcode2] = f
+        self._opcode_map_prefix_0x61 = D
 
     def _init_opcode_map_prefix_0x71(self):
-        self._opcode_map_prefix_0x71 = {}
+        D = {}
 
-        for opcode2 in range(0x100):
-            # set1 sfr.bit
-            if opcode2 in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
-                f = self._opcode_0x71_0x0a_to_0x7a_set1
-
-            # set1 [hl].bit
-            elif opcode2 in (0x82, 0x92, 0xa2, 0xb2, 0xc2, 0xd2, 0xe2, 0xf2):
-                f = self._opcode_0x71_0x82_to_0xf2_set1
-
-            # clr1 sfr.bit
-            elif opcode2 in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
-                f = self._opcode_0x71_0x0b_to_0x7b_clr1
-
-            # clr1 [hl].bit
-            elif opcode2 in (0x83, 0x93, 0xa3, 0xb3, 0xc3, 0xd3, 0xe3, 0xf3):
-                f = self._opcode2_0x71_0x83_to_0xf3_clr1
-
-            # mov1 cy,0fffeh.bit            ;71 0c fe       sfr
-            elif opcode2 in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
-                f = self._opcode_0x71_0x0c_to_0x7c_mov1
-
-            # mov1 0fffeh.bit,cy            ;71 09 fe       sfr
-            elif opcode2 in (0x09, 0x19, 0x29, 0x39, 0x49, 0x59, 0x69, 0x79):
-                f = self._opcode_0x71_0x09_to_0x79_mov1
-
-            # mov1 0fe20h.bit,cy            ;71 01 20       saddr
-            elif opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
-                f = self._opcode_0x71_0x01_to_0x71_mov1
-
-            # mov1 cy,0fe20h.bit            ;71 04 20       saddr
-            elif opcode2 in (0x04, 0x14, 0x24, 0x34, 0x44, 0x54, 0x64, 0x74):
-                f = self._opcode_0x71_0x04_to_0x74_mov1
-
-            # mov1 cy,[hl].bit              ;71 84
-            elif opcode2 in (0x84, 0x94, 0xa4, 0xb4, 0xc4, 0xd4, 0xe4, 0xf4):
-                f = self._opcode_0x71_0x84_to_0xf4_mov1
-
-            # mov1 [hl].bit,cy              ;71 81
-            elif opcode2 in (0x81, 0x91, 0xa1, 0xb1, 0xc1, 0xd1, 0xe1, 0xf1):
-                f = self._opcode_0x71_0x81_to_0xf1_mov1
-
-            # and1 cy,[hl].0              ;71 85
-            elif opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
-                f = self._opcode_0x71_0x85_to_0xf5_and1
-
-            # and1 cy,0fffeh.0            ;71 0d fe       sfr
-            elif opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
-                f = self._opcode_0x71_0x0d_to_0x7d_and1
-
-            # and1 cy,0fe20h.0            ;71 05 20       saddr
-            elif opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
-                f = self._opcode_0x71_0x05_to_0x75_and1
-
-            # or1 cy,0fffeh.0             ;71 0e fe       sfr
-            elif opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
-                f = self._opcode_0x71_0x0e_to_0x7e_or1
-
-            # or1 cy,[hl].0               ;71 86
-            elif opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
-                f = self._opcode_0x71_0x86_to_0xf6_or1
-
-            # or1 cy,0fe20h.0             ;71 06 20       saddr
-            elif opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
-                f = self._opcode_0x71_0x06_to_0x76_or1
-
-            # xor1 cy,[hl].0              ;71 87
-            elif opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
-                f = self._opcode_0x71_0x87_to_0xf7_xor1
-
-            # xor1 cy,0fffeh.0            ;71 0f fe       sfr
-            elif opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
-                f = self._opcode_0x71_0x0f_to_0x7f
-
-            # xor1 cy,0fe20h.0            ;71 07 20       saddr
-            elif opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
-                f = self._opcode_0x71_0x07_to_0x77_xor1
-
-            else:
-                continue
-
-            self._opcode_map_prefix_0x71[opcode2] = f
+        # set1 sfr.bit
+        for opcode2 in (0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a, 0x6a, 0x7a):
+            D[opcode2] = self._opcode_0x71_0x0a_to_0x7a_set1
+        # set1 [hl].bit
+        for opcode2 in (0x82, 0x92, 0xa2, 0xb2, 0xc2, 0xd2, 0xe2, 0xf2):
+            D[opcode2] = self._opcode_0x71_0x82_to_0xf2_set1
+        # clr1 sfr.bit
+        for opcode2 in (0x0b, 0x1b, 0x2b, 0x3b, 0x4b, 0x5b, 0x6b, 0x7b):
+            D[opcode2] = self._opcode_0x71_0x0b_to_0x7b_clr1
+        # clr1 [hl].bit
+        for opcode2 in (0x83, 0x93, 0xa3, 0xb3, 0xc3, 0xd3, 0xe3, 0xf3):
+            D[opcode2] = self._opcode2_0x71_0x83_to_0xf3_clr1
+        # mov1 0fe20h.bit,cy            ;71 01 20       saddr
+        for opcode2 in (0x01, 0x11, 0x21, 0x31, 0x41, 0x51, 0x61, 0x71):
+            D[opcode2] = self._opcode_0x71_0x01_to_0x71_mov1
+        # mov1 cy,0fffeh.bit            ;71 0c fe       sfr
+        for opcode2 in (0x0c, 0x1c, 0x2c, 0x3c, 0x4c, 0x5c, 0x6c, 0x7c):
+            D[opcode2] = self._opcode_0x71_0x0c_to_0x7c_mov1
+        # mov1 0fffeh.bit,cy            ;71 09 fe       sfr
+        for opcode2 in (0x09, 0x19, 0x29, 0x39, 0x49, 0x59, 0x69, 0x79):
+            D[opcode2] = self._opcode_0x71_0x09_to_0x79_mov1
+        # mov1 cy,0fe20h.bit            ;71 04 20       saddr
+        for opcode2 in (0x04, 0x14, 0x24, 0x34, 0x44, 0x54, 0x64, 0x74):
+            D[opcode2] = self._opcode_0x71_0x04_to_0x74_mov1
+        # mov1 cy,[hl].bit              ;71 84
+        for opcode2 in (0x84, 0x94, 0xa4, 0xb4, 0xc4, 0xd4, 0xe4, 0xf4):
+            D[opcode2] = self._opcode_0x71_0x84_to_0xf4_mov1
+        # mov1 [hl].bit,cy              ;71 81
+        for opcode2 in (0x81, 0x91, 0xa1, 0xb1, 0xc1, 0xd1, 0xe1, 0xf1):
+            D[opcode2] = self._opcode_0x71_0x81_to_0xf1_mov1
+        # and1 cy,[hl].0              ;71 85
+        for opcode2 in (0x85, 0x95, 0xa5, 0xb5, 0xc5, 0xd5, 0xe5, 0xf5):
+            D[opcode2] = self._opcode_0x71_0x85_to_0xf5_and1
+        # and1 cy,0fffeh.0            ;71 0d fe       sfr
+        for opcode2 in (0x0d, 0x1d, 0x2d, 0x3d, 0x4d, 0x5d, 0x6d, 0x7d):
+            D[opcode2] = self._opcode_0x71_0x0d_to_0x7d_and1
+        # and1 cy,0fe20h.0            ;71 05 20       saddr
+        for opcode2 in (0x05, 0x15, 0x25, 0x35, 0x45, 0x55, 0x65, 0x75):
+            D[opcode2] = self._opcode_0x71_0x05_to_0x75_and1
+        # or1 cy,0fffeh.0             ;71 0e fe       sfr
+        for opcode2 in (0x0e, 0x1e, 0x2e, 0x3e, 0x4e, 0x5e, 0x6e, 0x7e):
+            D[opcode2] = self._opcode_0x71_0x0e_to_0x7e_or1
+        # or1 cy,[hl].0               ;71 86
+        for opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
+            D[opcode2] = self._opcode_0x71_0x86_to_0xf6_or1
+        # or1 cy,0fe20h.0             ;71 06 20       saddr
+        for opcode2 in (0x06, 0x16, 0x26, 0x36, 0x46, 0x56, 0x66, 0x76):
+            D[opcode2] = self._opcode_0x71_0x06_to_0x76_or1
+        # xor1 cy,[hl].0              ;71 87
+        for opcode2 in (0x87, 0x97, 0xa7, 0xb7, 0xc7, 0xd7, 0xe7, 0xf7):
+            D[opcode2] = self._opcode_0x71_0x87_to_0xf7_xor1
+        # xor1 cy,0fffeh.0            ;71 0f fe       sfr
+        for opcode2 in (0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f, 0x7f):
+            D[opcode2] = self._opcode_0x71_0x0f_to_0x7f
+        # xor1 cy,0fe20h.0            ;71 07 20       saddr
+        for opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
+            D[opcode2] = self._opcode_0x71_0x07_to_0x77_xor1
+        self._opcode_map_prefix_0x71 = D
 
     # not implemented
     def _opcode_not_implemented(self, opcode):
@@ -482,17 +330,17 @@ class Processor(object):
 
     def _opcode_0x31(self, opcode):
         opcode2 = self._consume_byte()
-        handler = self._opcode_map_prefix_0x31[opcode2]
+        handler = self._opcode_map_prefix_0x31.get(opcode2, self._opcode_not_implemented)
         handler(opcode2)
 
     def _opcode_0x61(self, opcode):
         opcode2 = self._consume_byte()
-        handler = self._opcode_map_prefix_0x61[opcode2]
+        handler = self._opcode_map_prefix_0x61.get(opcode2, self._opcode_not_implemented)
         handler(opcode2)
 
     def _opcode_0x71(self, opcode):
         opcode2 = self._consume_byte()
-        handler = self._opcode_map_prefix_0x71[opcode2]
+        handler = self._opcode_map_prefix_0x71.get(opcode2, self._opcode_not_implemented)
         handler(opcode2)
 
     # nop
@@ -942,8 +790,8 @@ class Processor(object):
         self.pc = self.read_gp_regpair(RegisterPairs.AX)
 
     def _opcode_0x61_0x0d_to_0xf8_sel_rb(self, opcode2):
-            banks_by_opcode2 = {0xD0: 0, 0xD8: 1, 0xF0: 2, 0xF8: 3}
-            self.write_rb(banks_by_opcode2[opcode2])
+        banks_by_opcode2 = {0xD0: 0, 0xD8: 1, 0xF0: 2, 0xF8: 3}
+        self.write_rb(banks_by_opcode2[opcode2])
 
     def _opcode_0x61_0x68_to_0x6f_or(self, opcode2):
         a = self.read_gp_reg(Registers.A)
@@ -974,11 +822,11 @@ class Processor(object):
         self.write_gp_reg(reg, result)
 
     def _opcode_0x61_0x78_to_0x7f_xor(self, opcode2):
-            a = self.read_gp_reg(Registers.A)
-            reg = _reg(opcode2)
-            b = self.read_gp_reg(reg)
-            result = self._operation_xor(a, b)
-            self.write_gp_reg(Registers.A, result)
+        a = self.read_gp_reg(Registers.A)
+        reg = _reg(opcode2)
+        b = self.read_gp_reg(reg)
+        result = self._operation_xor(a, b)
+        self.write_gp_reg(Registers.A, result)
 
     def _opcode_0x61_0x70_to_0x77_xor(self, opcode2):
         a = self.read_gp_reg(Registers.A)
@@ -1000,18 +848,18 @@ class Processor(object):
         self.write_gp_reg(Registers.A, result)
 
     def _opcode_0x61_0x8c_to_0xfc_mov1(self, opcode2):
-            bit = _bit(opcode2)
-            src = self.read_gp_reg(Registers.A)
-            dest = self.read_psw()
-            result = self._operation_mov1(src, bit, dest, 0)
-            self.write_psw(result)
+        bit = _bit(opcode2)
+        src = self.read_gp_reg(Registers.A)
+        dest = self.read_psw()
+        result = self._operation_mov1(src, bit, dest, 0)
+        self.write_psw(result)
 
     def _opcode_0x61_0x89_to_0xf9_mov1(self, opcode2):
-            bit = _bit(opcode2)
-            src = self.read_psw()
-            dest = self.read_gp_reg(Registers.A)
-            result = self._operation_mov1(src, 0, dest, bit)
-            self.write_gp_reg(Registers.A, result)
+        bit = _bit(opcode2)
+        src = self.read_psw()
+        dest = self.read_gp_reg(Registers.A)
+        result = self._operation_mov1(src, 0, dest, bit)
+        self.write_gp_reg(Registers.A, result)
 
     def _opcode_0x61_0x8d_to_0xfd_and1(self, opcode2):
         bit = _bit(opcode2)
@@ -1143,12 +991,12 @@ class Processor(object):
         self.write_psw(result)
 
     def _opcode_0x71_0x86_to_0xf6_or1(self, opcode2):
-            bit = _bit(opcode2)
-            address = self.read_gp_regpair(RegisterPairs.HL)
-            src = self.memory[address]
-            dest = self.read_psw()
-            result = self._operation_or1(src, bit, dest, 0)
-            self.write_psw(result)
+        bit = _bit(opcode2)
+        address = self.read_gp_regpair(RegisterPairs.HL)
+        src = self.memory[address]
+        dest = self.read_psw()
+        result = self._operation_or1(src, bit, dest, 0)
+        self.write_psw(result)
 
     def _opcode_0x71_0x06_to_0x76_or1(self, opcode2):
         bit = _bit(opcode2)
