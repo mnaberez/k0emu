@@ -750,3 +750,5 @@ label31:
     add d,a                     ;61 05
     add l,a                     ;61 06
     add h,a                     ;61 07
+
+    add a,#0abh                 ;0d ab

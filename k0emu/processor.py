@@ -36,6 +36,7 @@ class Processor(object):
             0x04: self._opcode_0x04, # dbnz 0fe20h,$label0         ;04 20 fd       saddr
             0x05: self._opcode_0x05, # xch a,[de]                  ;05
             0x07: self._opcode_0x07, # xch a,[hl]                  ;07
+            0x0d: self._opcode_0x0d, # add a,#0abh                 ;0d ab
             0x11: self._opcode_0x11, # mov 0fe20h,#0abh            ;11 20 ab       saddr
             0x13: self._opcode_0x13, # mov 0fffeh, #0abh           ;13 fe ab       sfr
             0x20: self._opcode_0x20, # set1 cy
@@ -381,6 +382,13 @@ class Processor(object):
         other_value = self.memory[address]
         self.write_gp_reg(Registers.A, other_value)
         self.memory[address] = a_value
+
+    # add a,#0abh                 ;0d ab
+    def _opcode_0x0d(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        b = self._consume_byte()
+        result = self._operation_add(a, b)
+        self.write_gp_reg(Registers.A, result)
 
     # movw regpair,#0abcdh             ;10..16 cd ab
     def _opcode_0x10_to_0x16_movw(self, opcode):
