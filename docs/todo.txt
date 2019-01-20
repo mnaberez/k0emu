@@ -1,6 +1,5 @@
     add a,[hl+0abh]             ;09 ab
 
-    add a,[hl+b]                ;31 0b
     add a,[hl+c]                ;31 0a
 
     add 0fe20h,#0abh            ;88 20 ab       saddr

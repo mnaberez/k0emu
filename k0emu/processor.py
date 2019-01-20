@@ -173,6 +173,7 @@ class Processor(object):
 
     def _init_opcode_map_prefix_0x31(self):
         D = {
+            0x0b: self._opcode_0x31_0x0b_add,   # add a,[hl+b]                ;31 0b
             0x5a: self._opcode_0x31_0x5a_and,   # and a,[hl+c]                ;31 5a
             0x5b: self._opcode_0x31_0x5b_and,   # and a,[hl+b]                ;31 5b
             0x6a: self._opcode_0x31_0x6a_or,    # or a,[hl+c]                 ;31 6a
@@ -685,6 +686,14 @@ class Processor(object):
         address = self._consume_sfr()
         value = self._consume_byte()
         self.memory[address] = value
+
+    # add a,[hl+b]                ;31 0b
+    def _opcode_0x31_0x0b_add(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._based_hl_b()
+        b = self.memory[address]
+        result = self._operation_add(a, b)
+        self.write_gp_reg(Registers.A, result)
 
     # bt a.bit,$label32             ;31 0e fd
     def _opcode_0x31_0x0e_to_0x7e_bt(self, opcode2):
