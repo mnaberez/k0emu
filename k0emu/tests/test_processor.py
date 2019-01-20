@@ -10181,21 +10181,21 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), 0)
 
     # add a,l                     ;61 0e
-    def test_61_08_add_a_d(self):
+    def test_61_08_add_a_l(self):
         proc = Processor()
         code = [0x61, 0x0e]
         proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 2)
-        proc.write_gp_reg(Registers.E, 3)
+        proc.write_gp_reg(Registers.L, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
-        self.assertEqual(proc.read_gp_reg(Registers.E), 3) # unchanged
+        self.assertEqual(proc.read_gp_reg(Registers.L), 3) # unchanged
         self.assertEqual(proc.read_psw(), 0)
 
     # add a,h                     ;61 0f
-    def test_61_08_add_a_d(self):
+    def test_61_08_add_a_h(self):
         proc = Processor()
         code = [0x61, 0x0f]
         proc.write_memory(0, code)
@@ -10235,7 +10235,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), 0)
 
     # add c,a                     ;61 02
-    def test_61_00_add_x_a(self):
+    def test_61_00_add_c_a(self):
         proc = Processor()
         code = [0x61, 0x02]
         proc.write_memory(0, code)
@@ -10249,7 +10249,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), 0)
 
     # add b,a                     ;61 03
-    def test_61_00_add_x_a(self):
+    def test_61_00_add_b_a(self):
         proc = Processor()
         code = [0x61, 0x03]
         proc.write_memory(0, code)
@@ -10277,7 +10277,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), 0)
 
     # add d,a                     ;61 05
-    def test_61_00_add_e_a(self):
+    def test_61_00_add_d_a(self):
         proc = Processor()
         code = [0x61, 0x05]
         proc.write_memory(0, code)
@@ -10324,6 +10324,46 @@ class ProcessorTests(unittest.TestCase):
         code = [0x0d, 0x03]
         proc.write_memory(0, code)
         proc.write_gp_reg(Registers.A, 2)
+        proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
+        self.assertEqual(proc.read_psw(), 0)
+
+    # add a,!0abcdh               ;08 cd ab
+    def test_08_add_a_addr16(self):
+        proc = Processor()
+        code = [0x08, 0xcd, 0xab]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 2)
+        proc.memory[0xabcd] = 0x03
+        proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
+        self.assertEqual(proc.read_psw(), 0)
+
+    # add a,[hl]                  ;0f
+    def test_0f_add_a_hl(self):
+        proc = Processor()
+        code = [0x0f]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 2)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
+        proc.memory[0xabcd] = 0x03
+        proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
+        self.assertEqual(proc.read_psw(), 0)
+
+    # add a,0fe20h                ;0e 20          saddr
+    def test_0e_add_a_saddr(self):
+        proc = Processor()
+        code = [0x0e, 0x20]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 2)
+        proc.memory[0xfe20] = 0x03
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
