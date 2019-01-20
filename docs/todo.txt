@@ -1,9 +1,3 @@
-    add a,[hl+0abh]             ;09 ab
-
-    add a,[hl+c]                ;31 0a
-
-    add 0fe20h,#0abh            ;88 20 ab       saddr
-
     addc a,!0abcdh              ;28 cd ab
     addc a,[hl+0abh]            ;29 ab
     addc a,#0abh                ;2d ab

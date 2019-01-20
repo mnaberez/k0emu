@@ -10385,6 +10385,46 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
 
+    # add a,[hl+c]                ;31 0a
+    def test_31_0a_add_a_based_hl_c(self):
+        proc = Processor()
+        code = [0x31, 0x0a]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 2)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xabc0)
+        proc.write_gp_reg(Registers.C, 0x0d)
+        proc.memory[0xabcd] = 0x03
+        proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
+        self.assertEqual(proc.read_psw(), 0)
+
+    # add a,[hl+0abh]             ;09 ab
+    def test_31_0a_add_a_based_hl_imm(self):
+        proc = Processor()
+        code = [0x09, 0xcd]
+        proc.write_memory(0, code)
+        proc.write_gp_reg(Registers.A, 2)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
+        proc.memory[0xabcd] = 0x03
+        proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
+        self.assertEqual(proc.read_psw(), 0)
+
+    # add 0fe20h,#0abh            ;88 20 ab       saddr
+    def test_88_20_add(self):
+        proc = Processor()
+        code = [0x88, 0x20, 0x03]
+        proc.write_memory(0, code)
+        proc.memory[0xfe20] = 0x02
+        proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.memory[0xfe20], 5) # sum
+        self.assertEqual(proc.read_psw(), 0)
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])
