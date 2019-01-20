@@ -262,7 +262,11 @@ class Processor(object):
         # xor1 cy,a.0                 ;61 8f
         for opcode2 in (0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0xff):
             D[opcode2] = self._opcode_0x61_0x8f_to_0xff_xor1
-
+        # add a,x                     ;61 08
+        for opcode2 in (0x08, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f):
+            D[opcode2] = self._opcode_0x61_0x08_to_0x0f_add
+        for opcode2 in (0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07):
+            D[opcode2] = self._opcode_0x61_0x00_to_0x07_add
         self._opcode_map_prefix_0x61 = D
 
     def _init_opcode_map_prefix_0x71(self):
@@ -917,6 +921,22 @@ class Processor(object):
         dest = self.read_psw()
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
+
+    # add a,x                     ;61 08
+    def _opcode_0x61_0x08_to_0x0f_add(self, opcode2):
+        reg = _reg(opcode2)
+        a = self.read_gp_reg(Registers.A)
+        b = self.read_gp_reg(reg)
+        result = self._operation_add(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # add x,a                     ;61 00
+    def _opcode_0x61_0x00_to_0x07_add(self, opcode2):
+        reg = _reg(opcode2)
+        a = self.read_gp_reg(Registers.A)
+        b = self.read_gp_reg(reg)
+        result = self._operation_add(a, b)
+        self.write_gp_reg(reg, result)
 
     # set1 [hl].0                 ;71 82
     def _opcode_0x71_0x82_to_0xf2_set1(self, opcode2):
@@ -1585,6 +1605,19 @@ class Processor(object):
             result = dest & ~dest_bitweight
         return result
 
+    def _operation_add(self, a, b):
+        psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
+        if ((a & 0x0F) + (b & 0x0F)) > 0x0F:
+            psw |= Flags.AC
+        sum = a + b
+        if sum > 0xFF:
+            psw |= Flags.CY
+        result = sum & 0xFF
+        if result == 0:
+            psw |= Flags.Z
+        self.write_psw(psw)
+        return result
+
     def _operation_inc(self, value):
         result = (value + 1) & 0xFF
 
@@ -1850,7 +1883,7 @@ def _regpair(opcode):
 
 def _bit(opcode):
     return (opcode & 0b01110000) >> 4
-
+Processor
 def _resolve_rel(pc, displacement):
     if displacement & 0x80:
         displacement = -((displacement ^ 0xFF) + 1)

@@ -732,3 +732,21 @@ label31:
     xor1 cy,psw.5               ;71 57 1e
     xor1 cy,psw.6               ;71 67 1e
     xor1 cy,psw.7               ;71 77 1e
+
+    add a,x                     ;61 08
+    add a,a                     ;61 01
+    add a,c                     ;61 0a
+    add a,b                     ;61 0b
+    add a,e                     ;61 0c
+    add a,d                     ;61 0d
+    add a,l                     ;61 0e
+    add a,h                     ;61 0f
+
+    add x,a                     ;61 00
+    add a,a                     ;61 01
+    add c,a                     ;61 02
+    add b,a                     ;61 03
+    add e,a                     ;61 04
+    add d,a                     ;61 05
+    add l,a                     ;61 06
+    add h,a                     ;61 07

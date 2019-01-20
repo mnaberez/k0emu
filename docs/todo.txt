@@ -7,24 +7,6 @@
     add a,[hl+b]                ;31 0b
     add a,[hl+c]                ;31 0a
 
-    add a,x                     ;61 08
-    add a,a                     ;61 01
-    add a,c                     ;61 0a
-    add a,b                     ;61 0b
-    add a,e                     ;61 0c
-    add a,d                     ;61 0d
-    add a,l                     ;61 0e
-    add a,h                     ;61 0f
-
-    add x,a                     ;61 00
-    add a,a                     ;61 01
-    add c,a                     ;61 02
-    add b,a                     ;61 03
-    add e,a                     ;61 04
-    add d,a                     ;61 05
-    add l,a                     ;61 06
-    add h,a                     ;61 07
-
     add 0fe20h,#0abh            ;88 20 ab       saddr
 
     addc a,!0abcdh              ;28 cd ab
