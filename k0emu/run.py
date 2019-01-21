@@ -26,7 +26,7 @@ def main():
         try:
             dasm = disassemble(proc.memory, proc.pc)
             hex = ' '.join(["%02x" % x for x in dasm.all_bytes]).ljust(12)
-            line = ("%04x: %s %s" % (proc.pc, hex, dasm)).ljust(36)
+            line = ("%04x: %s %s" % (proc.pc, hex, dasm)).ljust(42)
             try:
                 proc.step()
             except NotImplementedError:
