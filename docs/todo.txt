@@ -1,13 +1,3 @@
-
-    addc x,a                    ;61 20
-    addc a,a                    ;61 21
-    addc c,a                    ;61 22
-    addc b,a                    ;61 23
-    addc e,a                    ;61 24
-    addc d,a                    ;61 25
-    addc l,a                    ;61 26
-    addc h,a                    ;61 27
-
     cmp a,!0abcdh               ;48 cd ab
     cmp a,[hl+0abh]             ;49 ab
     cmp a,#0abh                 ;4d ab

@@ -230,7 +230,6 @@ class Processor(object):
         # bt [hl].0,$label40          ;31 86 fd
         for opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
             D[opcode2] = self._opcode_0x31_0x86_to_0xf6_bt
-
         self._opcode_map_prefix_0x31 = D
 
     def _init_opcode_map_prefix_0x61(self):
@@ -287,7 +286,9 @@ class Processor(object):
         # add x,a                     ;61 00
         for opcode2 in (0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07):
             D[opcode2] = self._opcode_0x61_0x00_to_0x07_add
-
+        # addc x,a                    ;61 20
+        for opcode2 in (0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27):
+            D[opcode2] = self._opcode_0x61_0x20_to_0x27_addc
         self._opcode_map_prefix_0x61 = D
 
     def _init_opcode_map_prefix_0x71(self):
@@ -1077,6 +1078,14 @@ class Processor(object):
         a = self.read_gp_reg(Registers.A)
         b = self.read_gp_reg(reg)
         result = self._operation_add(a, b)
+        self.write_gp_reg(reg, result)
+
+    # addc x,a                    ;61 20
+    def _opcode_0x61_0x20_to_0x27_addc(self, opcode2):
+        reg = _reg(opcode2)
+        a = self.read_gp_reg(Registers.A)
+        b = self.read_gp_reg(reg)
+        result = self._operation_addc(a, b)
         self.write_gp_reg(reg, result)
 
     # set1 [hl].0                 ;71 82

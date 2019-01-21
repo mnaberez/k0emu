@@ -777,3 +777,12 @@ label31:
     addc a,d                    ;61 2d
     addc a,l                    ;61 2e
     addc a,h                    ;61 2f
+
+    addc x,a                    ;61 20
+    addc a,a                    ;61 21
+    addc c,a                    ;61 22
+    addc b,a                    ;61 23
+    addc e,a                    ;61 24
+    addc d,a                    ;61 25
+    addc l,a                    ;61 26
+    addc h,a                    ;61 27
