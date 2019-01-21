@@ -3,6 +3,9 @@
     cmp a,#0abh                 ;4d ab
     cmp a,0fe20h                ;4e 20          saddr
     cmp a,[hl]                  ;4f
+    cmp a,[hl+b]                ;31 4b
+    cmp a,[hl+c]                ;31 4a
+    cmp 0fe20h,#0abh            ;c8 20 ab       saddr
 
     cmp a,x                     ;61 48
     cmp a,a                     ;61 41
@@ -22,17 +25,14 @@
     cmp l,a                     ;61 46
     cmp h,a                     ;61 47
 
-    cmp 0fe20h,#0abh            ;c8 20 ab       saddr
-
-    cmp a,[hl+b]                ;31 4b
-    cmp a,[hl+c]                ;31 4a
-
-    divuw c                     ;31 82
-    ror4 [hl]                   ;31 90
-    rol4 [hl]                   ;31 80
-
-    adjba                       ;61 80
-    adjbs                       ;61 90
+    sub a,!0abcdh               ;18 cd ab
+    sub a,[hl+0abh]             ;19 ab
+    sub a,#0abh                 ;1d ab
+    sub a,0fe20h                ;1e 20          saddr
+    sub a,[hl]                  ;1f
+    sub a,[hl+b]                ;31 1b
+    sub a,[hl+c]                ;31 1a
+    sub 0fe20h,#0abh            ;98 20 ab       saddr
 
     sub a,x                     ;61 18
     sub a,a                     ;61 11
@@ -52,15 +52,14 @@
     sub l,a                     ;61 16
     sub h,a                     ;61 17
 
-    sub 0fe20h,#0abh            ;98 20 ab       saddr
-
-    sub a,!0abcdh               ;18 cd ab
-    sub a,[hl+0abh]             ;19 ab
-    sub a,#0abh                 ;1d ab
-    sub a,0fe20h                ;1e 20          saddr
-    sub a,[hl]                  ;1f
-    sub a,[hl+b]                ;31 1b
-    sub a,[hl+c]                ;31 1a
+    subc a,!0abcdh              ;38 cd ab
+    subc a,[hl+0abh]            ;39 ab
+    subc a,#0abh                ;3d ab
+    subc a,0fe20h               ;3e 20          saddr
+    subc a,[hl]                 ;3f
+    subc a,[hl+b]               ;31 3b
+    subc a,[hl+c]               ;31 3a
+    subc 0fe20h,#0abh           ;b8 20 ab       saddr
 
     subc a,x                    ;61 38
     subc a,a                    ;61 31
@@ -80,22 +79,17 @@
     subc l,a                    ;61 36
     subc h,a                    ;61 37
 
-    subc a,[hl+b]               ;31 3b
-    subc a,[hl+c]               ;31 3a
-
-    subc 0fe20h,#0abh           ;b8 20 ab       saddr
-
-    subc a,!0abcdh              ;38 cd ab
-    subc a,[hl+0abh]            ;39 ab
-    subc a,#0abh                ;3d ab
-    subc a,0fe20h               ;3e 20          saddr
-    subc a,[hl]                 ;3f
-
-    halt                        ;71 10
-    stop                        ;71 00
-    retb                        ;9f
-    brk                         ;bf
-
     addw ax,#0abcdh             ;ca cd ab
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
+    divuw c                     ;31 82
+
+    ror4 [hl]                   ;31 90
+    rol4 [hl]                   ;31 80
+    adjba                       ;61 80
+    adjbs                       ;61 90
+
+    halt                        ;71 10
+    stop                        ;71 00
+    brk                         ;bf
+    retb                        ;9f
