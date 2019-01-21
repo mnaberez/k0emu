@@ -1996,9 +1996,8 @@ class RegisterTrace:
     )
 
     NamedFlags = (
-        ('C', Flags.CY), ('I', Flags.ISP), ('U', Flags.UNUSED),
-        ('R', Flags.RBS0), ('A', Flags.AC), ('R', Flags.RBS1),
-        ('Z', Flags.Z), ('I', Flags.IE)
+        ('I', Flags.IE), ('Z', Flags.Z), ('R', Flags.RBS1), ('A', Flags.AC),
+        ('R', Flags.RBS0), ('U', Flags.UNUSED), ('I', Flags.ISP), ('C', Flags.CY),
     )
 
     @classmethod
