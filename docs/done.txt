@@ -759,3 +759,21 @@ label31:
     add a,[hl+c]                ;31 0a
     add a,[hl+0abh]             ;09 ab
     add 0fe20h,#0abh            ;88 20 ab       saddr
+
+    addc a,#0abh                ;2d ab
+    addc a,0fe20h               ;2e 20          saddr
+    addc a,!0abcdh              ;28 cd ab
+    addc a,[hl]                 ;2f
+    addc a,[hl+b]               ;31 2b
+    addc a,[hl+c]               ;31 2a
+    addc a,[hl+0abh]            ;29 ab
+    addc 0fe20h,#0abh           ;a8 20 ab       saddr
+
+    addc a,x                    ;61 28
+    addc a,a                    ;61 21
+    addc a,c                    ;61 2a
+    addc a,b                    ;61 2b
+    addc a,e                    ;61 2c
+    addc a,d                    ;61 2d
+    addc a,l                    ;61 2e
+    addc a,h                    ;61 2f

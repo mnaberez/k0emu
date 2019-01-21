@@ -1,6 +1,5 @@
 Unimplemented instructions needed by "SOFTWARE 23":
 
-0c21: 2d 00        addc a,#00h      !!! NOT IMPLEMENTED !!!
 09dd: 1e 2d        sub a,0fe2dh     !!! NOT IMPLEMENTED !!!
 0a10: da 06 f2     subw ax,#0f206h  !!! NOT IMPLEMENTED !!!
 3795: 4d 00        cmp a,#00h       !!! NOT IMPLEMENTED !!!

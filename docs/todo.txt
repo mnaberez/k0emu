@@ -1,19 +1,3 @@
-    addc a,!0abcdh              ;28 cd ab
-    addc a,[hl+0abh]            ;29 ab
-    addc a,#0abh                ;2d ab
-    addc a,0fe20h               ;2e 20          saddr
-    addc a,[hl]                 ;2f
-    addc a,[hl+b]               ;31 2b
-    addc a,[hl+c]               ;31 2a
-
-    addc a,x                    ;61 28
-    addc a,a                    ;61 21
-    addc a,c                    ;61 2a
-    addc a,b                    ;61 2b
-    addc a,e                    ;61 2c
-    addc a,d                    ;61 2d
-    addc a,l                    ;61 2e
-    addc a,h                    ;61 2f
 
     addc x,a                    ;61 20
     addc a,a                    ;61 21
@@ -23,8 +7,6 @@
     addc d,a                    ;61 25
     addc l,a                    ;61 26
     addc h,a                    ;61 27
-
-    addc 0fe20h,#0abh           ;a8 20 ab       saddr
 
     cmp a,!0abcdh               ;48 cd ab
     cmp a,[hl+0abh]             ;49 ab
