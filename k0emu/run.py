@@ -2,10 +2,18 @@
 Usage: k0dasm <rom.bin>
 
 '''
+import os
 import sys
 
 from k0dasm.disassemble import disassemble
 from k0emu.processor import Processor
+
+def write_dumpfile(proc): # XXX hack
+    home = os.environ['HOME']
+    filename = os.path.join(home, 'Desktop/memory.bin')
+    with open(filename, 'wb') as f:
+        f.write(proc.memory)
+    print("\nDump written to: %s" % filename)
 
 def main():
     proc = Processor()
@@ -38,10 +46,7 @@ def main():
         except KeyboardInterrupt:
             break
 
-    filename = "/Users/mnaberez/Desktop/memory.bin"
-    with open(filename, 'wb') as f:
-        f.write(proc.memory)
-    print("\nDump written to: %s" % filename)
+    write_dumpfile(proc)
 
 if __name__ == "__main__":
     main()
