@@ -81,7 +81,6 @@
 
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
-    divuw c                     ;31 82
 
     ror4 [hl]                   ;31 90
     rol4 [hl]                   ;31 80

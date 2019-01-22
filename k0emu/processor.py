@@ -192,6 +192,7 @@ class Processor(object):
             0x6b: self._opcode_0x31_0x6b_or,    # or a,[hl+c]                 ;31 6b
             0x7a: self._opcode_0x31_0x7a_xor,   # xor a,[hl+c]                ;31 7a
             0x7b: self._opcode_0x31_0x7b_xor,   # xor a,[hl+b]                ;31 7b
+            0x82: self._opcode_0x31_0x82_divuw, # divuw c                     ;31 82
             0x88: self._opcode_0x31_0x88_mulu,  # mulu x                      ;31 88
             0x8a: self._opcode_0x31_0x8a_xch,   # xch a,[hl+c]                ;31 8a
             0x8b: self._opcode_0x31_0x8b_xch,   # xch a,[hl+b]                ;31 8b
@@ -930,12 +931,25 @@ class Processor(object):
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # divuw c                     ;31 82
+    def _opcode_0x31_0x82_divuw(self, opcode2):
+        ax = self.read_gp_regpair(RegisterPairs.AX)
+        c = self.read_gp_reg(Registers.C)
+        if c == 0:
+            quotient = 0xffff
+            remainder = ax & 0xff
+        else:
+            quotient = ax // c
+            remainder = ax % c
+        self.write_gp_regpair(RegisterPairs.AX, quotient)
+        self.write_gp_reg(Registers.C, remainder)
+
     # mulu x                      ;31 88
     def _opcode_0x31_0x88_mulu(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         x = self.read_gp_reg(Registers.X)
-        result = a * x
-        self.write_gp_regpair(RegisterPairs.AX, result)
+        product = a * x
+        self.write_gp_regpair(RegisterPairs.AX, product)
 
     # xch a,[hl+c]                ;31 8a
     def _opcode_0x31_0x8a_xch(self, opcode2):

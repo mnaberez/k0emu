@@ -10814,6 +10814,34 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd) # sum
         self.assertEqual(proc.read_psw(), 0)
 
+    # divuw c                     ;31 82
+    def test_31_82_divuw_c_divisor_nonzero(self):
+        proc = Processor()
+        code = [0x31, 0x82]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.write_gp_reg(Registers.C, 0x02)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x55e6)
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0x01)
+        self.assertEqual(proc.read_psw(), 0) # unchanged
+
+    # divuw c                     ;31 82
+    def test_31_82_divuw_c_divisor_of_zero(self):
+        proc = Processor()
+        code = [0x31, 0x82]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.write_gp_reg(Registers.C, 0)
+        proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xffff)
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0xcd)
+        self.assertEqual(proc.read_psw(), Flags.Z | Flags.AC | Flags.CY) # unchanged
+
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])
