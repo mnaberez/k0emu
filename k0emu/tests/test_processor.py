@@ -9099,6 +9099,17 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.memory[0xfe20], 0xcd)
         self.assertEqual(proc.memory[0xfe21], 0xab)
 
+    # movw sp,ax                  ;99 1c
+    def test_99_movw_sp_ax(self):
+        proc = Processor()
+        code = [0x99, 0x1c]
+        proc.write_memory(0, code)
+        proc.write_sp(0)
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_sp(), 0xabcd)
+
     # movw ax,0fe20h              ;89 20          saddrp
     def test_89_movw_ax_saddrp(self):
         proc = Processor()
@@ -9109,6 +9120,17 @@ class ProcessorTests(unittest.TestCase):
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
+
+    # movw ax,sp                  ;89 1c
+    def test_89_movw_ax_sp(self):
+        proc = Processor()
+        code = [0x89, 0x1c]
+        proc.write_memory(0, code)
+        proc.write_sp(0xabcd)
+        proc.write_gp_regpair(RegisterPairs.AX, 0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_sp(), 0xabcd)
 
     # movw ax,0fffeh              ;a9 fe          sfrp
     def test_a9_movw_ax_sfrp(self):
