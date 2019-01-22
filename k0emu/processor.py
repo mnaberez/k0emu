@@ -106,6 +106,7 @@ class Processor(object):
             0xbb: self._opcode_0xbb, # mov [hl+b],a                ;bb
             0xbd: self._opcode_0xbd, # bnz $label5                 ;bd fe
             0xbe: self._opcode_0xbe, # mov [hl+0abh],a             ;be ab
+            0xca: self._opcode_0xca, # addw ax,#0abcdh             ;ca cd ab
             0xce: self._opcode_0xce, # xch a,!abcd                 ;ce cd ab
             0xd8: self._opcode_0xd8, # and 0fe20h,#0abh            ;d8 20 ab       saddr
             0xde: self._opcode_0xde, # xch a,[hl+0abh]             ;de ab
@@ -595,6 +596,13 @@ class Processor(object):
         other_value = self.read_gp_reg(other_reg)
         self.write_gp_reg(Registers.A, other_value)
         self.write_gp_reg(other_reg, a_value)
+
+    # addw ax,#0abcdh             ;ca cd ab
+    def _opcode_0xca(self, opcode):
+        ax_value = self.read_gp_regpair(RegisterPairs.AX)
+        other_value = self._consume_word()
+        result = self._operation_addw(ax_value, other_value)
+        self.write_gp_regpair(RegisterPairs.AX, result)
 
     # xch a,!abcd                 ;ce cd ab
     def _opcode_0xce(self, opcode):
@@ -1769,6 +1777,19 @@ class Processor(object):
             result = dest | dest_bitweight
         else:
             result = dest & ~dest_bitweight
+        return result
+
+    def _operation_addw(self, a, b):
+        # TODO docs say AC is undefined, so we just clear it.  Find
+        # out what the hardware really does to AC.
+        psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
+        sum = a + b
+        if sum > 0xFFFF:
+            psw |= Flags.CY
+        result = sum & 0xFFFF
+        if result == 0:
+            psw |= Flags.Z
+        self.write_psw(psw)
         return result
 
     def _operation_add(self, a, b):

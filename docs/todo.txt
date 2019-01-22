@@ -79,7 +79,6 @@
     subc l,a                    ;61 36
     subc h,a                    ;61 37
 
-    addw ax,#0abcdh             ;ca cd ab
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
     divuw c                     ;31 82

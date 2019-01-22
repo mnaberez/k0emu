@@ -34,3 +34,5 @@ Verify the address must really be even:
     movw ax,!0abceh             ;02 ce ab       addr16p
     movw !0abceh,ax             ;03 ce ab       addr16p
 
+Find out what ADDW does to the AC flag on real hardware.  The instruction
+manual says the AC flag is undefined.

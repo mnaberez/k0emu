@@ -786,3 +786,5 @@ label31:
     addc d,a                    ;61 25
     addc l,a                    ;61 26
     addc h,a                    ;61 27
+
+    addw ax,#0abcdh             ;ca cd ab
