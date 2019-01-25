@@ -789,3 +789,4 @@ label31:
 
     addw ax,#0abcdh             ;ca cd ab
     divuw c                     ;31 82
+    retb                        ;9f

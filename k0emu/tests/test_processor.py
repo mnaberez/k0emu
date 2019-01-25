@@ -6885,6 +6885,20 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), 0x55)
         self.assertEqual(proc.read_sp(), 0xfe13)
 
+    # retb                        ;9f
+    def test_9f_retb(self):
+        proc = Processor()
+        code = [0x9f]
+        proc.write_memory(0, code)
+        proc.write_sp(0xfe10)
+        proc.memory[0xfe12] = 0x55 # psw
+        proc.memory[0xfe11] = 0xab # pch
+        proc.memory[0xfe10] = 0xcd # pcl
+        proc.step()
+        self.assertEqual(proc.pc, 0xabcd)
+        self.assertEqual(proc.read_psw(), 0x55)
+        self.assertEqual(proc.read_sp(), 0xfe13)
+
     # set1 [hl].0                 ;71 82
     def test_71_82_set1_hl_bit_0(self):
         proc = Processor()

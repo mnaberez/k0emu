@@ -83,7 +83,7 @@ class Processor(object):
             0x8a: self._opcode_0x8a, # dbnz c,$label1              ;8a fe
             0x8b: self._opcode_0x8b, # dbnz c,$label1              ;8a fe
             0x8d: self._opcode_0x8d, # bc $label3                  ;8d fe
-            0x8e: self._opcode_0x8e, # mov a,!addr16                 ;8e
+            0x8e: self._opcode_0x8e, # mov a,!addr16               ;8e
             0x8f: self._opcode_0x8f, # reti                        ;8f
             0x91: self._opcode_0x91, # dec 0fe20h                  ;91 20          saddr
             0x93: self._opcode_0x93, # xch a,0fffeh                ;93 fe          sfr
@@ -94,6 +94,7 @@ class Processor(object):
             0x9b: self._opcode_0x9b, # br !0abcdh                  ;9b cd ab
             0x9d: self._opcode_0x9d, # bnc $label3                 ;8d fe
             0x9e: self._opcode_0x9e, # mov !addr16,a               ;9e cd ab
+            0x9f: self._opcode_0x9f, # retb                        ;9f
             0xa8: self._opcode_0xa8, # addc 0fe20h,#0abh           ;a8 20 ab       saddr
             0xa9: self._opcode_0xa9, # movw ax,0fffeh              ;a9 fe          sfrp
             0xaa: self._opcode_0xaa, # mov a,[hl+c]                ;aa
@@ -1501,6 +1502,11 @@ class Processor(object):
 
     # reti                        ;8f
     def _opcode_0x8f(self, opcode):
+        self.pc = self._pop_word()
+        self.write_psw(self._pop())
+
+    # retb                        ;9f
+    def _opcode_0x9f(self, opcode):
         self.pc = self._pop_word()
         self.write_psw(self._pop())
 
