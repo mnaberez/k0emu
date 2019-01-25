@@ -6885,6 +6885,23 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), 0x55)
         self.assertEqual(proc.read_sp(), 0xfe13)
 
+    # brk                         ;bf
+    def test_bf_brk(self):
+        proc = Processor()
+        code = [0xbf]
+        proc.write_memory(0xc1d2, code)
+        proc.pc = 0xc1d2
+        proc.memory[0x003f] = 0xcd # brk vector low
+        proc.memory[0x0040] = 0xab # brk vector high
+        proc.write_sp(0xfe12)
+        proc.write_psw(0b10101010)
+        proc.step()
+        self.assertEqual(proc.pc, 0xabcd)
+        self.assertEqual(proc.read_psw(), 0b10101010 & ~Flags.IE)
+        self.assertEqual(proc.memory[0xfe11], 0b10101010) # psw
+        self.assertEqual(proc.memory[0xfe10], 0xc1) # return address high
+        self.assertEqual(proc.memory[0xfe0f], 0xd3) # return address low
+
     # retb                        ;9f
     def test_9f_retb(self):
         proc = Processor()

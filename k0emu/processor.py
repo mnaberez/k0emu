@@ -2,6 +2,7 @@
 class Processor(object):
     REGISTERS_BASE_ADDRESS = 0xFEF8
     RESET_VECTOR_ADDRESS = 0x0000
+    BRK_VECTOR_ADDRESS = 0x003F
     SP_ADDRESS = 0xFF1C
     PSW_ADDRESS = 0xFF1E
 
@@ -15,9 +16,7 @@ class Processor(object):
 
     def reset(self):
         self.write_sp(0)
-        low = self.memory[self.RESET_VECTOR_ADDRESS]
-        high = self.memory[self.RESET_VECTOR_ADDRESS+1]
-        self.pc = (high << 8) + low
+        self.pc = self.read_memory_word(self.RESET_VECTOR_ADDRESS)
 
     def step(self):
         opcode = self._consume_byte()
@@ -107,6 +106,7 @@ class Processor(object):
             0xbb: self._opcode_0xbb, # mov [hl+b],a                ;bb
             0xbd: self._opcode_0xbd, # bnz $label5                 ;bd fe
             0xbe: self._opcode_0xbe, # mov [hl+0abh],a             ;be ab
+            0xbf: self._opcode_0xbf, # brk                         ;bf
             0xca: self._opcode_0xca, # addw ax,#0abcdh             ;ca cd ab
             0xce: self._opcode_0xce, # xch a,!abcd                 ;ce cd ab
             0xd8: self._opcode_0xd8, # and 0fe20h,#0abh            ;d8 20 ab       saddr
@@ -1510,6 +1510,14 @@ class Processor(object):
         self.pc = self._pop_word()
         self.write_psw(self._pop())
 
+    # brk                         ;bf
+    def _opcode_0xbf(self, opcode):
+        psw = self.read_psw()
+        self._push(psw)
+        self._push_word(self.pc)
+        self.write_psw(psw & ~Flags.IE)
+        self.pc = self.read_memory_word(self.BRK_VECTOR_ADDRESS)
+
     # br $label7                  ;fa fe
     def _opcode_0xfa(self, opcode):
         displacement = self._consume_byte()
@@ -1598,15 +1606,9 @@ class Processor(object):
     # ...
     # callt [007eh]               ;ff
     def _opcode_0xc1_to_0xff_callt(self, opcode):
-        # parse vector address from opcode
         offset = (opcode & 0b00111110) >> 1
         vector_address = 0x40 + (offset * 2)
-
-        # read address in vector
-        address_low = self.memory[vector_address]
-        address_high = self.memory[vector_address+1]
-        address = (address_high << 8) + address_low
-
+        address = self.read_memory_word(vector_address)
         self._push_word(self.pc)
         self.pc = address
 
@@ -1956,7 +1958,8 @@ class Processor(object):
 
     def _push(self, value):
         """Push a byte onto the stack"""
-        sp = self.read_sp() - 1
+        # TODO add test for wrap-around behavior
+        sp = (self.read_sp() - 1) & 0xFFFF
         self.write_sp(sp)
         self.memory[sp] = value
 
@@ -1964,7 +1967,8 @@ class Processor(object):
         """Pop a byte off the stack"""
         sp = self.read_sp()
         value = self.memory[sp]
-        self.write_sp(sp + 1)
+        # TODO add test for wrap-around behavior
+        self.write_sp((sp + 1) & 0xFFFF)
         return value
 
     def _push_word(self, value):
@@ -2060,9 +2064,17 @@ class Processor(object):
         if value == 0:
             self.write_psw(self.read_psw() | Flags.Z)
 
+    # Memory Helpers
+
     def write_memory(self, address, data):
         for address, value in enumerate(data, address):
             self.memory[address] = value
+
+    def read_memory_word(self, address):
+        low = self.memory[address]
+        high = self.memory[(address + 1) & 0xffff]
+        return (high << 8) + low
+
 
 def _sfr(low):
     sfr = 0xff00 + low

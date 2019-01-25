@@ -36,3 +36,4 @@ Verify the address must really be even:
 
 Find out what ADDW does to the AC flag on real hardware.  The instruction
 manual says the AC flag is undefined.
+

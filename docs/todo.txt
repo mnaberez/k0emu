@@ -89,4 +89,3 @@
 
     halt                        ;71 10
     stop                        ;71 00
-    brk                         ;bf
