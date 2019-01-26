@@ -2151,10 +2151,11 @@ class Flags(object):
 
 
 class RegisterTrace:
-    NamedRegisters = (
-        ('X', Registers.X), ('A', Registers.A), ('C', Registers.C),
-        ('B', Registers.B), ('E', Registers.E), ('D', Registers.D),
-        ('L', Registers.L), ('H', Registers.H)
+    NamedRegisterPairs = (
+        ('AX', RegisterPairs.AX),
+        ('BC', RegisterPairs.BC),
+        ('DE', RegisterPairs.DE),
+        ('HL', RegisterPairs.HL)
     )
 
     NamedFlags = (
@@ -2165,8 +2166,8 @@ class RegisterTrace:
     @classmethod
     def generate(klass, processor):
         s = ""
-        for name, reg in klass.NamedRegisters:
-            s += "%s=%02X " % (name, processor.read_gp_reg(reg))
+        for name, reg in klass.NamedRegisterPairs:
+            s += "%s=%04X " % (name, processor.read_gp_regpair(reg))
         s += "SP=%04X" % processor.read_sp()
         s += " ["
         psw = processor.read_psw()
