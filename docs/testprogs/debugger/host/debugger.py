@@ -5,6 +5,7 @@ if sys.version_info.major < 3:
 
 import serial # pyserial
 
+
 class Debugger(object):
     def __init__(self, serial):
         self.ser = serial
@@ -18,25 +19,30 @@ class Debugger(object):
             if data == b'>':
                 return
 
-    def read_memory(self, address):
-        low = address & 0xFF
-        high = address >> 8
-        self.ser.write(bytearray([ord(b'R'), low, high]))
-        data = self.ser.read(3)
-        if len(data) != 3:
+    def read(self, address, length):
+        low, high = self._split_word(address)
+        self.ser.write(bytearray([ord(b'R'), low, high, length]))
+        response_length = 2 + length
+        data = bytearray(self.ser.read(response_length))
+        if len(data) != response_length:
             raise Exception("too short")
         if data[0] != ord('r'):
             raise Exception("unexpected response: %r" % data[0])
-        if data[2] != ord('>'):
+        if data[-1] != ord('>'):
             raise Exception("no prompt")
-        return data[1]
+        data.pop(0) # remove first byte of packet ('r' response)
+        data.pop()  # remove last byte of packet ('>' prompt)
+        return data
 
-    def write_memory(self, address, value):
-        low = address & 0xFF
-        high = address >> 8
-        self.ser.write(bytearray([ord(b'W'), low, high, value]))
-        data = self.ser.read(2)
-        if len(data) != 2:
+    def write(self, address, data):
+        low, high = self._split_word(address)
+        packet = bytearray([ord(b'W'), low, high, len(data)])
+        for d in data:
+            packet.append(d)
+        self.ser.write(packet)
+        response_length = 2
+        data = self.ser.read(response_length)
+        if len(data) != response_length:
             raise Exception("too short: %r" % data)
         if data[0] != ord('w'):
             raise Exception("unexpected response: %r" % data[0])
@@ -44,8 +50,7 @@ class Debugger(object):
             raise Exception("no prompt")
 
     def branch(self, address):
-        low = address & 0xFF
-        high = address >> 8
+        low, high = self._split_word(address)
         self.ser.write(bytearray([ord(b'B'), low, high]))
         data = self.ser.read(2)
         if len(data) != 2:
@@ -54,6 +59,12 @@ class Debugger(object):
             raise Exception("unexpected response: %r" % data[0])
         if data[1] != ord('>'):
             raise Exception("no prompt")
+
+    def _split_word(self, word):
+        low = word & 0xFF
+        high = word >> 8
+        return low, high
+
 
 def make_serial():
     from serial.tools.list_ports import comports

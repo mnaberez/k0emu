@@ -9,27 +9,17 @@ import debugger
 
 def test(debug):
     code = [
-        # f000 89 1C         movw ax,sp
-        0x89, 0x1c,
-        # f002 03 00 FE      movw 0xfe00,ax
-        0x03, 0x00, 0xfe,
-        # f005 89 1C         movw ax,0xff1c
-        0x89, 0x1c,
-        # f007 03 02 FE      movw 0xfe02,ax
-        0x03, 0x02, 0xfe,
-        # f00a af            ret
-        0xaf
+        0x89, 0x1c,         # movw ax,sp
+        0x03, 0x00, 0xfe,   # movw 0xfe00,ax
+        0x89, 0x1c,         # movw ax,0xff1c
+        0x03, 0x02, 0xfe,   # movw 0xfe02,ax
+        0xaf                # ret
     ]
-    for address, value in enumerate(code, 0xf000):
-        debug.write_memory(address, value)
+    debug.write(0xf000, code)
     debug.branch(0xf000)
 
-    sp_low = debug.read_memory(0xfe00)
-    sp_high = debug.read_memory(0xfe01)
+    sp_low, sp_high, ff1c_low, ff1c_high = debug.read(0xfe00, length=4)
     sp = (sp_high << 8) + sp_low
-
-    ff1c_low = debug.read_memory(0xfe02)
-    ff1c_high = debug.read_memory(0xfe03)
     ff1c = (ff1c_high << 8) + ff1c_low
 
     print("SP=%04x, FF1C=%04x" % (sp, ff1c))

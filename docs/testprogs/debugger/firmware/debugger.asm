@@ -57,25 +57,45 @@ other:
 
 cmd_read:
 ;Read a byte from memory
-;Reads from UART: 2 bytes for address
-;Writes to UART: "r" followed by the byte read
+;Reads from UART: 2 bytes for address, 1 byte for length
+;Writes to UART: "r" followed by the bytes read
   call uart_get_hl      ;get address to read into HL
+
+  call uart_get         ;get length to read
+  mov b,a               ;b = length to read
+  mov c,#0xff           ;c = index for read pointer
 
   mov a,#'r             ;send "r" = response to read
   call uart_put
 
-  mov a,[hl]            ;read byte from memory
+cmd_read_loop:
+  dec b
+  inc c
+  mov a,[hl+c]          ;read byte from memory
   call uart_put         ;send it
+  mov a,b
+  cmp a,#0
+  bnz cmd_read_loop
   ret
 
 cmd_write:
 ;Write a byte to memory
-;Reads from UART: 2 bytes for address, 1 byte for value to write
+;Reads from UART: 2 bytes for address, 1 byte for length, bytes to write
 ;Writes to UART: "w" only
   call uart_get_hl      ;get address to write into HL
 
-  call uart_get         ;get byte to write to memory
-  mov [hl],a            ;write it to memory
+  call uart_get         ;get length to write
+  mov b,a               ;b = length to write
+  mov c,#0xff           ;c = index for write pointer
+
+cmd_write_loop:
+  dec b
+  inc c
+  call uart_get         ;get value to write
+  mov [hl+c],a          ;write it from memory
+  mov a,b
+  cmp a,#0
+  bnz cmd_write_loop
 
   mov a,#'w             ;send "w" = response to write
   call uart_put
