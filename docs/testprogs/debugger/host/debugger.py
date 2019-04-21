@@ -1,13 +1,9 @@
 #!/usr/bin/env python3 -u
 import sys
-import serial # pyserial
+if sys.version_info.major < 3:
+    raise Exception("Python 2 is not supported")
 
-def make_serial():
-    from serial.tools.list_ports import comports
-    names = [ x.device for x in comports() if 'Bluetooth' not in x.device ]
-    if not names:
-        raise Exception("No serial port found")
-    return serial.Serial(port=names[0], baudrate=38400, timeout=2)
+import serial # pyserial
 
 class Debugger(object):
     def __init__(self, serial):
@@ -61,24 +57,15 @@ class Debugger(object):
         if data[1] != ord('>'):
             raise Exception("no prompt")
 
+def make_serial():
+    from serial.tools.list_ports import comports
+    names = [ x.device for x in comports() if 'Bluetooth' not in x.device ]
+    if not names:
+        raise Exception("No serial port found")
+    return serial.Serial(port=names[0], baudrate=38400, timeout=2)
 
-def main():
-    ser = make_serial()
+def make_debugger(ser=None):
+    if ser is None:
+        ser = make_serial()
     debug = Debugger(ser)
-
-    while True:
-        for x in range(256):
-            # 0020 A1 2A         [ 4]   31     mov a,#42
-            # 0022 9E 00 FE      [ 9]   32     mov 0xfe01,a
-            # af                                ret
-            code = [0xa1, x, 0x9e, 0x07, 0xfe, 0xaf]
-            for address, value in enumerate(code, 0xf000):
-                debug.write_memory(address, value) # ret
-                if debug.read_memory(address) != value:
-                    raise Exception("write failed")
-            debug.branch(0xf000)
-            sys.stdout.write("%02x " % debug.read_memory(0xfe07))
-            sys.stdout.flush()
-
-if __name__ == '__main__':
-    main()
+    return debug
