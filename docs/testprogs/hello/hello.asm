@@ -1,3 +1,5 @@
+;Print "Hello, World!" out the UART every 100ms
+
     .area CODE1 (ABS)
     .org 0
 
@@ -26,22 +28,24 @@ pcc = 0xfffb            ;Processor clock control register
     mov asim0,#0x8a     ;Enable UART for transmit only and 8-N-1
 
 loop:
-    mov a,#'h
-    call uart_put
-    mov a,#'e
-    call uart_put
-    mov a,#'l
-    call uart_put
-    mov a,#'l
-    call uart_put
-    mov a,#'o
-    call uart_put
-    mov a,#0x0d
-    call uart_put
-    mov a,#0x0a
-    call uart_put
-
+    call greet
+    call delay_100ms
     br loop
+
+greet:
+;Write "Hello, World" greeting to the UART
+    movw hl,#greet_text
+greet_nextchar:
+    mov a,[hl]
+    or a,#0
+    bz greet_done
+    call uart_put
+    incw hl
+    br greet_nextchar
+greet_done:
+    ret
+greet_text:
+    .ascii "Hello, World!\r\n\0"
 
 uart_put:
 ;Write a byte to the UART
@@ -51,3 +55,14 @@ uart_put_wait:
     bf if0h.3, uart_put_wait   ;Wait until IF0H.3=1 (transmit complete)
     clr1 if0h.3                ;Clear transmit complete interrupt flag
     ret
+
+delay_100ms:
+;Delay ~100ms
+  push ax
+  movw ax,#0x6700
+delay_loop:
+  decw ax
+  cmpw ax,#0
+  bnz delay_loop
+  pop ax
+  ret
