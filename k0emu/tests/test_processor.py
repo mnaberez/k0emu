@@ -2990,7 +2990,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.X), 1)
 
     #    inc x                       ;40
-    def test_40_inc_x_result_ff_to_0_wraps_and_sets_z(self):
+    def test_40_inc_x_result_ff_to_0_wraps_and_sets_ac_and_z(self):
         proc = Processor()
         code = [0x40]
         proc.write_memory(0, code)
@@ -2998,7 +2998,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.Z)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_psw(), Flags.Z)
+        self.assertEqual(proc.read_psw(), Flags.Z | Flags.AC)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0)
 
     #    inc x                       ;40
@@ -3012,6 +3012,30 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.AC)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0b00010000)
+
+    #    inc x                       ;40
+    def test_40_inc_x_sets_ac_and_z_flags(self):
+        ac_setters = set([0x0f, 0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x6f,
+                          0x7f, 0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf,
+                          0xef, 0xff])
+        for x in range(256):
+            proc = Processor()
+            code = [0x40]
+            proc.write_memory(0, code)
+            proc.write_gp_reg(Registers.X, x)
+            proc.write_psw(0)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            if x in ac_setters:
+                self.assertEqual(proc.read_psw() & Flags.AC, Flags.AC)
+            else:
+                self.assertEqual(proc.read_psw() & Flags.AC, 0)
+            expected = (x + 1) & 0xFF
+            self.assertEqual(proc.read_gp_reg(Registers.X), expected)
+            if expected == 0:
+                self.assertEqual(proc.read_psw() & Flags.Z, Flags.Z)
+            else:
+                self.assertEqual(proc.read_psw() & Flags.Z, 0)
 
     #    inc a                       ;41
     def test_41_inc_a(self):

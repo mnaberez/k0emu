@@ -2,7 +2,7 @@
 
 ## Verify that PSW is really stored in FF1E.
 
-CONFIRMED, it is.  (`test_psw.py`)
+DONE, it is.  (`test_psw.py`)
 
 From the instructions, PSW translates to FF1E:
 
@@ -24,13 +24,13 @@ ff1e: IE (BIT R/W)
 
 ## Verify that bit 2 of PSW is always stuck at 0.
 
-CONFIRMED, it is.  (`test_psw.py`)
+DONE, it is.  (`test_psw.py`)
 
 Writing a 1 to PSW bit 2 doesn't change it.
 
 ## Verify that SP is really stored in FF1C.
 
-CONFIRMED, it is.  (`test_sp.py`)
+DONE, it is.  (`test_sp.py`)
 
 ```
 movw 0fe20h,ax              ;99 20          saddrp
@@ -40,6 +40,8 @@ movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
 ```
 
 ## Verify behavior of flag AC during INC.
+
+DONE.
 
 ## Verify behavior of flag AC during DEC.
 
