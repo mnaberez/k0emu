@@ -1,6 +1,6 @@
 import debugger
 
-def test_cmp(debug):
+def test(debug):
     code = [
         # f000 A1 01         [ 4]   31     mov a, #0
         0xa1, 0,
@@ -28,7 +28,7 @@ def test_cmp(debug):
 
 def main():
     debug = debugger.make_debugger()
-    test_cmp(debug)
+    test(debug)
 
 if __name__ == '__main__':
     main()

@@ -7,7 +7,7 @@ Result = yes, it is.
 
 import debugger
 
-def test_cmp(debug):
+def test(debug):
     code = [
         # f000 89 1C         movw ax,sp
         0x89, 0x1c,
@@ -36,7 +36,7 @@ def test_cmp(debug):
 
 def main():
     debug = debugger.make_debugger()
-    test_cmp(debug)
+    test(debug)
 
 if __name__ == '__main__':
     main()
