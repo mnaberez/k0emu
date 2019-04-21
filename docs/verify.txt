@@ -1,7 +1,7 @@
-Verify on Real Hardware
------------------------
+# Verify on Real Hardware
 
-Verify that PSW is really stored in FF1E.
+# Verify that PSW is really stored in FF1E.
+
   From the instructions, PSW translates to FF1E:
       # mov a,0fe20h                ;F0 20          saddr
       # mov a,psw                   ;f0 1e
@@ -13,27 +13,32 @@ Verify that PSW is really stored in FF1E.
     ff1e: Z (BIT R/W)
     ff1e: IE (BIT R/W)
 
-Verify that SP is really stored in FF1C.
-    movw 0fe20h,ax              ;99 20          saddrp
-    movw sp,ax                  ;99 1c
-    movw sp,#0abcdh             ;ee 1c cd ab
-    movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
+## Verify that SP is really stored in FF1C.
 
-Verify behavior of flag AC during INC.
+CONFIRMED, it is.  (`test_sp.py`)
 
-Verify behavior of flag AC during DEC.
+```
+movw 0fe20h,ax              ;99 20          saddrp
+movw sp,ax                  ;99 1c
+movw sp,#0abcdh             ;ee 1c cd ab
+movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
+```
 
-Verify DBNZ wrap-around behavior.
+## Verify behavior of flag AC during INC.
 
-Verify all branch displacement calculations.
+## Verify behavior of flag AC during DEC.
 
-Verify # mov a,[hl+0abh]             ;ae ab wrap-around behavior.
+## Verify DBNZ wrap-around behavior.
+
+## Verify all branch displacement calculations.
+
+## Verify # mov a,[hl+0abh]             ;ae ab wrap-around behavior.
 
 
-Verify the address must really be even:
+## Verify the address must really be even:
     movw ax,!0abceh             ;02 ce ab       addr16p
     movw !0abceh,ax             ;03 ce ab       addr16p
 
-Find out what ADDW does to the AC flag on real hardware.  The instruction
+## Find out what ADDW does to the AC flag on real hardware.  The instruction
 manual says the AC flag is undefined.
 

@@ -28,6 +28,16 @@ pcc = 0xfffb            ;Processor clock control register
     mov asim0,#0x8a     ;Enable UART for transmit only and 8-N-1
 
 loop:
+    push ax
+    pop ax
+
+    movw ax,sp
+    movw 0xfe00,ax
+
+    movw ax,0xff1c
+    movw 0xfe02,ax
+
+
     call greet
     call delay_100ms
     br loop
