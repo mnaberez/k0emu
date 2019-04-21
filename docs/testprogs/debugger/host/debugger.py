@@ -8,6 +8,7 @@ import serial # pyserial
 class Debugger(object):
     def __init__(self, serial):
         self.ser = serial
+        self.find_prompt()
 
     def find_prompt(self):
         self.ser.flushOutput()
@@ -18,7 +19,6 @@ class Debugger(object):
                 return
 
     def read_memory(self, address):
-        self.find_prompt()
         low = address & 0xFF
         high = address >> 8
         self.ser.write(bytearray([ord(b'R'), low, high]))
@@ -32,7 +32,6 @@ class Debugger(object):
         return data[1]
 
     def write_memory(self, address, value):
-        self.find_prompt()
         low = address & 0xFF
         high = address >> 8
         self.ser.write(bytearray([ord(b'W'), low, high, value]))
@@ -45,7 +44,6 @@ class Debugger(object):
             raise Exception("no prompt")
 
     def branch(self, address):
-        self.find_prompt()
         low = address & 0xFF
         high = address >> 8
         self.ser.write(bytearray([ord(b'B'), low, high]))
