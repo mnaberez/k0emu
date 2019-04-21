@@ -23,7 +23,8 @@ pcc = 0xfffb            ;Processor clock control register
     mov pm2,#0b11011111 ;PM25=output (TxD0), all others input
     mov asim0,#0        ;Disable UART
     mov brgc0,#0x1b     ;Set baud rate to 38400 bps
-    mov asim0,#0x8a     ;Enable UART for transmit only and 8-N-1
+    mov if0h,#0
+    mov asim0,#0xca     ;Enable UART for tx & rx and 8-N-1
 
 loop:
     mov a,#'>           ;send ">" prompt
@@ -31,13 +32,25 @@ loop:
 
     call uart_get       ;get command byte
 
+check_r:
     cmp a,#'R           ;handle command
-    bz cmd_read
-    cmp a,#'W
-    bz cmd_write
-    cmp a,#'B
-    bz cmd_branch
+    bnz check_w
+    call cmd_read
+    br loop
 
+check_w:
+    cmp a,#'W
+    bnz check_b
+    call cmd_write
+    br loop
+
+check_b:
+    cmp a,#'B
+    bnz other
+    call cmd_branch
+    br loop
+
+other:
     br loop             ;do it again
 
 ;Commands ===================================================================
@@ -82,6 +95,15 @@ cmd_branch:
 
 ;UART routines ==============================================================
 
+uart_get:
+;Read a byte from the UART
+;Blocks until one has been received
+uart_get_wait:
+  bf if0h.2, uart_get_wait  ;Wait until IF0H.2=1 (receive complete)
+  mov a,rxb0_txs0           ;A = byte received
+  clr1 if0h.2               ;Clear receive complete interrupt flag
+  ret
+
 uart_put:
 ;Write a byte to the UART
 ;Blocks until it has been sent
@@ -91,11 +113,6 @@ uart_put_wait:
     clr1 if0h.3                ;Clear transmit complete interrupt flag
     ret
 
-uart_get:
-;Read a byte from the UART, return it in A
-;Blocks until one has been received
-    ret
-
 uart_get_hl:
 ;Read two bytes from the UART, return them in HL
 ;Blocks until they have been received
@@ -103,5 +120,4 @@ uart_get_hl:
     mov l,a
     call uart_get    ;get address high
     mov h,a
-    call uart_get    ;get value to write
     ret
