@@ -7,7 +7,7 @@ class Processor(object):
     PSW_ADDRESS = 0xFF1E
 
     def __init__(self):
-        self.memory = bytearray(0x10000)
+        self.memory = Memory(0x10000)
         self._init_opcode_map_unprefixed()
         self._init_opcode_map_prefix_0x31()
         self._init_opcode_map_prefix_0x61()
@@ -2052,11 +2052,11 @@ class Processor(object):
 
     def read_psw(self):
         """Read the Processor Status Word"""
-        return self.memory[self.PSW_ADDRESS]
+        return self.memory[self.PSW_ADDRESS] & 0b11111011  # psw bit 2 always stuck off
 
     def write_psw(self, value):
         """Write the Processor Status Word"""
-        self.memory[self.PSW_ADDRESS] = value
+        self.memory[self.PSW_ADDRESS] = value & 0b11111011  # psw bit 2 always stuck off
 
     def _update_psw_z(self, value):
         """Set the Z flag in PSW if value is zero, clear otherwise"""
@@ -2178,3 +2178,10 @@ class RegisterTrace:
                 s += '.'
         s += "]"
         return s
+
+
+class Memory(bytearray):
+    def __setitem__(self, address, value):
+        if address == Processor.PSW_ADDRESS:
+            value = value & 0b11111011  # psw bit 2 always stuck off
+        super().__setitem__(address, value)
