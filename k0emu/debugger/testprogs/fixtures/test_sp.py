@@ -23,7 +23,8 @@ def test(debug, outfile):
     sp = (sp_high << 8) + sp_low
     ff1c = (ff1c_high << 8) + ff1c_low
 
-    outfile.write("SP=%04x, FF1C=%04x\n" % (sp, ff1c))
+    fmt = "SP(OUT)=%04x, FF1C(OUT)=%04x\n"
+    outfile.write(fmt % (sp, ff1c))
     outfile.flush()
 
 def main():

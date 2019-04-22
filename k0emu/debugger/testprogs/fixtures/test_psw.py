@@ -15,14 +15,10 @@ def test(debug, outfile):
         debug.write(0xf000, code)
         debug.branch(0xf000)
         psw, ff1e = debug.read(0xfe00, length=2)
-        extra = ''
-        if psw != a:
-            extra = ' PSW %02x NOT EQUAL TO VALUE SET %02x' % (psw, a)
-        outfile.write("PSW=%02x (%s), FF1E=%02x (%s) %s\n" % (psw, binary(psw), ff1e, binary(ff1e), extra))
-        outfile.flush()
 
-def binary(b):
-    return bin(b)[2:].rjust(8,'0')
+        fmt = "PSW(OUT)=%02x, FF1E(OUT)=%02x\n"
+        outfile.write(fmt % (psw, ff1e))
+        outfile.flush()
 
 def main():
     debug = make_debugger_from_argv()

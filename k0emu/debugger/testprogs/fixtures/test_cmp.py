@@ -17,7 +17,9 @@ def test(debug, outfile):
             debug.write(0xf000, code)
             debug.branch(0xf000)
             psw = debug.read(0xfe07, length=1)[0]
-            outfile.write("CMP A,X with A=%02x, X=%02x: PSW=%02x\n" % (a, x, psw))
+
+            fmt = "A(IN)=%02x, X(IN)=%02x -> PSW(OUT)=%02x\n"
+            outfile.write(fmt % (a, x, psw))
             outfile.flush()
 
 def main():

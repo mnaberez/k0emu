@@ -15,9 +15,10 @@ def test(debug, outfile):
         ]
         debug.write(0xf000, code)
         debug.branch(0xf000)
-
         a_out, psw = debug.read(0xfe00, length=2)
-        outfile.write("A(IN)=%02x, A(OUT)=%02x, PSW=%02x\n" % (a, a_out, psw))
+
+        fmt = "A(IN)=%02x -> A(OUT)=%02x, PSW(OUT)=%02x\n"
+        outfile.write(fmt % (a, a_out, psw))
         outfile.flush()
 
 def main():
