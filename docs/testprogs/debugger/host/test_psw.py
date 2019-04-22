@@ -1,4 +1,4 @@
-import debugger
+from k0emu.debugger import make_debugger_from_argv
 
 def test(debug):
     for a in range(0x80):
@@ -23,7 +23,7 @@ def binary(b):
     return bin(b)[2:].rjust(8,'0')
 
 def main():
-    debug = debugger.make_debugger()
+    debug = make_debugger_from_argv()
     test(debug)
 
 if __name__ == '__main__':

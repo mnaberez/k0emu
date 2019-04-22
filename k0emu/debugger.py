@@ -1,12 +1,46 @@
-#!/usr/bin/env python3 -u
 import sys
-if sys.version_info.major < 3:
-    raise Exception("Python 2 is not supported")
-
 import serial # pyserial
+from k0emu.processor import Processor
 
 
-class Debugger(object):
+class BaseDebugger(object):
+    '''Methods a debugger must implement'''
+    def read(self, address, length):
+        '''Read <length> bytes from memory starting at <address>.'''
+        raise NotImplementedError
+
+    def write(self, address, data):
+        '''Write <data> bytes to memory starting at <address>.'''
+        raise NotImplementedError
+
+    def branch(self, address, data):
+        '''Branch to <address> in memory.  The code must return (0xAF RET).'''
+        raise NotImplementedError
+
+
+class EmulatorDebugger(BaseDebugger):
+    '''Debugger for the k0emu software emulator'''
+    def __init__(self, processor):
+        self.proc = processor
+
+    def read(self, address, length):
+        data = bytearray()
+        for i in range(length):
+            data.append(self.proc.memory[address + i])
+        return data
+
+    def write(self, address, data):
+        for addr, d in enumerate(data, address):
+            self.proc.memory[addr] = d
+
+    def branch(self, address):
+        self.proc.pc = address
+        while self.proc.memory[self.proc.pc] != 0xaf:  # ret
+            self.proc.step()
+
+
+class SerialDebugger(BaseDebugger):
+    '''Serial interface to a real uPD78F0831Y running the debugger firmware'''
     def __init__(self, serial):
         self.ser = serial
         self.find_prompt()
@@ -73,8 +107,23 @@ def make_serial():
         raise Exception("No serial port found")
     return serial.Serial(port=names[0], baudrate=38400, timeout=2)
 
-def make_debugger(ser=None):
+def make_serial_debugger(ser=None):
     if ser is None:
         ser = make_serial()
-    debug = Debugger(ser)
+    debug = SerialDebugger(ser)
     return debug
+
+def make_emulator_debugger(proc=None):
+    if proc is None:
+        proc = Processor()
+    debug = EmulatorDebugger(proc)
+    return debug
+
+def make_debugger_from_argv(argv=None):
+    if argv is None:
+        argv = sys.argv
+    if 'emulator' in argv:
+        factory = make_emulator_debugger
+    else:
+        factory = make_serial_debugger
+    return factory()

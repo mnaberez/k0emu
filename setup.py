@@ -47,6 +47,7 @@ setup(
     entry_points={
         'console_scripts': [
             'k0emu = k0emu.run:main',
+            'k0debug = k0emu.debugger:main'
         ],
     },
 )

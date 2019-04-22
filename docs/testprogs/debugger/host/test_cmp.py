@@ -1,4 +1,4 @@
-import debugger
+from k0emu.debugger import make_debugger_from_argv
 
 def test(debug):
     for a in range(256):
@@ -19,7 +19,7 @@ def test(debug):
             print("CMP A,X with A=%02x, X=%02x: PSW=%02x" % (a, x, psw))
 
 def main():
-    debug = debugger.make_debugger()
+    debug = make_debugger_from_argv()
     test(debug)
 
 if __name__ == '__main__':

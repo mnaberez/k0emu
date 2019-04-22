@@ -5,7 +5,7 @@ Check that the stack pointer really is stored in location
 Result = yes, it is.
 '''
 
-import debugger
+from k0emu.debugger import make_debugger_from_argv
 
 def test(debug):
     code = [
@@ -25,7 +25,7 @@ def test(debug):
     print("SP=%04x, FF1C=%04x" % (sp, ff1c))
 
 def main():
-    debug = debugger.make_debugger()
+    debug = make_debugger_from_argv()
     test(debug)
 
 if __name__ == '__main__':
