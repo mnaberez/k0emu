@@ -22,6 +22,7 @@ class EmulatorDebugger(BaseDebugger):
     '''Debugger for the k0emu software emulator'''
     def __init__(self, processor):
         self.proc = processor
+        self.proc.write_sp(0xfe1d)  # for consistency with serial debugger firmware
 
     def read(self, address, length):
         data = bytearray()
