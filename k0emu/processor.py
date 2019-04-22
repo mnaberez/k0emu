@@ -1853,17 +1853,15 @@ class Processor(object):
         return result
 
     def _operation_dec(self, value):
+        psw = self.read_psw() & ~(Flags.Z + Flags.AC)
+        if value & 0x0f == 0:
+            psw |= Flags.AC
         result = value - 1
         if result < 0:
             result = 0xFF
-
-        psw = self.read_psw() & ~(Flags.Z + Flags.AC)
         if result == 0:
             psw |= Flags.Z
-        if (value == 0x10) and (result == 0x0f):
-            psw |= Flags.AC
         self.write_psw(psw)
-
         return result
 
     def _operation_incw(self, value):

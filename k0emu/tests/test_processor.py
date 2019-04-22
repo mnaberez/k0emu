@@ -3346,15 +3346,15 @@ class ProcessorTests(unittest.TestCase):
             self.assertEqual(proc.read_psw(), rotated_psw)
 
     # dec x                       ;50
-    def test_50_dec_x_0_to_ff_wraps_clears_z_ac(self):
+    def test_50_dec_x_0_to_ff_wraps_clears_z_sets_ac(self):
         proc = Processor()
         code = [0x50]
         proc.write_memory(0, code)
         proc.write_gp_reg(Registers.X, 0)
-        proc.write_psw(Flags.Z | Flags.AC)
+        proc.write_psw(Flags.Z)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_psw(), 0)
+        self.assertEqual(proc.read_psw(), Flags.AC)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0xFF)
 
     # dec x                       ;50
@@ -3392,6 +3392,32 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0xfe)
+
+    # dec x                       ;50
+    def test_50_dec_x_sets_ac_and_z_flags(self):
+        ac_setters = set([0xf0, 0xe0, 0xd0, 0xc0, 0xb0, 0xa0,
+                          0x90, 0x80, 0x70, 0x60, 0x50, 0x40,
+                          0x30, 0x20, 0x10, 0x00])
+        for x in range(256):
+            proc = Processor()
+            code = [0x50]
+            proc.write_memory(0, code)
+            proc.write_gp_reg(Registers.X, x)
+            proc.write_psw(0)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            if x in ac_setters:
+                self.assertEqual(proc.read_psw() & Flags.AC, Flags.AC)
+            else:
+                self.assertEqual(proc.read_psw() & Flags.AC, 0)
+            expected = x - 1
+            if expected < 0:
+                expected = 0xff
+            self.assertEqual(proc.read_gp_reg(Registers.X), expected)
+            if expected == 0:
+                self.assertEqual(proc.read_psw() & Flags.Z, Flags.Z)
+            else:
+                self.assertEqual(proc.read_psw() & Flags.Z, 0)
 
     # dec a                       ;51
     def test_51_dec_a(self):

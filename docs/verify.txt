@@ -45,6 +45,8 @@ DONE.
 
 ## Verify behavior of flag AC during DEC.
 
+DONE.
+
 ## Verify DBNZ wrap-around behavior.
 
 ## Verify all branch displacement calculations.
