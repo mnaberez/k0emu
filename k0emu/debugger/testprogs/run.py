@@ -25,7 +25,13 @@ def main(debug):
                 spec = importlib.util.spec_from_file_location("module.name", fullname)
                 mod = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(mod)
-                mod.test(debug, outfile)
+                try:
+                    mod.test(debug, outfile)
+                except Exception as exc:
+                    msg = "ERROR: %r\n" % exc
+                    print(msg)
+                    outfile.close()
+                    os.remove(outfilename)
 
 if __name__ == '__main__':
     debug = make_debugger_from_argv()
