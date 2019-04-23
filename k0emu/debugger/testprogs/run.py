@@ -18,9 +18,9 @@ def main(debug):
         outfilename = os.path.abspath(os.path.join(here, '..', 'results', what, basename))
 
         if os.path.exists(outfilename):
-            print("Skipping %s on %s (report exists)" % (basename, what))
+            print("Skipping %s on %s (report exists)" % (filename, what))
         else:
-            print("Running %s on %s" % (basename, what))
+            print("Running %s on %s" % (filename, what))
             with open(outfilename, 'w') as outfile:
                 spec = importlib.util.spec_from_file_location("module.name", fullname)
                 mod = importlib.util.module_from_spec(spec)
