@@ -11,13 +11,14 @@ def test(debug, outfile):
            0x9E, 0x00, 0xFE,    # mov 0xfe00,a
            0xF0, 0x1E,          # mov a,psw
            0x9E, 0x01, 0xFE,    # mov 0xfe01,a
+           0xAF,                # ret
         ]
         debug.write(0xf000, code)
         debug.branch(0xf000)
-        a_out, psw = debug.read(0xfe00, length=2)
+        a_out, psw_out = debug.read(0xfe00, length=2)
 
         fmt = "A(IN)=%02x -> A(OUT)=%02x, PSW(OUT)=%02x\n"
-        outfile.write(fmt % (a, a_out, psw))
+        outfile.write(fmt % (a, a_out, psw_out))
         outfile.flush()
 
 def main():
