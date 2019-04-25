@@ -350,6 +350,10 @@ class ProcessorTests(unittest.TestCase):
         proc.step()
         self.assertEqual(proc.pc, 0xabcd)
 
+
+# TODO test adjba 61 80
+
+
     # sel rb0                     ;61 d0
     def test_61_d0_sel_rb0(self):
         proc = Processor()

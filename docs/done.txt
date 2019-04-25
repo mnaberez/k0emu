@@ -775,3 +775,5 @@
     bf psw.5,$label77           ;31 53 1e fc
     bf psw.6,$label78           ;31 63 1e fc
     bf psw.7,$label79           ;31 73 1e fc
+
+    adjba                       ;61 80

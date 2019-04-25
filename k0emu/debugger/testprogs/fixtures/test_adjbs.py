@@ -2,7 +2,7 @@ import sys
 from k0emu.debug import make_debugger_from_argv
 
 def test(debug, outfile):
-    for psw in (0x00, 0x40, 0x01, 0x41):
+    for psw in (0x00, 0x01, 0x40, 0x41):
         for a in range(256):
             code = [
                 0xa1, psw,          # mov a,#<psw>

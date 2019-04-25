@@ -236,7 +236,9 @@ class Processor(object):
         self._opcode_map_prefix_0x31 = D
 
     def _init_opcode_map_prefix_0x61(self):
-        D = {}
+        D = {
+            0x80: self._opcode_0x61_0x80_adjba,     # adjba                       ;61 80
+        }
 
         # sel rbn
         for opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
@@ -971,6 +973,55 @@ class Processor(object):
     # br ax                       ;31 98
     def _opcode_0x31_0x98_br(self, opcode2):
         self.pc = self.read_gp_regpair(RegisterPairs.AX)
+
+    # adjba                       ;61 80
+    def _opcode_0x61_0x80_adjba(self, opcode2):
+        psw = self.read_psw()
+        cy = int(bool(psw & Flags.CY))
+        ac = int(bool(psw & Flags.AC))
+
+        a = self.read_gp_reg(Registers.A)
+        a_low_nib = a & 0x0f
+        a_high_nib = (a & 0xf0) >> 4
+
+        if ac == 0:
+            if a_low_nib <= 9:
+                if (a_high_nib <= 9) and (cy == 0):
+                    a = a
+                    cy = 0
+                    ac = 0
+                if (a_high_nib >= 10) or (cy == 1):
+                    a = (a + 0b01100000) & 0xff
+                    cy = 1
+                    ac = 0
+            else:
+                if (a_high_nib < 9) and (cy == 0):
+                    a = (a + 0b00000110) & 0xff
+                    cy = 0
+                    ac = 1
+                if (a_high_nib >= 9) or (cy == 1):
+                    a = (a + 0b01100110) & 0xff
+                    cy = 1
+                    ac = 1
+        else:
+            if (a_high_nib <= 9) and (cy == 0):
+                a = (a + 0b00000110) & 0xff
+                cy = 0
+                ac = 0
+            if (a_high_nib >= 10) or (cy == 1):
+                a = (a + 0b01100110) & 0xff
+                cy = 1
+                ac = 0
+
+        psw &= ~(Flags.AC | Flags.CY | Flags.Z)
+        if cy:
+            psw |= Flags.CY
+        if ac:
+            psw |= Flags.AC
+        if a == 0:
+            psw |= Flags.Z
+        self.write_psw(psw)
+        self.write_gp_reg(Registers.A, a)
 
     # sel rb0                     ;61 d0
     def _opcode_0x61_0xd0_to_0xf8_sel_rb(self, opcode2):
