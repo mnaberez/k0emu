@@ -84,7 +84,6 @@
 
     ror4 [hl]                   ;31 90
     rol4 [hl]                   ;31 80
-    adjbs                       ;61 90
 
     halt                        ;71 10
     stop                        ;71 00

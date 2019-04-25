@@ -352,7 +352,7 @@ class ProcessorTests(unittest.TestCase):
 
 
 # TODO test adjba 61 80
-
+# TODO test adjbs 61 90
 
     # sel rb0                     ;61 d0
     def test_61_d0_sel_rb0(self):

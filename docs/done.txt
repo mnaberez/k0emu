@@ -777,3 +777,4 @@
     bf psw.7,$label79           ;31 73 1e fc
 
     adjba                       ;61 80
+    adjbs                       ;61 90

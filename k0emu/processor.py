@@ -238,6 +238,7 @@ class Processor(object):
     def _init_opcode_map_prefix_0x61(self):
         D = {
             0x80: self._opcode_0x61_0x80_adjba,     # adjba                       ;61 80
+            0x90: self._opcode_0x61_0x90_adjbs,     # adjbs                       ;61 90
         }
 
         # sel rbn
@@ -1010,6 +1011,43 @@ class Processor(object):
                 ac = 0
             if (a_high_nib >= 10) or (cy == 1):
                 a = (a + 0b01100110) & 0xff
+                cy = 1
+                ac = 0
+
+        psw &= ~(Flags.AC | Flags.CY | Flags.Z)
+        if cy:
+            psw |= Flags.CY
+        if ac:
+            psw |= Flags.AC
+        if a == 0:
+            psw |= Flags.Z
+        self.write_psw(psw)
+        self.write_gp_reg(Registers.A, a)
+
+    # adjbs                       ;61 90
+    def _opcode_0x61_0x90_adjbs(self, opcode2):
+        psw = self.read_psw()
+        cy = int(bool(psw & Flags.CY))
+        ac = int(bool(psw & Flags.AC))
+
+        a = self.read_gp_reg(Registers.A)
+
+        if ac == 0:
+            if cy == 0:
+                a = a
+                cy = 0
+                ac = 0
+            else:
+                a = (a - 0b01100000) & 0xff
+                cy = 1
+                ac = 0
+        else:
+            if cy == 0:
+                a = (a - 0b00000110) & 0xff
+                cy = 0
+                ac = 0
+            else:
+                a = (a - 0b01100110) & 0xff
                 cy = 1
                 ac = 0
 
