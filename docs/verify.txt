@@ -1,52 +1,5 @@
 # Verify on Real Hardware
 
-## Verify that PSW is really stored in FF1E.
-
-DONE, it is.  (`test_psw.py`)
-
-From the instructions, PSW translates to FF1E:
-
-```
-# mov a,0fe20h                ;F0 20          saddr
-# mov a,psw                   ;f0 1e
-```
-
-From the 78F0831Y device file, FF1E does indeed look like PSW:
-
-```
-ff1e: ISP (BIT R/W)
-ff1e: RBS0 (BIT R/W)
-ff1e: AC (BIT R/W)
-ff1e: RBS1 (BIT R/W)
-ff1e: Z (BIT R/W)
-ff1e: IE (BIT R/W)
-```
-
-## Verify that bit 2 of PSW is always stuck at 0.
-
-DONE, it is.  (`test_psw.py`)
-
-Writing a 1 to PSW bit 2 doesn't change it.
-
-## Verify that SP is really stored in FF1C.
-
-DONE, it is.  (`test_sp.py`)
-
-```
-movw 0fe20h,ax              ;99 20          saddrp
-movw sp,ax                  ;99 1c
-movw sp,#0abcdh             ;ee 1c cd ab
-movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
-```
-
-## Verify behavior of flag AC during INC.
-
-DONE.
-
-## Verify behavior of flag AC during DEC.
-
-DONE.
-
 ## Verify DBNZ wrap-around behavior.
 
 ## Verify all branch displacement calculations.
