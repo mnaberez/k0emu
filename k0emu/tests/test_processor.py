@@ -350,8 +350,31 @@ class ProcessorTests(unittest.TestCase):
         proc.step()
         self.assertEqual(proc.pc, 0xabcd)
 
+    # adjba                       ;61 80
+    def test_61_80_adjba(self):
+        tests = (
+            (0x00, 0x00, 0x40, 0x00),
+            (0x00, 0x90, 0x00, 0x90),
+            (0x01, 0x90, 0x01, 0xf0),
+            (0x00, 0x0a, 0x10, 0x10),
+            (0x00, 0x8a, 0x10, 0x90),
+            (0x01, 0x8a, 0x11, 0xf0),
+            (0x00, 0x9a, 0x51, 0x00),
+            (0x40, 0x90, 0x00, 0x90),
+            (0x41, 0x90, 0x01, 0xf0),
+            (0x40, 0xa0, 0x41, 0x00),
+        )
+        for psw_in, a_in, psw_out, a_out in tests:
+            proc = Processor()
+            code = [0x61, 0x80]
+            proc.write_memory(0, code)
+            proc.write_gp_reg(Registers.A, a_in)
+            proc.write_psw(psw_in)
+            proc.step()
+            self.assertEqual(proc.pc, len(code))
+            self.assertEqual(proc.read_gp_reg(Registers.A), a_out)
+            self.assertEqual(proc.read_psw(), psw_out)
 
-# TODO test adjba 61 80
 # TODO test adjbs 61 90
 
     # sel rb0                     ;61 d0
