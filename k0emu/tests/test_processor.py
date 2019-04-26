@@ -10885,6 +10885,27 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd) # sum
         self.assertEqual(proc.read_psw(), 0)
 
+    # rol4 [hl]                   ;31 80
+    def test_31_80_rol4_raises_for_sfr_area(self):
+        proc = Processor()
+        code = [0x31, 0x80]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xFF12)
+        self.assertRaises(Exception, proc.step)
+
+    # rol4 [hl]                   ;31 80
+    def test_31_80_rol4(self):
+        proc = Processor()
+        code = [0x31, 0x80]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xFE00)
+        proc.write_gp_reg(Registers.A, 0xA1)
+        proc.memory[0xFE00] = 0x32
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0xA3)
+        self.assertEqual(proc.memory[0xFE00], 0x21)
+
     # divuw c                     ;31 82
     def test_31_82_divuw_c_divisor_nonzero(self):
         proc = Processor()

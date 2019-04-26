@@ -83,7 +83,6 @@
     cmpw ax,#0abcdh             ;ea cd ab
 
     ror4 [hl]                   ;31 90
-    rol4 [hl]                   ;31 80
 
     halt                        ;71 10
     stop                        ;71 00

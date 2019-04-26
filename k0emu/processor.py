@@ -178,7 +178,6 @@ class Processor(object):
         # callt [0040h] ... callt [007eh]
         for opcode in range(0xc1, 0x100, 2):
             D[opcode] = self._opcode_0xc1_to_0xff_callt
-
         self._opcode_map_unprefixed = D
 
     def _init_opcode_map_prefix_0x31(self):
@@ -193,6 +192,7 @@ class Processor(object):
             0x6b: self._opcode_0x31_0x6b_or,    # or a,[hl+c]                 ;31 6b
             0x7a: self._opcode_0x31_0x7a_xor,   # xor a,[hl+c]                ;31 7a
             0x7b: self._opcode_0x31_0x7b_xor,   # xor a,[hl+b]                ;31 7b
+            0x80: self._opcode_0x31_0x80_rol4,  # rol4 [hl]                   ;31 80
             0x82: self._opcode_0x31_0x82_divuw, # divuw c                     ;31 82
             0x88: self._opcode_0x31_0x88_mulu,  # mulu x                      ;31 88
             0x8a: self._opcode_0x31_0x8a_xch,   # xch a,[hl+c]                ;31 8a
@@ -295,6 +295,9 @@ class Processor(object):
         # addc x,a                    ;61 20
         for opcode2 in (0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27):
             D[opcode2] = self._opcode_0x61_0x20_to_0x27_addc
+        # sub a,reg                   ;61 18..1f except 11
+        for opcode in (0x18, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f):
+            D[opcode] = self._opcode_0x18_to_0x1f_except_0x11
         self._opcode_map_prefix_0x61 = D
 
     def _init_opcode_map_prefix_0x71(self):
@@ -935,6 +938,26 @@ class Processor(object):
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
 
+    # rol4 [hl]                   ;31 80
+    def _opcode_0x31_0x80_rol4(self, opcode2):
+        address = self.read_gp_regpair(RegisterPairs.HL)
+        if (address & 0xff00) == 0xff00:
+            raise Exception("ROL4 does not allow SFR area for operand [HL]")
+
+        a = self.read_gp_reg(Registers.A)
+        a_low_nib = a & 0x0f
+        a_high_nib = a >> 4
+
+        dest = self.memory[address]
+        dest_low_nib = dest & 0x0f
+        dest_high_nib = dest >> 4
+
+        a = (a_high_nib << 4) | dest_high_nib 
+        self.write_gp_reg(Registers.A, a)
+
+        dest = (dest_low_nib << 4) | a_low_nib
+        self.memory[address] = dest
+
     # divuw c                     ;31 82
     def _opcode_0x31_0x82_divuw(self, opcode2):
         ax = self.read_gp_regpair(RegisterPairs.AX)
@@ -983,7 +1006,7 @@ class Processor(object):
 
         a = self.read_gp_reg(Registers.A)
         a_low_nib = a & 0x0f
-        a_high_nib = (a & 0xf0) >> 4
+        a_high_nib = a >> 4
 
         if ac == 0:
             if a_low_nib <= 9:
@@ -1182,6 +1205,14 @@ class Processor(object):
         a = self.read_gp_reg(Registers.A)
         b = self.read_gp_reg(reg)
         result = self._operation_addc(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # sub a,x                     ;61 18
+    def _opcode_0x18_to_0x1f_except_0x11(self, opcode2):
+        reg = _reg(opcode2)
+        a = self.read_gp_reg(Registers.A)
+        b = self.read_gp_reg(reg)
+        result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
 
     # add x,a                     ;61 00
@@ -1902,6 +1933,14 @@ class Processor(object):
             psw |= Flags.Z
         self.write_psw(psw)
         return result
+
+    def _operation_sub(self, a, b):
+        psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
+        # TODO flags
+        result = (a - b) & 0xff
+        return result
+
+
 
     def _operation_add(self, a, b):
         psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
