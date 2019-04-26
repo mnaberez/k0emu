@@ -5,8 +5,7 @@ def test(debug, outfile):
     for psw in (0x00, 0x01, 0x40, 0x41):
         for a in range(256):
             code = [
-                0xa1, psw,          # mov a,#<psw>
-                0xf2, 0x1e,         # mov psw,a
+                0x11, 0x1e, psw,    # mov psw,#<psw>
                 0xa1, a,            # mov a,#<a>
                 0x61, 0x90,         # adjbs
                 0x9e, 0x06, 0xfe,   # mov 0xfe06,a

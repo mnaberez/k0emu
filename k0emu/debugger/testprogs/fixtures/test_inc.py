@@ -4,8 +4,7 @@ from k0emu.debug import make_debugger_from_argv
 def test(debug, outfile):
     for a in range(256):
         code = [
-           0xA1, 0x00,          # mov a,#0
-           0xF2, 0x1E,          # mov psw,a
+           0x11, 0x1e, 0,       # mov psw,#0
            0xA1, a,             # mov a,#<a>
            0x41,                # inc a
            0x9E, 0x00, 0xFE,    # mov 0xfe00,a

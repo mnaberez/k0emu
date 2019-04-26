@@ -6,8 +6,7 @@ def test(debug, outfile):
         for a in range(256):
             for x in range(256):
                 code = [
-                    0xa1, psw,          # mov a,#<psw>
-                    0xf2, 0x1e,         # mov psw,a
+                    0x11, 0x1e, psw,    # mov psw,#<psw>
                     0xa1, a,            # mov a,#<a>
                     0xa0, x,            # mov x,#<x>
                     0x61, 0x18,         # sub a,x

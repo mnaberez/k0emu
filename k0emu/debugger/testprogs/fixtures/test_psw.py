@@ -2,10 +2,9 @@ import sys
 from k0emu.debug import make_debugger_from_argv
 
 def test(debug, outfile):
-    for a in range(0x80):
+    for psw in range(0x80):
         code = [
-            0xa1, a,            # mov a,#<a>
-            0xf2, 0x1e,         # mov psw,a
+            0x11, 0x1e, psw,    # mov psw,#<psw>
             0xf0, 0x1e,         # mov a,psw
             0x9e, 0x00, 0xfe,   # mov 0xfe00,a
             0xf0, 0x1e,         # mov a,0xff1e
