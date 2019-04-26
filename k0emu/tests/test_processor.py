@@ -10900,11 +10900,33 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0, code)
         proc.write_gp_regpair(RegisterPairs.HL, 0xFE00)
         proc.write_gp_reg(Registers.A, 0xA1)
-        proc.memory[0xFE00] = 0x32
+        proc.memory[0xFE00] = 0x23
+        proc.pc = 0
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0xA2)
+        self.assertEqual(proc.memory[0xFE00], 0x31)
+
+    # ror4 [hl]                   ;31 90
+    def test_31_90_rol4_raises_for_sfr_area(self):
+        proc = Processor()
+        code = [0x31, 0x90]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xFF12)
+        self.assertRaises(Exception, proc.step)
+
+    # ror4 [hl]                   ;31 90
+    def test_31_90_ror4(self):
+        proc = Processor()
+        code = [0x31, 0x90]
+        proc.write_memory(0, code)
+        proc.write_gp_regpair(RegisterPairs.HL, 0xFE00)
+        proc.write_gp_reg(Registers.A, 0xA1)
+        proc.memory[0xFE00] = 0x23
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xA3)
-        self.assertEqual(proc.memory[0xFE00], 0x21)
+        self.assertEqual(proc.memory[0xFE00], 0x12)
 
     # divuw c                     ;31 82
     def test_31_82_divuw_c_divisor_nonzero(self):

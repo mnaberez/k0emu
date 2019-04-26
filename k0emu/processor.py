@@ -197,6 +197,7 @@ class Processor(object):
             0x88: self._opcode_0x31_0x88_mulu,  # mulu x                      ;31 88
             0x8a: self._opcode_0x31_0x8a_xch,   # xch a,[hl+c]                ;31 8a
             0x8b: self._opcode_0x31_0x8b_xch,   # xch a,[hl+b]                ;31 8b
+            0x90: self._opcode_0x31_0x90_ror4,  # ror4 [hl]                   ;31 90
             0x98: self._opcode_0x31_0x98_br,    # br ax                       ;31 98
         }
 
@@ -952,10 +953,30 @@ class Processor(object):
         dest_low_nib = dest & 0x0f
         dest_high_nib = dest >> 4
 
-        a = (a_high_nib << 4) | dest_high_nib 
+        a = (a_high_nib << 4) | dest_high_nib
         self.write_gp_reg(Registers.A, a)
 
         dest = (dest_low_nib << 4) | a_low_nib
+        self.memory[address] = dest
+
+    # ror4 [hl]                   ;31 90
+    def _opcode_0x31_0x90_ror4(self, opcode2):
+        address = self.read_gp_regpair(RegisterPairs.HL)
+        if (address & 0xff00) == 0xff00:
+            raise Exception("ROR4 does not allow SFR area for operand [HL]")
+
+        a = self.read_gp_reg(Registers.A)
+        a_low_nib = a & 0x0f
+        a_high_nib = a >> 4
+
+        dest = self.memory[address]
+        dest_low_nib = dest & 0x0f
+        dest_high_nib = dest >> 4
+
+        a = (a_high_nib << 4) | dest_low_nib
+        self.write_gp_reg(Registers.A, a)
+
+        dest = (a_low_nib << 4) | dest_high_nib
         self.memory[address] = dest
 
     # divuw c                     ;31 82

@@ -82,7 +82,5 @@
     subw ax,#0abcdh             ;da cd ab
     cmpw ax,#0abcdh             ;ea cd ab
 
-    ror4 [hl]                   ;31 90
-
     halt                        ;71 10
     stop                        ;71 00
