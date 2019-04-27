@@ -1,13 +1,11 @@
 Unimplemented instructions needed by "SOFTWARE 23":
 
-09dd: 1e 2d        sub a,0fe2dh           !!! NOT IMPLEMENTED !!!
 3795: 4d 00        cmp a,#00h             !!! NOT IMPLEMENTED !!!
 0a10: da 06 f2     subw ax,#0f206h        !!! NOT IMPLEMENTED !!!
 0c40: 4e dc        cmp a,0fedch           !!! NOT IMPLEMENTED !!!
 0950: 4e 2e        cmp a,0fe2eh           !!! NOT IMPLEMENTED !!!
 0e2d: ea cb fe     cmpw ax,#0fecbh        !!! NOT IMPLEMENTED !!!
 0e3c: ea 00 f8     cmpw ax,#0f800h        !!! NOT IMPLEMENTED !!!
-09f1: 61 1e        sub a,l                !!! NOT IMPLEMENTED !!!
 09f4: 61 3f        subc a,h               !!! NOT IMPLEMENTED !!!
 0ca0: 4d 00        cmp a,#00h             !!! NOT IMPLEMENTED !!!
 0cdd: 4d 00        cmp a,#00h             !!! NOT IMPLEMENTED !!!
@@ -27,11 +25,8 @@ aad9: 4d 15        cmp a,#15h             !!! NOT IMPLEMENTED !!!
 40a2: ea 06 f2     cmpw ax,#0f206h        !!! NOT IMPLEMENTED !!!
 40a7: ea 6b f2     cmpw ax,#0f26bh        !!! NOT IMPLEMENTED !!!
 9dec: 4d 0a        cmp a,#0ah             !!! NOT IMPLEMENTED !!!
-9e13: 61 1b        sub a,b                !!! NOT IMPLEMENTED !!!
 9fa7: 4d 21        cmp a,#21h             !!! NOT IMPLEMENTED !!!
 9f3e: 4d 1e        cmp a,#1eh             !!! NOT IMPLEMENTED !!!
-9f42: 1d 1e        sub a,#1eh             !!! NOT IMPLEMENTED !!!
-9f5f: 1d 03        sub a,#03h             !!! NOT IMPLEMENTED !!!
 a09e: 4d 00        cmp a,#00h             !!! NOT IMPLEMENTED !!!
 a0a8: 4d 00        cmp a,#00h             !!! NOT IMPLEMENTED !!!
 111e: 4d 00        cmp a,#00h             !!! NOT IMPLEMENTED !!!

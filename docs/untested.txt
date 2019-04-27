@@ -1,0 +1,24 @@
+    sub a,!0abcdh               ;18 cd ab
+    sub a,[hl+0abh]             ;19 ab
+    sub a,#0abh                 ;1d ab
+    sub a,0fe20h                ;1e 20          saddr
+    sub a,[hl]                  ;1f
+    sub a,[hl+c]                ;31 1a
+    sub a,[hl+b]                ;31 1b
+    sub a,x                     ;61 18
+    sub a,a                     ;61 11
+    sub a,c                     ;61 1a
+    sub a,b                     ;61 1b
+    sub a,e                     ;61 1c
+    sub a,d                     ;61 1d
+    sub a,l                     ;61 1e
+    sub a,h                     ;61 1f
+    sub x,a                     ;61 10
+    sub a,a                     ;61 11
+    sub c,a                     ;61 12
+    sub b,a                     ;61 13
+    sub e,a                     ;61 14
+    sub d,a                     ;61 15
+    sub l,a                     ;61 16
+    sub h,a                     ;61 17
+    sub 0fe20h,#0abh            ;98 20 ab       saddr

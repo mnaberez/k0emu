@@ -42,6 +42,11 @@ class Processor(object):
             0x0f: self._opcode_0x0f, # add a,[hl]                  ;0f
             0x11: self._opcode_0x11, # mov 0fe20h,#0abh            ;11 20 ab       saddr
             0x13: self._opcode_0x13, # mov 0fffeh, #0abh           ;13 fe ab       sfr
+            0x18: self._opcode_0x18, # sub a,!0abcdh               ;18 cd ab
+            0x19: self._opcode_0x19, # sub a,[hl+0abh]             ;19 ab
+            0x1d: self._opcode_0x1d, # sub a,#0abh                 ;1d ab
+            0x1e: self._opcode_0x1e, # sub a,0fe20h                ;1e 20          saddr
+            0x1f: self._opcode_0x1f, # sub a,[hl]                  ;1f
             0x20: self._opcode_0x20, # set1 cy
             0x21: self._opcode_0x21, # clr1 cy
             0x22: self._opcode_0x22, # push psw                    ;22
@@ -88,6 +93,7 @@ class Processor(object):
             0x93: self._opcode_0x93, # xch a,0fffeh                ;93 fe          sfr
             0x95: self._opcode_0x95, # mov [de],a                  ;95
             0x97: self._opcode_0x97, # mov [hl],a                  ;97
+            0x98: self._opcode_0x98, # sub 0fe20h,#0abh            ;98 20 ab       saddr
             0x99: self._opcode_0x99, # movw 0fe20h,ax              ;99 20          saddrp
             0x9a: self._opcode_0x9a, # call !0abcdh                ;9a cd ab
             0x9b: self._opcode_0x9b, # br !0abcdh                  ;9b cd ab
@@ -184,6 +190,8 @@ class Processor(object):
         D = {
             0x0a: self._opcode_0x31_0x0a_add,   # add a,[hl+c]                ;31 0a
             0x0b: self._opcode_0x31_0x0b_add,   # add a,[hl+b]                ;31 0b
+            0x1a: self._opcode_0x31_0x1a_sub,   # sub a,[hl+c]                ;31 1a
+            0x1b: self._opcode_0x31_0x1b_sub,   # sub a,[hl+b]                ;31 1b
             0x2a: self._opcode_0x31_0x2a_addc,  # addc a,[hl+c]               ;31 2a
             0x2b: self._opcode_0x31_0x2b_addc,  # addc a,[hl+b]               ;31 2b
             0x5a: self._opcode_0x31_0x5a_and,   # and a,[hl+c]                ;31 5a
@@ -299,6 +307,9 @@ class Processor(object):
         # sub a,reg                   ;61 18..1f except 11
         for opcode in (0x18, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f):
             D[opcode] = self._opcode_0x18_to_0x1f_except_0x11
+        # sub reg,a                   ;61 10..17
+        for opcode in (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17):
+            D[opcode] = self._opcode_0x10_to_0x17_sub
         self._opcode_map_prefix_0x61 = D
 
     def _init_opcode_map_prefix_0x71(self):
@@ -469,6 +480,46 @@ class Processor(object):
         other_value = self.read_gp_regpair(other_regpair)
         self.write_gp_regpair(RegisterPairs.AX, other_value)
         self.write_gp_regpair(other_regpair, ax_value)
+
+    # sub a,!0abcdh               ;18 cd ab
+    def _opcode_0x18(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self.consume_addr16()
+        b = self.memory[address]
+        result = self._operation_sub(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # sub a,[hl+0abh]             ;19 ab
+    def _opcode_0x19(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        imm = self._consume_byte()
+        address = self._based_hl_imm(imm)
+        b = self.memory[address]
+        result = self._operation_sub(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # sub a,#0abh                 ;1d ab
+    def _opcode_0x1d(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        b = self._consume_byte()
+        result = self._operation_sub(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # sub a,0fe20h                ;1e 20          saddr
+    def _opcode_0x1e(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._consume_saddr()
+        b = self.memory[address]
+        result = self._operation_sub(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # sub a,[hl]                  ;1f
+    def _opcode_0x1f(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self.read_gp_regpair(RegisterPairs.HL)
+        b = self.memory[address]
+        result = self._operation_sub(a, b)
+        self.write_gp_reg(Registers.A, result)
 
     # set1 cy
     def _opcode_0x20(self, opcode):
@@ -671,6 +722,14 @@ class Processor(object):
         value_high = self.memory[address+1]
         self.write_gp_reg(Registers.A, value_high)
 
+    # sub 0fe20h,#0abh            ;98 20 ab       saddr
+    def _opcode_0x98(self, opcode):
+        address = self.consume_saddr()
+        a = self.memory[address]
+        b = self.consume_byte()
+        result = self._operation_sub(a, b)
+        self.memory[address] = result
+
     # movw 0fe20h,ax              ;99 20          saddrp
     def _opcode_0x99(self, opcode):
         address = self._consume_saddrp()
@@ -772,6 +831,22 @@ class Processor(object):
 
     # add a,[hl+b]                ;31 0b
     def _opcode_0x31_0x0b_add(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._based_hl_b()
+        b = self.memory[address]
+        result = self._operation_add(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # sub a,[hl+c]                ;31 1a
+    def _opcode_0x31_0x1a_sub(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._based_hl_c()
+        b = self.memory[address]
+        result = self._operation_add(a, b)
+        self.write_gp_reg(Registers.A, result)
+
+    # sub a,[hl+b]                ;31 1b
+    def _opcode_0x31_0x1b_sub(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_b()
         b = self.memory[address]
@@ -1228,7 +1303,15 @@ class Processor(object):
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
 
-    # sub a,x                     ;61 18
+    # sub reg,a                   ;61 10..17
+    def _opcode_0x10_to_0x17_sub(self, opcode2):
+        reg = _reg(opcode2)
+        a = self.read_gp_reg(reg)
+        b = self.read_gp_reg(Registers.A)
+        result = self._operation_sub(a, b)
+        self.write_gp_reg(reg, result)
+
+    # sub a,reg                   ;61 18..1f
     def _opcode_0x18_to_0x1f_except_0x11(self, opcode2):
         reg = _reg(opcode2)
         a = self.read_gp_reg(Registers.A)
@@ -1957,11 +2040,12 @@ class Processor(object):
 
     def _operation_sub(self, a, b):
         psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
-        # TODO flags
+        # TODO finish me
         result = (a - b) & 0xff
+        if result == 0:
+            psw |= Flags.Z
+        self.write_psw(psw)
         return result
-
-
 
     def _operation_add(self, a, b):
         psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
