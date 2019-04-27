@@ -61,6 +61,10 @@ class Processor(object):
             0x2e: self._opcode_0x2e, # addc a,0fe20h               ;2e 20          saddr
             0x2f: self._opcode_0x2f, # addc a,[hl]                 ;2f
             0x31: self._opcode_0x31,
+            0x48: self._opcode_0x48, # cmp a,!0abcdh               ;48 cd ab
+            0x4d: self._opcode_0x4d, # cmp a,#0abh                 ;4d ab
+            0x4e: self._opcode_0x4e, # cmp a,0fe20h                ;4e 20          saddr
+            0x4f: self._opcode_0x4f, # cmp a,[hl]                  ;4f
             0x58: self._opcode_0x58, # and a,!0abcdh               ;58 cd ab
             0x59: self._opcode_0x59, # and a,[hl+0abh]             ;59 ab
             0x5d: self._opcode_0x5d, # and a,#0abh                 ;5d ab
@@ -113,6 +117,7 @@ class Processor(object):
             0xbd: self._opcode_0xbd, # bnz $label5                 ;bd fe
             0xbe: self._opcode_0xbe, # mov [hl+0abh],a             ;be ab
             0xbf: self._opcode_0xbf, # brk                         ;bf
+            0xc8: self._opcode_0xc8, # cmp 0fe20h,#0abh            ;c8 20 ab       saddr
             0xca: self._opcode_0xca, # addw ax,#0abcdh             ;ca cd ab
             0xce: self._opcode_0xce, # xch a,!abcd                 ;ce cd ab
             0xd8: self._opcode_0xd8, # and 0fe20h,#0abh            ;d8 20 ab       saddr
@@ -194,6 +199,7 @@ class Processor(object):
             0x1b: self._opcode_0x31_0x1b_sub,   # sub a,[hl+b]                ;31 1b
             0x2a: self._opcode_0x31_0x2a_addc,  # addc a,[hl+c]               ;31 2a
             0x2b: self._opcode_0x31_0x2b_addc,  # addc a,[hl+b]               ;31 2b
+            0x4b: self._opcode_0x31_0x4b_cmp,   # cmp a,[hl+b]                ;31 4b
             0x5a: self._opcode_0x31_0x5a_and,   # and a,[hl+c]                ;31 5a
             0x5b: self._opcode_0x31_0x5b_and,   # and a,[hl+b]                ;31 5b
             0x6a: self._opcode_0x31_0x6a_or,    # or a,[hl+c]                 ;31 6a
@@ -259,12 +265,18 @@ class Processor(object):
         # or reg,a
         for opcode2 in (0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67):
             D[opcode2] = self._opcode_0x61_0x61_to_0x67_or
-        # and a,reg (except: and a,reg=a)
-        for opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
-            D[opcode2] = self._opcode_0x61_0x58_to_0x5f_and
+        # cmp reg,a                     ;61 40..47
+        for opcode2 in (0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47):
+            D[opcode2] = self._opcode_0x61_0x40_to_0x47_cmp
+        # cmp a,reg (except cmp a, reg=a)
+        for opcode2 in (0x48, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f):
+            D[opcode2] = self._opcode_0x61_48_to_4f_cmp
         # and reg,a
         for opcode2 in (0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57):
             D[opcode2] = self._opcode_0x61_0x50_to_0x57_and
+        # and a,reg (except: and a,reg=a)
+        for opcode2 in (0x58, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f):
+            D[opcode2] = self._opcode_0x61_0x58_to_0x5f_and
         # xor a,reg (except: xor a,reg=a)
         for opcode2 in (0x78, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f):
             D[opcode2] = self._opcode_0x61_0x78_to_0x7f_xor
@@ -657,6 +669,13 @@ class Processor(object):
         self.write_gp_reg(Registers.A, other_value)
         self.write_gp_reg(other_reg, a_value)
 
+    # cmp 0fe20h,#0abh            ;c8 20 ab       saddr
+    def _opcode_0xc8(self, opcode):
+        address = self._consume_saddr()
+        a = self.memory[address]
+        b = self._consume_byte()
+        self._operation_sub(a, b)
+
     # addw ax,#0abcdh             ;ca cd ab
     def _opcode_0xca(self, opcode):
         ax_value = self.read_gp_regpair(RegisterPairs.AX)
@@ -860,6 +879,13 @@ class Processor(object):
         b = self.memory[address]
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+
+    # cmp a,[hl+b]                ;31 4b
+    def _opcode_0x31_0x4b_cmp(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._based_hl_b()
+        b = self.memory[address]
+        self._operation_sub(a, b)
 
     # add a,[hl+c]                ;31 0a
     def _opcode_0x31_0x0a_add(self, opcode):
@@ -1094,6 +1120,32 @@ class Processor(object):
     def _opcode_0x31_0x98_br(self, opcode2):
         self.pc = self.read_gp_regpair(RegisterPairs.AX)
 
+    # cmp a,!0abcdh               ;48 cd ab
+    def _opcode_0x48(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self._consume_addr16()
+        b = self.memory[address]
+        self._operation_sub(a, b)
+
+    # cmp a,#0abh                 ;4d ab
+    def _opcode_0x4d(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        b = self._consume_byte()
+        self._operation_sub(a, b)
+
+    # cmp a,0fe20h                ;4e 20          saddr
+    def _opcode_0x4e(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        b = self._consume_saddr()
+        self._operation_sub(a, b)
+
+    # cmp a,[hl]                  ;4f
+    def _opcode_0x4f(self, opcode):
+        a = self.read_gp_reg(Registers.A)
+        address = self.read_gp_regpair(RegisterPairs.HL)
+        b = self.memory[address]
+        self._operation_sub(a, b)
+
     # adjba                       ;61 80
     def _opcode_0x61_0x80_adjba(self, opcode2):
         psw = self.read_psw()
@@ -1208,6 +1260,20 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+
+    # cmp reg,a                   ;61 40..47
+    def _opcode_0x61_0x40_to_0x47_cmp(self, opcode2):
+        reg = _reg(opcode2)
+        a = self.read_gp_reg(reg)
+        b = self.read_gp_reg(Registers.A)
+        self._operation_sub(a, b)
+
+    # cmp a,reg                   ;61 48..4f
+    def _opcode_0x61_48_to_4f_cmp(self, opcode2):
+        a = self.read_gp_reg(Registers.A)
+        reg = _reg(opcode2)
+        b = self.read_gp_reg(reg)
+        self._operation_sub(a, b)
 
     # and x,a                     ;61 50
     def _opcode_0x61_0x50_to_0x57_and(self, opcode2):

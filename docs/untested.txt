@@ -22,3 +22,29 @@
     sub l,a                     ;61 16
     sub h,a                     ;61 17
     sub 0fe20h,#0abh            ;98 20 ab       saddr
+
+    cmp a,!0abcdh               ;48 cd ab
+    cmp a,#0abh                 ;4d ab
+    cmp a,0fe20h                ;4e 20          saddr
+    cmp a,[hl+b]                ;31 4b
+
+
+    cmp a,x                     ;61 48
+    cmp a,a                     ;61 41
+    cmp a,c                     ;61 4a
+    cmp a,b                     ;61 4b
+    cmp a,e                     ;61 4c
+    cmp a,d                     ;61 4d
+    cmp a,l                     ;61 4e
+    cmp a,h                     ;61 4f
+    cmp 0fe20h,#0abh            ;c8 20 ab       saddr
+
+    cmp x,a                     ;61 40
+    cmp a,a                     ;61 41
+    cmp c,a                     ;61 42
+    cmp b,a                     ;61 43
+    cmp e,a                     ;61 44
+    cmp d,a                     ;61 45
+    cmp l,a                     ;61 46
+    cmp h,a                     ;61 47
+    cmp a,[hl]                  ;4f
