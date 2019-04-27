@@ -2040,8 +2040,12 @@ class Processor(object):
 
     def _operation_sub(self, a, b):
         psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
-        # TODO finish me
-        result = (a - b) & 0xff
+        if ((a & 0x0f) - (b & 0x0f)) & 0x10:
+            psw |= Flags.AC
+        difference = a - b
+        if difference < 0:
+            psw |= Flags.CY
+        result = difference & 0xff
         if result == 0:
             psw |= Flags.Z
         self.write_psw(psw)
