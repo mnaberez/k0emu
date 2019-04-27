@@ -259,7 +259,6 @@ class Processor(object):
             0x80: self._opcode_0x61_0x80_adjba,     # adjba                       ;61 80
             0x90: self._opcode_0x61_0x90_adjbs,     # adjbs                       ;61 90
         }
-
         # sel rbn
         for opcode2 in (0xD0, 0xD8, 0xF0, 0xF8):
             D[opcode2] = self._opcode_0x61_0xd0_to_0xf8_sel_rb
@@ -322,10 +321,16 @@ class Processor(object):
             D[opcode2] = self._opcode_0x61_0x20_to_0x27_addc
         # sub a,reg                   ;61 18..1f except 11
         for opcode in (0x18, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f):
-            D[opcode] = self._opcode_0x18_to_0x1f_except_0x11
+            D[opcode] = self._opcode_0x61_0x18_to_0x1f_except_0x11
         # sub reg,a                   ;61 10..17
         for opcode in (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17):
-            D[opcode] = self._opcode_0x10_to_0x17_sub
+            D[opcode] = self._opcode_0x61_0x10_to_0x17_sub
+        # subc a,reg (except: subc a,reg=a) ;61 38..3f
+        for opcode in (0x38, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f):
+            D[opcode] = self._opcode_0x61_0x38_to_0x3f_subc
+        # subc reg,a                  ;61 30..37
+        for opcode in (0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37):
+            D[opcode] = self._opcode_0x61_0x30_to_0x37_subc
         self._opcode_map_prefix_0x61 = D
 
     def _init_opcode_map_prefix_0x71(self):
@@ -1402,15 +1407,31 @@ class Processor(object):
         self.write_gp_reg(Registers.A, result)
 
     # sub reg,a                   ;61 10..17
-    def _opcode_0x10_to_0x17_sub(self, opcode2):
+    def _opcode_0x61_0x10_to_0x17_sub(self, opcode2):
         reg = _reg(opcode2)
         a = self.read_gp_reg(reg)
         b = self.read_gp_reg(Registers.A)
         result = self._operation_sub(a, b)
         self.write_gp_reg(reg, result)
 
+    # subc reg,a                  ;61 30..37
+    def _opcode_0x61_0x30_to_0x37_subc(self, opcode2):
+        reg = _reg(opcode2)
+        a = self.read_gp_reg(reg)
+        b = self.read_gp_reg(Registers.A)
+        result = self._operation_subc(a, b)
+        self.write_gp_reg(reg, result)
+
+    # subc a,reg                  ;61 38..3f
+    def _opcode_0x61_0x38_to_0x3f_subc(self, opcode2):
+        reg = _reg(opcode2)
+        a = self.read_gp_reg(reg)
+        b = self.read_gp_reg(Registers.A)
+        result = self._operation_subc(a, b)
+        self.write_gp_reg(reg, result)
+
     # sub a,reg                   ;61 18..1f
-    def _opcode_0x18_to_0x1f_except_0x11(self, opcode2):
+    def _opcode_0x61_0x18_to_0x1f_except_0x11(self, opcode2):
         reg = _reg(opcode2)
         a = self.read_gp_reg(Registers.A)
         b = self.read_gp_reg(reg)
@@ -2152,6 +2173,20 @@ class Processor(object):
     def _operation_sub(self, a, b):
         psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
         if ((a & 0x0f) - (b & 0x0f)) & 0x10:
+            psw |= Flags.AC
+        difference = a - b
+        if difference < 0:
+            psw |= Flags.CY
+        result = difference & 0xff
+        if result == 0:
+            psw |= Flags.Z
+        self.write_psw(psw)
+        return result
+
+    def _operation_subc(self, a, b):
+        psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
+        carry = psw & Flags.CY
+        if ((a & 0x0f) - (b & 0x0f) - carry) & 0x10:
             psw |= Flags.AC
         difference = a - b
         if difference < 0:

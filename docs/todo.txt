@@ -8,23 +8,5 @@
     subc a,[hl+c]               ;31 3a
     subc 0fe20h,#0abh           ;b8 20 ab       saddr
 
-    subc a,x                    ;61 38
-    subc a,a                    ;61 31
-    subc a,c                    ;61 3a
-    subc a,b                    ;61 3b
-    subc a,e                    ;61 3c
-    subc a,d                    ;61 3d
-    subc a,l                    ;61 3e
-    subc a,h                    ;61 3f
-
-    subc x,a                    ;61 30
-    subc a,a                    ;61 31
-    subc c,a                    ;61 32
-    subc b,a                    ;61 33
-    subc e,a                    ;61 34
-    subc d,a                    ;61 35
-    subc l,a                    ;61 36
-    subc h,a                    ;61 37
-
     halt                        ;71 10
     stop                        ;71 00
