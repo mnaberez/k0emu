@@ -1,5 +1,3 @@
-    cmp a,[hl+0abh]             ;49 ab
-    cmp a,[hl+c]                ;31 4a
 
     subc a,!0abcdh              ;38 cd ab
     subc a,[hl+0abh]            ;39 ab
