@@ -1,5 +1,5 @@
 '''
-Usage: k0dasm <rom.bin>
+Usage: k0emu <rom.bin>
 
 '''
 import os
@@ -25,7 +25,7 @@ def main():
         proc.write_memory(0, rom)
         proc.reset()
         for address in range(0xfb00, 0x10000):
-            proc.memory[address] = 0x17
+            proc.memory[address] = 0
     else:
         sys.stderr.write(__doc__)
         sys.exit(1)
