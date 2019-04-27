@@ -122,8 +122,10 @@ class Processor(object):
             0xca: self._opcode_0xca, # addw ax,#0abcdh             ;ca cd ab
             0xce: self._opcode_0xce, # xch a,!abcd                 ;ce cd ab
             0xd8: self._opcode_0xd8, # and 0fe20h,#0abh            ;d8 20 ab       saddr
+            0xda: self._opcode_0xda, # subw ax,#0abcdh             ;da cd ab
             0xde: self._opcode_0xde, # xch a,[hl+0abh]             ;de ab
             0xe8: self._opcode_0xe8, # or 0fe20h,#0abh             ;e8 20 ab
+            0xea: self._opcode_0xea, # cmpw ax,#0abcdh             ;ea cd ab
             0xee: self._opcode_0xee, # movw sp,#0abcdh             ;ee 1c cd ab
             0xf0: self._opcode_0xf0, # mov a,0fe20h                ;F0 20          saddr
             0xf2: self._opcode_0xf2, # mov 0fe20h,a                ;f2 20          saddr
@@ -684,6 +686,19 @@ class Processor(object):
         other_value = self._consume_word()
         result = self._operation_addw(ax_value, other_value)
         self.write_gp_regpair(RegisterPairs.AX, result)
+
+    # subw ax,#0abcdh             ;da cd ab
+    def _opcode_0xda(self, opcode):
+        ax_value = self.read_gp_regpair(RegisterPairs.AX)
+        other_value = self._consume_word()
+        result = self._operation_subw(ax_value, other_value)
+        self.write_gp_regpair(RegisterPairs.AX, result)
+
+    # cmpw ax,#0abcdh             ;ea cd ab
+    def _opcode_0xea(self, opcode):
+        ax_value = self.read_gp_regpair(RegisterPairs.AX)
+        other_value = self._consume_word()
+        self._operation_subw(ax_value, other_value)
 
     # xch a,!abcd                 ;ce cd ab
     def _opcode_0xce(self, opcode):
@@ -2116,6 +2131,19 @@ class Processor(object):
         if sum > 0xFFFF:
             psw |= Flags.CY
         result = sum & 0xFFFF
+        if result == 0:
+            psw |= Flags.Z
+        self.write_psw(psw)
+        return result
+
+    def _operation_subw(self, a, b):
+        # TODO docs say AC is undefined, so we just clear it.  Find
+        # out what the hardware really does to AC.
+        psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
+        difference = a - b
+        if difference < 0:
+            psw |= Flags.CY
+        result = difference & 0xFFFF
         if result == 0:
             psw |= Flags.Z
         self.write_psw(psw)

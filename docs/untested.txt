@@ -47,3 +47,6 @@
     sub l,a                     ;61 16
     sub h,a                     ;61 17
     sub 0xfe20,#0xab            ;98 20 ab       saddr
+
+    subw ax,#0abcdh             ;da cd ab
+    cmpw ax,#0abcdh             ;ea cd ab

@@ -26,8 +26,5 @@
     subc l,a                    ;61 36
     subc h,a                    ;61 37
 
-    subw ax,#0abcdh             ;da cd ab
-    cmpw ax,#0abcdh             ;ea cd ab
-
     halt                        ;71 10
     stop                        ;71 00

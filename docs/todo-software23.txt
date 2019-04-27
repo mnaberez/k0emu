@@ -1,9 +1,4 @@
 Unimplemented instructions needed by "SOFTWARE 23":
 
-0a10: da 06 f2     subw ax,#0f206h        !!! NOT IMPLEMENTED !!!
-0e2d: ea cb fe     cmpw ax,#0fecbh        !!! NOT IMPLEMENTED !!!
-0e3c: ea 00 f8     cmpw ax,#0f800h        !!! NOT IMPLEMENTED !!!
 09f4: 61 3f        subc a,h               !!! NOT IMPLEMENTED !!!
-40a2: ea 06 f2     cmpw ax,#0f206h        !!! NOT IMPLEMENTED !!!
-40a7: ea 6b f2     cmpw ax,#0f26bh        !!! NOT IMPLEMENTED !!!
 117a: 71 10        halt                   !!! NOT IMPLEMENTED !!!
