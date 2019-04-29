@@ -22,7 +22,7 @@ def main():
         filename = sys.argv[1]
         with open(filename, 'rb') as f:
             rom = bytearray(f.read())
-        proc.write_memory(0, rom)
+        proc.write_memory_bytes(0, rom)
         proc.reset()
         for address in range(0xfb00, 0x10000):
             proc.memory[address] = 0
