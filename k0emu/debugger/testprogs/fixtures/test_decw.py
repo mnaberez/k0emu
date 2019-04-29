@@ -19,7 +19,7 @@ def test(debug, outfile):
             0xaf                        # ret
         ]
         debug.write(0xf000, code)
-        debug.branch(0xf000)
+        debug.call(0xf000)
         x_out, a_out, psw_out = debug.read(0xfe06, length=3)
         ax_out = (a_out << 8) + x_out
 

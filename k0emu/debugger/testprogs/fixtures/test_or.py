@@ -15,7 +15,7 @@ def test(debug, outfile):
                 0xaf                # ret
             ]
             debug.write(0xf000, code)
-            debug.branch(0xf000)
+            debug.call(0xf000)
             a_out, psw_out = debug.read(0xfe06, length=2)
 
             fmt = "A(IN)=%02x, X(IN)=%02x -> A(OUT)=%02x, PSW(OUT)=%02x\n"

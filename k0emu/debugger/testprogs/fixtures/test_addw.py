@@ -31,7 +31,7 @@ def test(debug, outfile):
 
             # run test code, collect results of 3 bytes each * <batch_size>
             debug.write(0xf000, code)
-            debug.branch(0xf000)
+            debug.call(0xf000)
             results = debug.read(0xfe00, length=batch_size * 3)
 
             # parse results and print them

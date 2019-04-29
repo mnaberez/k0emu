@@ -12,7 +12,7 @@ def test(debug, outfile):
             0xaf,               # ret
         ]
         debug.write(0xf000, code)
-        debug.branch(0xf000)
+        debug.call(0xf000)
         psw, ff1e = debug.read(0xfe00, length=2)
 
         fmt = "PSW(OUT)=%02x, FF1E(OUT)=%02x\n"

@@ -15,7 +15,7 @@ def test(debug, outfile):
         ]
         debug.write(0xf000, code)
         debug.write(0xfee0, [0]*24)
-        debug.branch(0xf000)
+        debug.call(0xf000)
         registers = debug.read(0xfee0, length=24)
         dump = ', '.join([ '%02x' % r for r in registers])
         outfile.write('SEL RB%d FEE0: %s\n' % (bank, dump))

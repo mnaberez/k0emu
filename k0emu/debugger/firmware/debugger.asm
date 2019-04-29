@@ -33,21 +33,21 @@ loop:
     call uart_get       ;get command byte
 
 check_r:
-    cmp a,#'R           ;handle command
+    cmp a,#'R           ;read
     bnz check_w
     call cmd_read
     br loop
 
 check_w:
-    cmp a,#'W
+    cmp a,#'W           ;write
     bnz check_b
     call cmd_write
     br loop
 
 check_b:
-    cmp a,#'B
+    cmp a,#'B           ;branch (call)
     bnz other
-    call cmd_branch
+    call cmd_call
     br loop
 
 other:
@@ -101,7 +101,7 @@ cmd_write_loop:
   call uart_put
   ret
 
-cmd_branch:
+cmd_call:
 ;Branch to a routine in memory
 ;Reads from UART: 2 bytes for address
 ;Writes to UART: "b" only

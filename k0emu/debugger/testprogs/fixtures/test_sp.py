@@ -17,7 +17,7 @@ def test(debug, outfile):
         0xaf                # ret
     ]
     debug.write(0xf000, code)
-    debug.branch(0xf000)
+    debug.call(0xf000)
 
     sp_low, sp_high, ff1c_low, ff1c_high = debug.read(0xfe00, length=4)
     sp = (sp_high << 8) + sp_low

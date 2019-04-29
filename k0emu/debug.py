@@ -13,8 +13,8 @@ class BaseDebugger(object):
         '''Write <data> bytes to memory starting at <address>.'''
         raise NotImplementedError
 
-    def branch(self, address, data):
-        '''Branch to <address> in memory.  The code must return (0xAF RET).'''
+    def call(self, address, data):
+        '''Call <address> in memory.  The code must return (0xAF RET).'''
         raise NotImplementedError
 
 
@@ -34,7 +34,7 @@ class EmulatorDebugger(BaseDebugger):
         for addr, d in enumerate(data, address):
             self.proc.write_memory(addr, d)
 
-    def branch(self, address):
+    def call(self, address):
         self.proc.pc = address
         while self.proc.read_memory(self.proc.pc) != 0xaf:  # ret
             self.proc.step()
@@ -84,7 +84,7 @@ class SerialDebugger(BaseDebugger):
         if data[1] != ord('>'):
             raise Exception("no prompt")
 
-    def branch(self, address):
+    def call(self, address):
         low, high = self._split_word(address)
         self.ser.write(bytearray([ord(b'B'), low, high]))
         data = self.ser.read(2)
