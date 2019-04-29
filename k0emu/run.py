@@ -42,6 +42,12 @@ def main():
                 print(line)
                 break
             line += str(proc)
+
+            # interrupt masks
+            binary = lambda x: bin(x)[2:].rjust(8, '0')
+            for address in range(0xffe4, 0xffe8): # interrupt masks
+                line += " %04x=%s" % (address, binary(proc.memory[address]))
+
             print(line)
         except KeyboardInterrupt:
             break
