@@ -27,16 +27,16 @@ class EmulatorDebugger(BaseDebugger):
     def read(self, address, length):
         data = bytearray()
         for i in range(length):
-            data.append(self.proc.memory[address + i])
+            data.append(self.proc.read_memory(address + i))
         return data
 
     def write(self, address, data):
         for addr, d in enumerate(data, address):
-            self.proc.memory[addr] = d
+            self.proc.write_memory(addr, d)
 
     def branch(self, address):
         self.proc.pc = address
-        while self.proc.memory[self.proc.pc] != 0xaf:  # ret
+        while self.proc.read_memory(self.proc.pc) != 0xaf:  # ret
             self.proc.step()
 
 
