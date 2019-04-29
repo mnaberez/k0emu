@@ -5,6 +5,7 @@ class Processor(object):
     REGISTERS_BASE_ADDRESS = 0xFEF8
     SP_ADDRESS = 0xFF1C
     PSW_ADDRESS = 0xFF1E
+    RESERVED_ADDRESSES = set(range(0xF800, 0xFB00))
 
     def __init__(self):
         self.memory = Memory(0x10000)
@@ -2446,14 +2447,18 @@ class Processor(object):
     # Memory Helpers
 
     def read_memory(self, address):
+        if address in self.RESERVED_ADDRESSES:
+            return 0x08
         return self.memory[address]
 
     def write_memory(self, address, value):
+        if address in self.RESERVED_ADDRESSES:
+            return
         self.memory[address] = value
 
     def write_memory_bytes(self, address, data):
         for address, value in enumerate(data, address):
-            self.memory[address] = value
+            self.write_memory(address, value)
 
     def read_memory_word(self, address):
         low = self.read_memory(address)

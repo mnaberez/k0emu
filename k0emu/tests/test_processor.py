@@ -67,6 +67,20 @@ class ProcessorTests(unittest.TestCase):
         proc.write_rb(3)
         self.assertEqual(proc.read_psw(), 0b00101000)
 
+    # reserved memory
+
+    def test_reserved_memory_ignores_writes(self):
+        proc = Processor()
+        for address in range(0xF800, 0xFB00):
+            self.assertNotEqual(proc.read_memory(address), 0)
+            proc.write_memory(address, 0)
+            self.assertNotEqual(proc.read_memory(address), 0)
+
+    def test_reserved_memory_reads_0x08_like_real_hw(self):
+        proc = Processor()
+        for address in range(0xF800, 0xFB00):
+            self.assertEqual(proc.read_memory(address), 0x08)
+
     # instructions
 
     # nop
