@@ -66,5 +66,3 @@
     subc d,a                    ;61 35
     subc l,a                    ;61 36
     subc h,a                    ;61 37
-
-    subw ax,#0abcdh             ;da cd ab
