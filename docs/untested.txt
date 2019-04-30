@@ -30,23 +30,18 @@
     sub a,[hl]                  ;1f
     sub a,[hl+b]                ;31 1b
     sub a,[hl+c]                ;31 1a
-    sub a,x                     ;61 18
+    sub 0xfe20,#0xab            ;98 20 ab       saddr
+
     sub a,a                     ;61 11
-    sub a,c                     ;61 1a
-    sub a,b                     ;61 1b
-    sub a,e                     ;61 1c
-    sub a,d                     ;61 1d
-    sub a,l                     ;61 1e
-    sub a,h                     ;61 1f
+    sub a,a                     ;61 11
+
     sub x,a                     ;61 10
-    sub a,a                     ;61 11
     sub c,a                     ;61 12
     sub b,a                     ;61 13
     sub e,a                     ;61 14
     sub d,a                     ;61 15
     sub l,a                     ;61 16
     sub h,a                     ;61 17
-    sub 0xfe20,#0xab            ;98 20 ab       saddr
 
 
     subc a,x                    ;61 38
