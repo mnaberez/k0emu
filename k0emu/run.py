@@ -49,6 +49,16 @@ def main():
                 line += " %04x=%s" % (address, binary(proc.memory[address]))
 
             print(line)
+
+            for message in proc.messages:
+                print(message)
+            proc.messages = []
+
+            if proc.pc < 0x135:
+                print("CRASH")
+                break
+        
+
         except KeyboardInterrupt:
             break
 

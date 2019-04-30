@@ -14,6 +14,10 @@ class Processor(object):
         self._init_opcode_map_prefix_0x61()
         self._init_opcode_map_prefix_0x71()
         self.reset()
+        self.sio31_pending = False
+        self.in_interrupt = False
+        self.messages = []
+        self.inst_count = 0
 
     def reset(self):
         self.write_sp(0)
@@ -23,6 +27,25 @@ class Processor(object):
         opcode = self._consume_byte()
         handler = self._opcode_map_unprefixed.get(opcode, self._opcode_not_implemented)
         handler(opcode)
+        self.inst_count += 1
+        # 
+        # if (self.read_psw() & Flags.IE) and (not self.in_interrupt):
+        #     if self.sio31_pending:
+        #         self.messages.append("INTERRUPT (SIO)")
+        #         self.in_interrupt = True
+        #         self._push_word(self.pc)
+        #         self.pc = 0x08f7
+        #         self.sio31_pending = False
+        #
+        #     # elif self.inst_count > 10000:
+        #     #     self.messages.append("INTERRUPT (TIMER)")
+        #     #     self.in_interrupt = True
+        #     #     self._push_word(self.pc)
+        #     #     self.pc = 0x3b2b
+        #     #     self.inst_count = 0
+
+
+
 
     def __str__(self):
         return RegisterTrace.generate(self)
@@ -1846,6 +1869,7 @@ class Processor(object):
 
     # reti                        ;8f
     def _opcode_0x8f(self, opcode):
+        self.in_interrupt = False
         self.pc = self._pop_word()
         self.write_psw(self._pop())
 
@@ -2449,11 +2473,48 @@ class Processor(object):
     def read_memory(self, address):
         if address in self.RESERVED_ADDRESSES:
             return 0x08
-        return self.memory[address]
+
+        value = self.memory[address]
+        if address == 0xff18:
+            value = 0
+            self.messages.append("PERIPHERAL READ RXB0 = %02x" % value)
+        elif address == 0xff1a:
+            value = 0
+            self.messages.append("PERIPHERAL READ SIO30 = %02x" % value)
+        elif address == 0xff1b:
+            value = 0
+            self.messages.append("PERIPHERAL READ SIO31 = %02x" % value)
+        elif address == 0xff1f:
+            self.messages.append("PERIPHERAL READ IIC0 SHIFT REG = %02x" % value)
+        elif address in range(0xff00, 0xff08):
+            if address == 0xff00:
+                value = 0xff & ~4
+            else:
+                import random
+                value = random.choice(range(0x100))
+
+
+        #     print("PERIPHERAL READ %04x = %02x" % (address, value))
+        return value
 
     def write_memory(self, address, value):
         if address in self.RESERVED_ADDRESSES:
             return
+        elif address == 0xff18:
+            self.messages.append("PERIPHERAL WRITE TXS0 = %02x" % value)
+        elif address == 0xff1a:
+            value = 0xff
+            self.messages.append("PERIPHERAL WRITE SIO30 = %02x" % value)
+            self.memory[0xffe1] = 0xff
+
+        elif address == 0xff1b:
+            self.messages.append("PERIPHERAL WRITE SIO31 = %02x" % value)
+            if not self.in_interrupt:
+                self.sio31_pending = True
+                self.memory[0xffe1] = 0xff
+
+        # elif address in range(0xff00, 0x10000):
+        #     print("PERIPHERAL WRITE %04x = %02x" % (address, value))
         self.memory[address] = value
 
     def write_memory_bytes(self, address, data):
