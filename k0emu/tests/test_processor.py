@@ -1086,6 +1086,39 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_memory(0xfe20), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
 
+    # cmpw ax,#0abcdh             ;ea cd ab
+    def test_ae_cmp_ax_imm16_equal(self):
+        proc = Processor()
+        code = [0xea, 0xcd, 0xab]
+        proc.write_memory_bytes(0, code)
+        proc.write_psw(0)
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmpw ax,#0abcdh             ;ea cd ab
+    def test_ae_cmp_ax_imm16_borrow(self):
+        proc = Processor()
+        code = [0xea, 0xce, 0xab]
+        proc.write_memory_bytes(0, code)
+        proc.write_psw(Flags.Z)
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
+        self.assertEqual(proc.read_psw(), Flags.CY)
+
+    # cmpw ax,#0abcdh             ;ea cd ab
+    def test_ae_cmp_ax_imm16_less(self):
+        proc = Processor()
+        code = [0xea, 0xcc, 0xab]
+        proc.write_memory_bytes(0, code)
+        proc.write_psw(Flags.Z | Flags.CY)
+        proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
+        proc.step()
+        self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
+        self.assertEqual(proc.read_psw(), 0)
+
     # and a,x                     ;61 58
     def test_61_58_and_a_x(self):
         proc = Processor()
