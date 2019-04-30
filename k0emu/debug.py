@@ -1,3 +1,4 @@
+import os
 import sys
 import serial # pyserial
 from k0emu.processor import Processor
@@ -102,11 +103,14 @@ class SerialDebugger(BaseDebugger):
 
 
 def make_serial():
-    from serial.tools.list_ports import comports
-    names = [ x.device for x in comports() if 'Bluetooth' not in x.device ]
-    if not names:
-        raise Exception("No serial port found")
-    return serial.Serial(port=names[0], baudrate=38400, timeout=2)
+    name = os.environ.get('FTDI_DEVICE')
+    if name is None:
+        from serial.tools.list_ports import comports
+        candidates = [ x.device for x in comports() if 'Bluetooth' not in x.device ]
+        if not candidates:
+            raise Exception("No serial port found")
+        name = candidates[0]
+    return serial.Serial(port=name, baudrate=38400, timeout=2)
 
 def make_serial_debugger(ser=None):
     if ser is None:
