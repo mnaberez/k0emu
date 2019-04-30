@@ -1,0 +1,3 @@
+There is a check at 0x1158 for 0xFF00.4 (P0.4).  If it
+it is 1, the firmware eventually stops with a HALT at
+0x117a.  No other port bits seem to cause this HALT.
