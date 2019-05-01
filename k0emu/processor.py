@@ -1499,10 +1499,10 @@ class Processor(object):
     # subc a,reg                  ;61 38..3f
     def _opcode_0x61_0x38_to_0x3f_subc(self, opcode2):
         reg = _reg(opcode2)
-        a = self.read_gp_reg(reg)
-        b = self.read_gp_reg(Registers.A)
+        a = self.read_gp_reg(Registers.A)
+        b = self.read_gp_reg(reg)
         result = self._operation_subc(a, b)
-        self.write_gp_reg(reg, result)
+        self.write_gp_reg(Registers.A, result)
 
     # sub a,reg                   ;61 18..1f
     def _opcode_0x61_0x18_to_0x1f_except_0x11(self, opcode2):
