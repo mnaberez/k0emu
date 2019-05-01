@@ -46,3 +46,12 @@
     subc d,a                    ;61 35
     subc l,a                    ;61 36
     subc h,a                    ;61 37
+
+    subc a,[hl]                 ;3f
+    subc a,[hl+c]               ;31 3a
+    subc a,[hl+b]               ;31 3b
+    subc a,!0abcdh              ;38 cd ab
+    subc a,#0abh                ;3d ab
+    subc a,0fe20h               ;3e 20          saddr
+    subc a,[hl+0abh]            ;39 ab
+    subc 0fe20h,#0abh           ;b8 20 ab       saddr
