@@ -7,21 +7,6 @@
     cmp a,[hl]                  ;4f
     cmp 0xfe20,#0xab            ;c8 20 ab       saddr
 
-    cmp a,c                     ;61 4a
-    cmp a,b                     ;61 4b
-    cmp a,e                     ;61 4c
-    cmp a,d                     ;61 4d
-    cmp a,l                     ;61 4e
-    cmp a,h                     ;61 4f
-
-    cmp x,a                     ;61 40
-    cmp c,a                     ;61 42
-    cmp b,a                     ;61 43
-    cmp e,a                     ;61 44
-    cmp d,a                     ;61 45
-    cmp l,a                     ;61 46
-    cmp h,a                     ;61 47
-
     sub a,!0xabcd               ;18 cd ab
     sub a,[hl+0xab]             ;19 ab
     sub a,#0xab                 ;1d ab

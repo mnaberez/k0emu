@@ -1354,6 +1354,188 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
+    # cmp x,a                     ;61 40
+    def test_61_40_cmp_x_a(self):
+        proc = Processor()
+        code = [0x61, 0x40]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.X, 0x42)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.X), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp c,a                     ;61 42
+    def test_61_42_cmp_c_a(self):
+        proc = Processor()
+        code = [0x61, 0x42]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.C, 0x42)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp b,a                     ;61 43
+    def test_61_43_cmp_b_a(self):
+        proc = Processor()
+        code = [0x61, 0x43]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.B, 0x42)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.B), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp e,a                     ;61 44
+    def test_61_44_cmp_e_a(self):
+        proc = Processor()
+        code = [0x61, 0x44]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.E, 0x42)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.E), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp d,a                     ;61 45
+    def test_61_45_cmp_d_a(self):
+        proc = Processor()
+        code = [0x61, 0x45]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.D, 0x42)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.D), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp l,a                     ;61 46
+    def test_61_46_cmp_l_a(self):
+        proc = Processor()
+        code = [0x61, 0x46]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.L, 0x42)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.L), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp h,a                     ;61 47
+    def test_61_47_cmp_h_a(self):
+        proc = Processor()
+        code = [0x61, 0x47]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.H, 0x42)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp a,c                     ;61 4a
+    def test_61_4a_cmp_a_c(self):
+        proc = Processor()
+        code = [0x61, 0x4a]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_reg(Registers.C, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp a,b                     ;61 4b
+    def test_61_4b_cmp_a_b(self):
+        proc = Processor()
+        code = [0x61, 0x4b]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_reg(Registers.B, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.B), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp a,e                     ;61 4c
+    def test_61_4c_cmp_a_e(self):
+        proc = Processor()
+        code = [0x61, 0x4c]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_reg(Registers.E, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.E), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp a,d                     ;61 4d
+    def test_61_4d_cmp_a_d(self):
+        proc = Processor()
+        code = [0x61, 0x4d]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_reg(Registers.D, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.D), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp a,l                     ;61 4e
+    def test_61_4e_cmp_a_l(self):
+        proc = Processor()
+        code = [0x61, 0x4e]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_reg(Registers.L, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.L), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
+    # cmp a,h                     ;61 4f
+    def test_61_4f_cmp_a_h(self):
+        proc = Processor()
+        code = [0x61, 0x4f]
+        proc.write_memory_bytes(0, code)
+        proc.write_gp_reg(Registers.A, 0x42)
+        proc.write_gp_reg(Registers.H, 0x42)
+        proc.write_psw(0)
+        proc.step()
+        self.assertEqual(proc.pc, len(code))
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
+        self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
+        self.assertEqual(proc.read_psw(), Flags.Z)
+
     # and a,x                     ;61 58
     def test_61_58_and_a_x(self):
         proc = Processor()
