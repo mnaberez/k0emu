@@ -7,15 +7,6 @@
     cmp a,[hl]                  ;4f
     cmp 0xfe20,#0xab            ;c8 20 ab       saddr
 
-    sub a,!0xabcd               ;18 cd ab
-    sub a,[hl+0xab]             ;19 ab
-    sub a,#0xab                 ;1d ab
-    sub a,@0xfe20               ;1e 20          saddr
-    sub a,[hl]                  ;1f
-    sub a,[hl+b]                ;31 1b
-    sub a,[hl+c]                ;31 1a
-    sub 0xfe20,#0xab            ;98 20 ab       saddr
-
     subc a,x                    ;61 38
     subc a,c                    ;61 3a
     subc a,b                    ;61 3b

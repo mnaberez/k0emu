@@ -514,7 +514,7 @@ class Processor(object):
     # sub a,!0abcdh               ;18 cd ab
     def _opcode_0x18(self, opcode):
         a = self.read_gp_reg(Registers.A)
-        address = self.consume_addr16()
+        address = self._consume_addr16()
         b = self.read_memory(address)
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
@@ -814,9 +814,9 @@ class Processor(object):
 
     # sub 0fe20h,#0abh            ;98 20 ab       saddr
     def _opcode_0x98(self, opcode):
-        address = self.consume_saddr()
+        address = self._consume_saddr()
         a = self.read_memory(address)
-        b = self.consume_byte()
+        b = self._consume_byte()
         result = self._operation_sub(a, b)
         self.write_memory(address, result)
 
@@ -940,7 +940,7 @@ class Processor(object):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_c()
         b = self.read_memory(address)
-        result = self._operation_add(a, b)
+        result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
 
     # sub a,[hl+b]                ;31 1b
@@ -948,7 +948,7 @@ class Processor(object):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_b()
         b = self.read_memory(address)
-        result = self._operation_add(a, b)
+        result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
 
     # addc a,[hl+b]               ;31 2b
