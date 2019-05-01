@@ -1269,7 +1269,8 @@ class Processor(object):
     # cmp a,0fe20h                ;4e 20          saddr
     def _opcode_0x4e(self, opcode):
         a = self.read_gp_reg(Registers.A)
-        b = self._consume_saddr()
+        address = self._consume_saddr()
+        b = self.read_memory(address)
         self._operation_sub(a, b)
 
     # cmp a,[hl]                  ;4f
