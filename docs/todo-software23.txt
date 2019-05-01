@@ -1,4 +1,0 @@
-Unimplemented instructions needed by "SOFTWARE 23":
-
-09f4: 61 3f        subc a,h               !!! NOT IMPLEMENTED !!!
-117a: 71 10        halt                   !!! NOT IMPLEMENTED !!!
