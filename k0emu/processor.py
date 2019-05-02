@@ -744,7 +744,7 @@ class Processor(object):
 
     # xch a,REG                    ;32...37 except 31
     def _opcode_0x30_to_0x37_except_0x31(self, opcode):
-        other_reg = opcode & 0b111
+        other_reg = _reg(opcode)
         a_value = self.read_gp_reg(Registers.A)
         other_value = self.read_gp_reg(other_reg)
         self.write_gp_reg(Registers.A, other_value)
@@ -882,9 +882,9 @@ class Processor(object):
 
     # mov r,#byte                 ;a0..a7 xx
     def _opcode_0xa0_to_0xa7(self, opcode):
-        regnum = opcode & 0b00000111
+        reg = _reg(opcode)
         immbyte = self._consume_byte()
-        self.write_gp_reg(regnum, immbyte)
+        self.write_gp_reg(reg, immbyte)
 
     # mov a,x ... mov a,h           ;60..67 except 61
     def _opcode_0x60_to_0x67_except_0x61(self, opcode):
@@ -1522,10 +1522,10 @@ class Processor(object):
     # subc a,reg                  ;61 38..3f
     def _opcode_0x61_0x38_to_0x3f_subc(self, opcode2):
         reg = _reg(opcode2)
-        a = self.read_gp_reg(reg)
-        b = self.read_gp_reg(Registers.A)
+        a = self.read_gp_reg(Registers.A)
+        b = self.read_gp_reg(reg)
         result = self._operation_subc(a, b)
-        self.write_gp_reg(reg, result)
+        self.write_gp_reg(Registers.A, result)
 
     # sub a,reg                   ;61 18..1f
     def _opcode_0x61_0x18_to_0x1f_except_0x11(self, opcode2):
