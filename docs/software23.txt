@@ -1,3 +1,41 @@
 There is a check at 0x1158 for 0xFF00.4 (P0.4).  If it
 it is 1, the firmware eventually stops with a HALT at
 0x117a.  No other port bits seem to cause this HALT.
+
+Interrupts that need to be implemented:
+
+    .word rst_0d88          ;0000  88 0d       VECTOR RST
+    .word intp0_5933        ;0006  93 59       VECTOR INTP0
+    .word intp1_3ecc        ;0008  cc 3e       VECTOR INTP1
+    .word intp2_3acc        ;000a  cc 3a       VECTOR INTP2
+    .word intp4_5904        ;000e  04 59       VECTOR INTP4
+    .word intp6_5904        ;0012  3b 59       VECTOR INTP6
+    .word intp7_883a        ;0014  3a 88       VECTOR INTP7
+    .word intser0_32df      ;0016  df 32       VECTOR INTSER0
+    .word intsr0_30e8       ;0018  e8 30       VECTOR INTSR0
+    .word intst0_307e       ;001a  7e 30       VECTOR INTST0
+    .word intcsi30_08a9     ;001c  a9 08       VECTOR INTCSI30
+    .word intcsi31_08f7     ;001e  f7 08       VECTOR INTCSI31
+    .word intwtni0_0135     ;0024  35 01       VECTOR INTWTNI0
+    .word inttm000_3b2b     ;0026  2b 3b       VECTOR INTTM000
+    .word inttm011_5b60     ;002c  60 5b       VECTOR INTTM011
+
+Interrupts that are unused:
+
+    .word badisr_0d75       ;0002  75 0d       VECTOR (unused)
+    .word badisr_0d75       ;0004  75 0d       VECTOR INTWDT
+    .word badisr_0d75       ;000c  75 0d       VECTOR INTP3
+    .word badisr_0d75       ;0010  75 0d       VECTOR INTP5
+    .word badisr_0d75       ;0020  75 0d       VECTOR INTIIC0
+    .word badisr_0d75       ;0022  75 0d       VECTOR INTC2
+    .word badisr_0d75       ;0028  75 0d       VECTOR INTTM010
+    .word badisr_0d75       ;002a  75 0d       VECTOR INTTM001
+    .word badisr_0d75       ;002e  75 0d       VECTOR INTAD00
+    .word badisr_0d75       ;0030  75 0d       VECTOR INTAD01
+    .word badisr_0d75       ;0032  75 0d       VECTOR (unused)
+    .word badisr_0d75       ;0034  75 0d       VECTOR INTWTN0
+    .word badisr_0d75       ;0036  75 0d       VECTOR INTKR
+    .word badisr_0d75       ;0038  75 0d       VECTOR (unused)
+    .word badisr_0d75       ;003a  75 0d       VECTOR (unused)
+    .word badisr_0d75       ;003c  75 0d       VECTOR (unused)
+    .word badisr_0d75       ;003e  75 0d       VECTOR BRK_I
