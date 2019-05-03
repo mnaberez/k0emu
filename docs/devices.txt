@@ -1,0 +1,35 @@
+0x0000 - 0xEFFF      ROM, read only
+0xF000 - 0xF7FF      ExpansionRAM, r/w, 2K
+0xF800 - 0xFAFF      Reserved, read only, always returns 0x08
+0xFB00 - 0xFEFF      HighSpeedRAM, r/w, 1K
+0xFF1C - 0xFF1C      StackPointerRegister, 1 byte, R/W
+0xFF1E - 0xFF1E      ProcessorStatusWord, 1 byte, R/W, one bit stuck on
+
+Watch Timer
+  FF41H     WTNM0     Watch Timer Operation Mode Register 0
+
+Watchdog Timer
+  FF42H     WDCS      Watchdog timer clock selection register
+  FFF9H     WDTM      Watchdog timer mode register
+
+Serial Interface SIO30
+  FFB0H     CSIM30    Serial Operation Mode Register 30
+  FF1AH     SIO30     Serial I/O shift register 30
+
+Serial Interface SIO31
+  FFB8H     CSIM31    Serial Operation Mode Register 31
+  FF1BH     SIO31     Serial I/O shift register 31
+
+Serial Interface IIC0
+  FF1FH     IIC0      IIC shift register 0
+  FFA7H     IICX0     IIC function expansion register 0
+  FFA8H     IICC0     IIC control register 0
+  FFA9H     IICS0     IIC status register 0
+  FFAAH     IICCL0    IIC transfer clock selection register 0
+  FFABH     SVA0      Slave address register 0
+
+Serial Interface UART0
+  FFA0H     ASIM0     Asynchronous serial interface mode register 0
+  FFA1H     ASIS0     Asynchronous serial interface status register 0
+  FF18H     TXS0      (W) Transmit shift register 0
+  FF18H     RXB0      (R) Receive shift register 0
