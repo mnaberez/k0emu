@@ -1,3 +1,4 @@
+import itertools
 
 class Processor(object):
     RESET_VECTOR_ADDRESS = 0x0000
@@ -18,6 +19,21 @@ class Processor(object):
         self.in_interrupt = False
         self.messages = []
         self.inst_count = 0
+        self.interrupt_addresses = itertools.cycle([
+            #0x5933,
+            0x3ecc,
+            #0x3acc,
+            0x5904,
+            0x883a,
+            0x32df,
+            0x30e8,
+            0x307e,
+            0x08a9,
+            0x08f7,
+            0x0135,
+            0x3b2b,
+            0x5b60,
+            ])
 
     def reset(self):
         self.write_sp(0)
@@ -33,15 +49,18 @@ class Processor(object):
             if self.sio31_pending:
                 self.messages.append("INTERRUPT (SIO)")
                 self.in_interrupt = True
+                self._push(self.read_psw())
                 self._push_word(self.pc)
                 self.pc = 0x08f7
                 self.sio31_pending = False
 
-            elif self.inst_count > 10000:
-                self.messages.append("INTERRUPT (TIMER)")
+            elif self.inst_count > 500:
+                address = next(self.interrupt_addresses)
+                self.messages.append("INTERRUPT (%04x)" % address)
                 self.in_interrupt = True
+                self._push(self.read_psw())
                 self._push_word(self.pc)
-                self.pc = 0x3b2b
+                self.pc = address
                 self.inst_count = 0
 
 
