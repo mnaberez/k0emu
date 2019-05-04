@@ -2314,9 +2314,7 @@ class Processor(object):
         psw = self.read_psw() & ~(Flags.Z + Flags.AC)
         if value & 0x0f == 0:
             psw |= Flags.AC
-        result = value - 1
-        if result < 0:
-            result = 0xFF
+        result = (value - 1) & 0xFF
         if result == 0:
             psw |= Flags.Z
         self.write_psw(psw)
@@ -2326,11 +2324,7 @@ class Processor(object):
         return (value + 1) & 0xFFFF
 
     def _operation_decw(self, value):
-        if value == 0:
-            result = 0xFFFF
-        else:
-            result = value - 1
-        return result
+        return (value - 1) & 0xFFFF
 
     def _operation_set1(self, value, bit):
         return value | (2 ** bit)
