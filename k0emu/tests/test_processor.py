@@ -1159,7 +1159,6 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,x                     ;61 38
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_38_subc_a_x(self):
         proc = Processor()
         code = [0x61, 0x38]
@@ -1169,12 +1168,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,c                     ;61 3a
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_3a_subc_a_c(self):
         proc = Processor()
         code = [0x61, 0x3a]
@@ -1184,12 +1182,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,b                     ;61 3b
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_3b_subc_a_b(self):
         proc = Processor()
         code = [0x61, 0x3b]
@@ -1199,12 +1196,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,e                     ;61 3c
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_3c_subc_a_e(self):
         proc = Processor()
         code = [0x61, 0x3c]
@@ -1214,12 +1210,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,d                     ;61 3d
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_3d_subc_a_d(self):
         proc = Processor()
         code = [0x61, 0x3d]
@@ -1229,12 +1224,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,l                     ;61 3e
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_3e_subc_a_l(self):
         proc = Processor()
         code = [0x61, 0x3e]
@@ -1244,12 +1238,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,h                     ;61 3f
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_3f_subc_a_h(self):
         proc = Processor()
         code = [0x61, 0x3f]
@@ -1259,12 +1252,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc x,a                     ;61 30
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_30_subc_x_a(self):
         proc = Processor()
         code = [0x61, 0x30]
@@ -1274,12 +1266,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.X), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.X), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc c,a                     ;61 32
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_32_subc_c_a(self):
         proc = Processor()
         code = [0x61, 0x32]
@@ -1289,12 +1280,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.C), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.C), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc b,a                     ;61 33
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_33_subc_b_a(self):
         proc = Processor()
         code = [0x61, 0x33]
@@ -1304,12 +1294,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.B), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.B), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc e,a                     ;61 34
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_34_subc_e_a(self):
         proc = Processor()
         code = [0x61, 0x34]
@@ -1319,12 +1308,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.E), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.E), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc d,a                     ;61 35
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_35_subc_d_a(self):
         proc = Processor()
         code = [0x61, 0x35]
@@ -1334,12 +1322,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.D), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.D), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc l,a                     ;61 36
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_36_subc_l_a(self):
         proc = Processor()
         code = [0x61, 0x36]
@@ -1349,12 +1336,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.L), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.L), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc h,a                     ;61 37
-    # TODO add carry flag to test to differentiate from SUB
     def test_61_37_subc_h_a(self):
         proc = Processor()
         code = [0x61, 0x37]
@@ -1364,12 +1350,11 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.H), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.H), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,[hl]                  ;3f
-    # TODO add carry flag to test to differentiate from SUB
     def test_3f_subc_a_hl(self):
         proc = Processor()
         code = [0x3f]
@@ -1377,15 +1362,14 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,[hl+c]                ;31 3a
-    # TODO add carry flag to test to differentiate from SUB
     def test_31_3a_subc_a_hl_based_c(self):
         proc = Processor()
         code = [0x31, 0x3a]
@@ -1394,14 +1378,13 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xab0d)
         proc.write_gp_reg(Registers.C, 0xc0)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,[hl+b]                ;31 3b
-    # TODO add carry flag to test to differentiate from SUB
     def test_31_3b_subc_a_hl_based_b(self):
         proc = Processor()
         code = [0x31, 0x3b]
@@ -1410,57 +1393,53 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xab0d)
         proc.write_gp_reg(Registers.B, 0xc0)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,!0xabcd               ;38 cd ab
-    # TODO add carry flag to test to differentiate from SUB
     def test_38_subc_a_addr16(self):
         proc = Processor()
         code = [0x38, 0xcd, 0xab]
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
-    # sub a,#0xab                 ;3d ab
-    # TODO add carry flag to test to differentiate from SUB
+    # subc a,#0xab                 ;3d ab
     def test_3d_subc_a_imm(self):
         proc = Processor()
         code = [0x3d, 0x22]
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0x33)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_psw(), 0)
 
     # sub a,@0xfe20               ;3e 20          saddr
-    # TODO add carry flag to test to differentiate from SUB
     def test_3e_subc_a_saddr(self):
         proc = Processor()
         code = [0x3e, 0x20]
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_memory(0xfe20, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_memory(0xfe20), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc a,[hl+0abh]            ;39 ab
-    # TODO add carry flag to test to differentiate from SUB
     def test_39_subc_a_hl_based_imm(self):
         proc = Processor()
         code = [0x39, 0xc0]
@@ -1468,25 +1447,24 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_gp_regpair(RegisterPairs.HL, 0xab0d)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
+        self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
         self.assertEqual(proc.read_psw(), 0)
 
     # subc 0fe20h,#0abh           ;b8 20 ab       saddr
-    # TODO add carry flag to test to differentiate from SUB
     def test_b8_subc_saddr_imm(self):
         proc = Processor()
         code = [0xb8, 0x20, 0x22]
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.Z)
         proc.write_memory(0xfe20, 0x33)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
-        self.assertEqual(proc.read_memory(0xfe20), 0x11)
+        self.assertEqual(proc.read_memory(0xfe20), 0x10)
         self.assertEqual(proc.read_psw(), 0)
 
     # sub a,x                     ;61 18
@@ -2514,7 +2492,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
@@ -2527,7 +2505,7 @@ class ProcessorTests(unittest.TestCase):
         code = [0x1d, 0x22]
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0x33)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
@@ -2541,7 +2519,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
@@ -2556,7 +2534,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_gp_regpair(RegisterPairs.HL, 0xab0d)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
@@ -2570,7 +2548,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_memory(0xfe20, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
@@ -2584,7 +2562,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.Z)
         proc.write_memory(0xfe20, 0x33)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0x11)
@@ -2599,7 +2577,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xab0d)
         proc.write_gp_reg(Registers.C, 0xc0)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
@@ -2614,7 +2592,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xab0d)
         proc.write_gp_reg(Registers.B, 0xc0)
         proc.write_memory(0xabcd, 0x22)
-        proc.write_psw(Flags.Z)
+        proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)

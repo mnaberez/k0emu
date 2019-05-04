@@ -2258,11 +2258,12 @@ class Processor(object):
         return result
 
     def _operation_subc(self, a, b):
-        psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
+        psw = self.read_psw()
         carry = psw & Flags.CY
+        psw &= ~(Flags.Z + Flags.AC + Flags.CY)
         if ((a & 0x0f) - (b & 0x0f) - carry) & 0x10:
             psw |= Flags.AC
-        difference = a - b
+        difference = a - b - carry
         if difference < 0:
             psw |= Flags.CY
         result = difference & 0xff
