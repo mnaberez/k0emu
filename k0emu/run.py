@@ -47,17 +47,19 @@ def main():
             binary = lambda x: bin(x)[2:].rjust(8, '0')
             for address in range(0xffe4, 0xffe8): # interrupt masks
                 line += " %04x=%s" % (address, binary(proc.memory[address]))
-
             print(line)
 
             for message in proc.messages:
                 print(message)
             proc.messages = []
 
+            # crash if out of range on software 23
             if proc.pc < 0x135:
-                print("CRASH")
+                print("CRASH PC")
                 break
-        
+            if proc.read_sp() > 0xfe1f:
+                print("CRASH SP")
+                break
 
         except KeyboardInterrupt:
             break

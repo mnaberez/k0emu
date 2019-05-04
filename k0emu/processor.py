@@ -28,21 +28,21 @@ class Processor(object):
         handler = self._opcode_map_unprefixed.get(opcode, self._opcode_not_implemented)
         handler(opcode)
         self.inst_count += 1
-        # 
-        # if (self.read_psw() & Flags.IE) and (not self.in_interrupt):
-        #     if self.sio31_pending:
-        #         self.messages.append("INTERRUPT (SIO)")
-        #         self.in_interrupt = True
-        #         self._push_word(self.pc)
-        #         self.pc = 0x08f7
-        #         self.sio31_pending = False
-        #
-        #     # elif self.inst_count > 10000:
-        #     #     self.messages.append("INTERRUPT (TIMER)")
-        #     #     self.in_interrupt = True
-        #     #     self._push_word(self.pc)
-        #     #     self.pc = 0x3b2b
-        #     #     self.inst_count = 0
+
+        if (self.read_psw() & Flags.IE) and (not self.in_interrupt):
+            if self.sio31_pending:
+                self.messages.append("INTERRUPT (SIO)")
+                self.in_interrupt = True
+                self._push_word(self.pc)
+                self.pc = 0x08f7
+                self.sio31_pending = False
+
+            elif self.inst_count > 10000:
+                self.messages.append("INTERRUPT (TIMER)")
+                self.in_interrupt = True
+                self._push_word(self.pc)
+                self.pc = 0x3b2b
+                self.inst_count = 0
 
 
 
@@ -2282,11 +2282,12 @@ class Processor(object):
         return result
 
     def _operation_subc(self, a, b):
-        psw = self.read_psw() & ~(Flags.Z + Flags.AC + Flags.CY)
+        psw = self.read_psw()
         carry = psw & Flags.CY
+        psw &= ~(Flags.Z + Flags.AC + Flags.CY)
         if ((a & 0x0f) - (b & 0x0f) - carry) & 0x10:
             psw |= Flags.AC
-        difference = a - b
+        difference = a - b - carry
         if difference < 0:
             psw |= Flags.CY
         result = difference & 0xff
@@ -2337,9 +2338,7 @@ class Processor(object):
         psw = self.read_psw() & ~(Flags.Z + Flags.AC)
         if value & 0x0f == 0:
             psw |= Flags.AC
-        result = value - 1
-        if result < 0:
-            result = 0xFF
+        result = (value - 1) & 0xFF
         if result == 0:
             psw |= Flags.Z
         self.write_psw(psw)
@@ -2349,11 +2348,7 @@ class Processor(object):
         return (value + 1) & 0xFFFF
 
     def _operation_decw(self, value):
-        if value == 0:
-            result = 0xFFFF
-        else:
-            result = value - 1
-        return result
+        return (value - 1) & 0xFFFF
 
     def _operation_set1(self, value, bit):
         return value | (2 ** bit)
