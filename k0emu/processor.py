@@ -20,19 +20,19 @@ class Processor(object):
         self.messages = []
         self.inst_count = 0
         self.interrupt_addresses = itertools.cycle([
-            #0x5933,
-            0x3ecc,
-            #0x3acc,
-            0x5904,
-            0x883a,
-            0x32df,
-            0x30e8,
-            0x307e,
-            0x08a9,
-            0x08f7,
-            0x0135,
-            0x3b2b,
-            0x5b60,
+            #0x5933,     # INTP0         causes infinite loop at 0xd86
+            #0x3ecc,     # INTP1
+            #0x3acc,     # INTP2         causes halt at 0x117a
+            #0x5904,     # INTP6
+            #0x883a,     # INTP7
+            #0x32df,     # INTSER0
+            #0x30e8,     # INTSR0
+            #0x307e,     # INTST0
+            #0x08a9,     # INTCSI30
+            #0x08f7,     # INTCSI31
+            0x0135,     # INTWTNI0      updates lcd
+            #0x3b2b,     # INTTM000
+            #0x5b60,     # INTTM011
             ])
 
     def reset(self):
@@ -45,23 +45,26 @@ class Processor(object):
         handler(opcode)
         self.inst_count += 1
 
-        if (self.read_psw() & Flags.IE) and (not self.in_interrupt):
-            if self.sio31_pending:
-                self.messages.append("INTERRUPT (SIO)")
-                self.in_interrupt = True
-                self._push(self.read_psw())
-                self._push_word(self.pc)
-                self.pc = 0x08f7
-                self.sio31_pending = False
+        if True:
+            if (self.read_psw() & Flags.IE) and (not self.in_interrupt):
+                if self.sio31_pending:
+                    self.messages.append("INTERRUPT (SIO)")
+                    self.in_interrupt = True
+                    self._push(self.read_psw())
+                    self.write_psw(self.read_psw() & ~Flags.IE)
+                    self._push_word(self.pc)
+                    self.pc = 0x08f7
+                    self.sio31_pending = False
 
-            elif self.inst_count > 500:
-                address = next(self.interrupt_addresses)
-                self.messages.append("INTERRUPT (%04x)" % address)
-                self.in_interrupt = True
-                self._push(self.read_psw())
-                self._push_word(self.pc)
-                self.pc = address
-                self.inst_count = 0
+                elif self.inst_count > 500:
+                    address = next(self.interrupt_addresses)
+                    self.messages.append("INTERRUPT (%04x)" % address)
+                    self.in_interrupt = True
+                    self._push(self.read_psw())
+                    self.write_psw(self.read_psw() & ~Flags.IE)
+                    self._push_word(self.pc)
+                    self.pc = address
+                    self.inst_count = 0
 
 
 
@@ -2696,25 +2699,23 @@ class RegisterTrace:
         ('HL', RegisterPairs.HL)
     )
 
-    NamedFlags = (
-        ('I', Flags.IE), ('Z', Flags.Z), ('R', Flags.RBS1), ('A', Flags.AC),
-        ('R', Flags.RBS0), ('U', Flags.UNUSED), ('I', Flags.ISP), ('C', Flags.CY),
-    )
-
     @classmethod
     def generate(klass, processor):
         s = ""
         for name, reg in klass.NamedRegisterPairs:
             s += "%s=%04X " % (name, processor.read_gp_regpair(reg))
         s += "SP=%04X" % processor.read_sp()
-        s += " ["
+
         psw = processor.read_psw()
-        for name, flag in klass.NamedFlags:
-            if psw & flag:
-                s += name
-            else:
-                s += '.'
-        s += "]"
+        s += " [IE:%d RB:%d ISP:%d Z:%d AC:%d CY:%d]" % (
+            int(bool(psw & Flags.IE)),
+            processor.read_rb(),
+            int(bool(psw & Flags.ISP)),
+            int(bool(psw & Flags.Z)),
+            int(bool(psw & Flags.AC)),
+            int(bool(psw & Flags.CY)),
+        )
+
         return s
 
 
