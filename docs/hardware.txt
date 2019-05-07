@@ -1,0 +1,26 @@
+SPI
+===
+
+CSI31: Unknown SPI
+CSI30: uPD16432B LCD Controller
+
+Watch Timer
+===========
+
+Watch timer can set a flag every 0.5 or 0.25 seconds and can simultaneously
+generate an interrupt request at a preset time interval.
+
+114b: 13 41 13     mov 0xff41,#0x13
+0148: 13 41 13     mov 0xff41,#0x13
+
+0x13 = 00010011
+
+  Bit 7     = 0   WTNM07 (32.7 KHz)               Count clock selection
+  Bit 6..4  = 001 WTNM06..WTNM04 (2^5/fw) 977 us  11-bit prescaler interval
+  Bit 3..2  = 00  WTNM03..WTNM02 2^21/fx (0.5 s)  Selection of watch timer interrupt request timing
+  Bit 1     = 1   WTNM01 Start                    5-bit counter operation control
+  Bit 0     = 1   WTNM00 Operation Enabled        Watch timer enable operation
+
+Two interrupts are possible:
+ - Watch timer interrupt INTWTN0     ("bad" ISR does infinite loop)
+ - Interval timer interrupt INTWTNI0 (ISR at 0x0135)
