@@ -2654,7 +2654,7 @@ def _regpair(opcode):
 
 def _bit(opcode):
     return (opcode & 0b01110000) >> 4
-Processor
+
 def _resolve_rel(pc, displacement):
     if displacement & 0x80:
         displacement = -((displacement ^ 0xFF) + 1)
