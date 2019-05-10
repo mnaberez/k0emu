@@ -45,29 +45,25 @@ class Processor(object):
         handler(opcode)
         self.inst_count += 1
 
-        if True:
-            if (self.read_psw() & Flags.IE) and (not self.in_interrupt):
-                if self.sio31_pending:
-                    self.messages.append("INTERRUPT (SIO)")
-                    self.in_interrupt = True
-                    self._push(self.read_psw())
-                    self.write_psw(self.read_psw() & ~Flags.IE)
-                    self._push_word(self.pc)
-                    self.pc = 0x08f7
-                    self.sio31_pending = False
+        if (self.read_psw() & Flags.IE) and (not self.in_interrupt):
+            if self.sio31_pending:
+                self.messages.append("INTERRUPT (SIO)")
+                self.in_interrupt = True
+                self.interrupt(0x08f7)
+                self.sio31_pending = False
 
-                elif self.inst_count > 500:
-                    address = next(self.interrupt_addresses)
-                    self.messages.append("INTERRUPT (%04x)" % address)
-                    self.in_interrupt = True
-                    self._push(self.read_psw())
-                    self.write_psw(self.read_psw() & ~Flags.IE)
-                    self._push_word(self.pc)
-                    self.pc = address
-                    self.inst_count = 0
+            elif self.inst_count > 500:
+                address = next(self.interrupt_addresses)
+                self.messages.append("INTERRUPT (%04x)" % address)
+                self.interrupt(address)
+                self.inst_count = 0
 
-
-
+    def interrupt(self, isr_address):
+        self.in_interrupt = True # XXX hack
+        self._push(self.read_psw())
+        self.write_psw(self.read_psw() & ~Flags.IE)
+        self._push_word(self.pc)
+        self.pc = isr_address
 
     def __str__(self):
         return RegisterTrace.generate(self)
