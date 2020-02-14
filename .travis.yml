@@ -32,4 +32,5 @@ install:
   - travis_retry pip install tox
 
 script:
+  - make -C k0emu/debugger/firmware
   - travis_retry tox
