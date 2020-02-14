@@ -8,13 +8,6 @@ import sys
 from k0dasm.disassemble import disassemble
 from k0emu.processor import Processor
 
-def write_dumpfile(proc): # XXX hack
-    home = os.environ['HOME']
-    filename = os.path.join(home, 'Desktop/memory.bin')
-    with open(filename, 'wb') as f:
-        f.write(proc.memory)
-    print("\nDump written to: %s" % filename)
-
 def main():
     proc = Processor()
 
@@ -53,18 +46,8 @@ def main():
                 print(message)
             proc.messages = []
 
-            # crash if out of range on software 23
-            if proc.pc < 0x135:
-                print("CRASH PC")
-                break
-            if proc.read_sp() > 0xfe1f:
-                print("CRASH SP")
-                break
-
         except KeyboardInterrupt:
             break
-
-    write_dumpfile(proc)
 
 if __name__ == "__main__":
     main()
