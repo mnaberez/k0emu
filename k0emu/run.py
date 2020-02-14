@@ -2,7 +2,6 @@
 Usage: k0emu <rom.bin>
 
 '''
-import os
 import sys
 
 from k0dasm.disassemble import disassemble
