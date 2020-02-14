@@ -3,8 +3,8 @@ __version__ = '1.0.0.dev0'
 import sys
 from setuptools import setup, find_packages
 
-if sys.version_info[:2] < (3, 5):
-    raise RuntimeError('k0emu requires Python 3.5 or later')
+if sys.version_info[:2] < (3, 4):
+    raise RuntimeError('k0emu requires Python 3.4 or later')
 
 DESC = "NEC 78K0 emulator"
 
