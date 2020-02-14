@@ -15,25 +15,8 @@ class Processor(object):
         self._init_opcode_map_prefix_0x61()
         self._init_opcode_map_prefix_0x71()
         self.reset()
-        self.sio31_pending = False
-        self.in_interrupt = False
         self.messages = []
         self.inst_count = 0
-        self.interrupt_addresses = itertools.cycle([
-            #0x5933,     # INTP0         causes infinite loop at 0xd86
-            #0x3ecc,     # INTP1
-            #0x3acc,     # INTP2         causes halt at 0x117a
-            #0x5904,     # INTP6
-            #0x883a,     # INTP7
-            #0x32df,     # INTSER0
-            #0x30e8,     # INTSR0
-            #0x307e,     # INTST0
-            #0x08a9,     # INTCSI30
-            #0x08f7,     # INTCSI31
-            0x0135,     # INTWTNI0      updates lcd
-            #0x3b2b,     # INTTM000
-            #0x5b60,     # INTTM011
-            ])
 
     def reset(self):
         self.write_sp(0)
@@ -45,21 +28,7 @@ class Processor(object):
         handler(opcode)
         self.inst_count += 1
 
-        if (self.read_psw() & Flags.IE) and (not self.in_interrupt):
-            if self.sio31_pending:
-                self.messages.append("INTERRUPT (SIO)")
-                self.in_interrupt = True
-                self.interrupt(0x08f7)
-                self.sio31_pending = False
-
-            elif self.inst_count > 500:
-                address = next(self.interrupt_addresses)
-                self.messages.append("INTERRUPT (%04x)" % address)
-                self.interrupt(address)
-                self.inst_count = 0
-
     def interrupt(self, isr_address):
-        self.in_interrupt = True # XXX hack
         self._push(self.read_psw())
         self.write_psw(self.read_psw() & ~Flags.IE)
         self._push_word(self.pc)
@@ -1960,7 +1929,6 @@ class Processor(object):
 
     # reti                        ;8f
     def _opcode_0x8f(self, opcode):
-        self.in_interrupt = False
         self.pc = self._pop_word()
         self.write_psw(self._pop())
 
@@ -2561,46 +2529,12 @@ class Processor(object):
             return 0x08
 
         value = self.memory[address]
-        if address == 0xff18:
-            value = 0
-            self.messages.append("PERIPHERAL READ RXB0 = %02x" % value)
-        elif address == 0xff1a:
-            value = 0
-            self.messages.append("PERIPHERAL READ SIO30 = %02x" % value)
-        elif address == 0xff1b:
-            value = 0
-            self.messages.append("PERIPHERAL READ SIO31 = %02x" % value)
-        elif address == 0xff1f:
-            self.messages.append("PERIPHERAL READ IIC0 SHIFT REG = %02x" % value)
-        elif address in range(0xff00, 0xff08):
-            if address == 0xff00:
-                value = 0xff & ~4
-            else:
-                import random
-                value = random.choice(range(0x100))
-
-
-        #     print("PERIPHERAL READ %04x = %02x" % (address, value))
         return value
 
     def write_memory(self, address, value):
         if address in self.RESERVED_ADDRESSES:
             return
-        elif address == 0xff18:
-            self.messages.append("PERIPHERAL WRITE TXS0 = %02x" % value)
-        elif address == 0xff1a:
-            value = 0xff
-            self.messages.append("PERIPHERAL WRITE SIO30 = %02x" % value)
-            self.memory[0xffe1] = 0xff
 
-        elif address == 0xff1b:
-            self.messages.append("PERIPHERAL WRITE SIO31 = %02x" % value)
-            if not self.in_interrupt:
-                self.sio31_pending = True
-                self.memory[0xffe1] = 0xff
-
-        # elif address in range(0xff00, 0x10000):
-        #     print("PERIPHERAL WRITE %04x = %02x" % (address, value))
         self.memory[address] = value
 
     def write_memory_bytes(self, address, data):
