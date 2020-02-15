@@ -1,12 +1,18 @@
 __version__ = '1.0.0.dev0'
 
+import os
 import sys
 from setuptools import setup, find_packages
 
 if sys.version_info[:2] < (3, 4):
     raise RuntimeError('k0emu requires Python 3.4 or later')
 
-DESC = "NEC 78K0 emulator"
+DESC = "Renesas (NEC) 78K0 emulator"
+here = os.path.abspath(os.path.dirname(__file__))
+try:
+    LONG_DESC = open(os.path.join(here, 'README.rst')).read()
+except:
+    LONG_DESC = DESC
 
 CLASSIFIERS = [
     'Development Status :: 3 - Alpha',
@@ -22,8 +28,9 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Assembly',
-    'Topic :: Software Development :: Disassemblers',
+    'Topic :: Software Development :: Debuggers',
     'Topic :: Software Development :: Embedded Systems',
+    'Topic :: Software Development :: Interpreters',
     'Topic :: System :: Hardware'
 ]
 
@@ -33,7 +40,7 @@ setup(
     license='License :: OSI Approved :: BSD License',
     url='https://github.com/mnaberez/k0emu',
     description=DESC,
-    long_description=DESC,
+    long_description=LONG_DESC,
     classifiers=CLASSIFIERS,
     author="Mike Naberezny",
     author_email="mike@naberezny.com",
