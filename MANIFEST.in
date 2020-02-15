@@ -1,0 +1,7 @@
+include CHANGES.rst
+include LICENSE.txt
+include README.rst
+
+include k0emu/debugger/firmware/Makefile
+include k0emu/debugger/firmware/debugger.asm
+
