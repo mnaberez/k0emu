@@ -22,9 +22,9 @@ Features
 Installation
 ------------
 
-k0emu is written in Python and requires Python 3.4 or later.  Packages are `available <https://pypi.org/project/k0emu/>`_ on the Python Package Index (PyPI).  You can download them from there or you can use ``pip`` to automatically install or upgrade ``k0emu``::
+k0emu is written in Python and requires Python 3.4 or later.  Packages are `available <https://pypi.org/project/k0emu/>`_ on the Python Package Index (PyPI).  You can download them from there or you can use ``pip`` to install ``k0emu``::
 
-    $ pip install -U k0emu
+    $ pip install setuptools k0emu
 
 Usage
 -----
