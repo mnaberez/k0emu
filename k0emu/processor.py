@@ -7,6 +7,8 @@ class Processor(object):
     SP_ADDRESS = 0xFF1C
     PSW_ADDRESS = 0xFF1E
     RESERVED_ADDRESSES = set(range(0xF800, 0xFB00))
+    INTERNAL_HIGH_SPEED_RAM_START = 0xFB00
+    INTERNAL_HIGH_SPEED_RAM_END = 0xFEFF
 
     def __init__(self):
         self.memory = Memory(0x10000)
@@ -16,17 +18,35 @@ class Processor(object):
         self._init_opcode_map_prefix_0x71()
         self.reset()
         self.messages = []
-        self.inst_count = 0
+        self.cycle_count = 0
 
     def reset(self):
         self.write_sp(0)
         self.pc = self.read_memory_word(self.RESET_VECTOR_ADDRESS)
+        self.cycle_count = 0
 
     def step(self):
         opcode = self._consume_byte()
         handler = self._opcode_map_unprefixed.get(opcode, self._opcode_not_implemented)
         handler(opcode)
-        self.inst_count += 1
+
+    def _is_internal_ram(self, address):
+        return (self.INTERNAL_HIGH_SPEED_RAM_START <= address
+                <= self.INTERNAL_HIGH_SPEED_RAM_END)
+
+    def _bus_read(self, address):
+        """Read a byte via the data bus.  Adds a cycle penalty when
+        the address is outside internal high-speed RAM."""
+        if not self._is_internal_ram(address):
+            self.cycle_count += 1
+        return self.read_memory(address)
+
+    def _bus_write(self, address, value):
+        """Write a byte via the data bus.  Adds a cycle penalty when
+        the address is outside internal high-speed RAM."""
+        if not self._is_internal_ram(address):
+            self.cycle_count += 1
+        self.write_memory(address, value)
 
     def interrupt(self, isr_address):
         self._push(self.read_psw())
@@ -438,7 +458,7 @@ class Processor(object):
 
     # nop
     def _opcode_0x00(self, opcode):
-        return
+        self.cycle_count += 2
 
     # not1 cy
     def _opcode_0x01(self, opcode):
@@ -448,39 +468,44 @@ class Processor(object):
             self.write_psw(self.read_psw() & ~bitweight)
         else:
             self.write_psw(self.read_psw() | bitweight)
+        self.cycle_count += 2
 
     # xch a,[de]                  ;05
     def _opcode_0x05(self, opcode):
         a_value = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.DE)
-        other_value = self.read_memory(address)
+        other_value = self._bus_read(address)
         self.write_gp_reg(Registers.A, other_value)
-        self.write_memory(address, a_value)
+        self._bus_write(address, a_value)
+        self.cycle_count += 4
 
     # xch a,[hl]                  ;07
     def _opcode_0x07(self, opcode):
         a_value = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        other_value = self.read_memory(address)
+        other_value = self._bus_read(address)
         self.write_gp_reg(Registers.A, other_value)
-        self.write_memory(address, a_value)
+        self._bus_write(address, a_value)
+        self.cycle_count += 4
 
     # add a,!0abcdh               ;08 cd ab
     def _opcode_0x08(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_addr16()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_add(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # add a,[hl+0abh]             ;09 ab
     def _opcode_0x09(self, opcode):
         a = self.read_gp_reg(Registers.A)
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_add(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # add a,#0abh                 ;0d ab
     def _opcode_0x0d(self, opcode):
@@ -488,28 +513,32 @@ class Processor(object):
         b = self._consume_byte()
         result = self._operation_add(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # add a,0fe20h                ;0e 20          saddr
     def _opcode_0x0e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_add(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # add a,[hl]                  ;0f
     def _opcode_0x0f(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_add(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # movw regpair,#0abcdh             ;10..16 cd ab
     def _opcode_0x10_to_0x16_movw(self, opcode):
         regpair = _regpair(opcode)
         value = self._consume_word()
         self.write_gp_regpair(regpair, value)
+        self.cycle_count += 6
 
     # xchw ax,bc                  ;e2
     # xchw ax,de                  ;e4
@@ -520,23 +549,26 @@ class Processor(object):
         other_value = self.read_gp_regpair(other_regpair)
         self.write_gp_regpair(RegisterPairs.AX, other_value)
         self.write_gp_regpair(other_regpair, ax_value)
+        self.cycle_count += 4
 
     # sub a,!0abcdh               ;18 cd ab
     def _opcode_0x18(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_addr16()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # sub a,[hl+0abh]             ;19 ab
     def _opcode_0x19(self, opcode):
         a = self.read_gp_reg(Registers.A)
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # sub a,#0abh                 ;1d ab
     def _opcode_0x1d(self, opcode):
@@ -544,40 +576,47 @@ class Processor(object):
         b = self._consume_byte()
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # sub a,0fe20h                ;1e 20          saddr
     def _opcode_0x1e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # sub a,[hl]                  ;1f
     def _opcode_0x1f(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # set1 cy
     def _opcode_0x20(self, opcode):
         bitweight = Flags.CY
         self.write_psw(self.read_psw() | bitweight)
+        self.cycle_count += 2
 
     # clr1 cy
     def _opcode_0x21(self, opcode):
         bitweight = Flags.CY
         self.write_psw(self.read_psw() & ~bitweight)
+        self.cycle_count += 2
 
     # push psw                    ;22
     def _opcode_0x22(self, opcode):
         self._push(self.read_psw())
+        self.cycle_count += 2
 
     # pop psw                     ;23
     def _opcode_0x23(self, opcode):
         self.write_psw(self._pop())
+        self.cycle_count += 2
 
     # ror a,1                     ;24
     def _opcode_0x24(self, opcode):
@@ -596,6 +635,7 @@ class Processor(object):
 
         self.write_psw(psw)
         self.write_gp_reg(Registers.A, rotated)
+        self.cycle_count += 2
 
     # rorc a,1                    ;25
     def _opcode_0x25(self, opcode):
@@ -616,6 +656,7 @@ class Processor(object):
 
         self.write_psw(psw)
         self.write_gp_reg(Registers.A, rotated)
+        self.cycle_count += 2
 
     # rol a,1                     ;26
     def _opcode_0x26(self, opcode):
@@ -631,6 +672,7 @@ class Processor(object):
 
         self.write_psw(psw)
         self.write_gp_reg(Registers.A, rotated)
+        self.cycle_count += 2
 
     # rolc a,1                    ;27
     def _opcode_0x27(self, opcode):
@@ -648,23 +690,26 @@ class Processor(object):
 
         self.write_psw(psw)
         self.write_gp_reg(Registers.A, rotated)
+        self.cycle_count += 2
 
     # addc a,!0abcdh              ;28 cd ab
     def _opcode_0x28(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_addr16()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # addc a,[hl+0abh]            ;29 ab
     def _opcode_0x29(self, opcode):
         a = self.read_gp_reg(Registers.A)
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # addc a,#0abh                ;2d ab
     def _opcode_0x2d(self, opcode):
@@ -672,39 +717,44 @@ class Processor(object):
         b = self._consume_byte()
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # addc a,0fe20h               ;2e 20          saddr
     def _opcode_0x2e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # addc a,[hl]                 ;2f
     def _opcode_0x2f(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # subc a,!0abcdh              ;38 cd ab
     def _opcode_0x38(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_addr16()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_subc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # subc a,[hl+0abh]            ;39 ab
     def _opcode_0x39(self, opcode):
         a = self.read_gp_reg(Registers.A)
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_subc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # subc a,#0abh                ;3d ab
     def _opcode_0x3d(self, opcode):
@@ -712,22 +762,25 @@ class Processor(object):
         b = self._consume_byte()
         result = self._operation_subc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # subc a,0fe20h               ;3e 20          saddr
     def _opcode_0x3e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_subc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # subc a,[hl]                 ;3f
     def _opcode_0x3f(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_subc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # xch a,REG                    ;32...37 except 31
     def _opcode_0x30_to_0x37_except_0x31(self, opcode):
@@ -736,13 +789,16 @@ class Processor(object):
         other_value = self.read_gp_reg(other_reg)
         self.write_gp_reg(Registers.A, other_value)
         self.write_gp_reg(other_reg, a_value)
+        self.cycle_count += 2
 
     # cmp 0fe20h,#0abh            ;c8 20 ab       saddr
     def _opcode_0xc8(self, opcode):
         address = self._consume_saddr()
-        a = self.read_memory(address)
+        a = self._bus_read(address)
         b = self._consume_byte()
         self._operation_sub(a, b)
+        self._bus_write(address, a)  # hardware does RMW bus cycle
+        self.cycle_count += 6
 
     # addw ax,#0abcdh             ;ca cd ab
     def _opcode_0xca(self, opcode):
@@ -750,6 +806,7 @@ class Processor(object):
         other_value = self._consume_word()
         result = self._operation_addw(ax_value, other_value)
         self.write_gp_regpair(RegisterPairs.AX, result)
+        self.cycle_count += 6
 
     # subw ax,#0abcdh             ;da cd ab
     def _opcode_0xda(self, opcode):
@@ -757,36 +814,41 @@ class Processor(object):
         other_value = self._consume_word()
         result = self._operation_subw(ax_value, other_value)
         self.write_gp_regpair(RegisterPairs.AX, result)
+        self.cycle_count += 6
 
     # cmpw ax,#0abcdh             ;ea cd ab
     def _opcode_0xea(self, opcode):
         ax_value = self.read_gp_regpair(RegisterPairs.AX)
         other_value = self._consume_word()
         self._operation_subw(ax_value, other_value)
+        self.cycle_count += 6
 
     # xch a,!abcd                 ;ce cd ab
     def _opcode_0xce(self, opcode):
         address = self._consume_addr16()
         a_value = self.read_gp_reg(Registers.A)
-        other_value = self.read_memory(address)
+        other_value = self._bus_read(address)
         self.write_gp_reg(Registers.A, other_value)
-        self.write_memory(address, a_value)
+        self._bus_write(address, a_value)
+        self.cycle_count += 8
 
     # xch a,0fe20h                ;83 20          saddr
     def _opcode_0x83(self, opcode):
         address = self._consume_saddr()
         a_value = self.read_gp_reg(Registers.A)
-        other_value = self.read_memory(address)
+        other_value = self._bus_read(address)
         self.write_gp_reg(Registers.A, other_value)
-        self.write_memory(address, a_value)
+        self._bus_write(address, a_value)
+        self.cycle_count += 4
 
     # xch a,0fffeh                ;93 fe          sfr
     def _opcode_0x93(self, opcode):
         address = self._consume_sfr()
         a_value = self.read_gp_reg(Registers.A)
-        other_value = self.read_memory(address)
+        other_value = self._bus_read(address)
         self.write_gp_reg(Registers.A, other_value)
-        self.write_memory(address, a_value)
+        self._bus_write(address, a_value)
+        self.cycle_count += 4
 
     # incw ax                     ;80
     # ...
@@ -796,6 +858,7 @@ class Processor(object):
         value = self.read_gp_regpair(regpair)
         result = self._operation_incw(value)
         self.write_gp_regpair(regpair, result)
+        self.cycle_count += 4
 
     # decw ax                     ;90
     # ...
@@ -805,215 +868,245 @@ class Processor(object):
         value = self.read_gp_regpair(regpair)
         result = self._operation_decw(value)
         self.write_gp_regpair(regpair, result)
+        self.cycle_count += 4
 
     # movw ax,!0abceh             ;02 ce ab       addr16p
     def _opcode_0x02(self, opcode):
         address = self._consume_addr16p()
-        value_low = self.read_memory(address)
+        value_low = self._bus_read(address)
         self.write_gp_reg(Registers.X, value_low)
-        value_high = self.read_memory(address+1)
+        value_high = self._bus_read(address+1)
         self.write_gp_reg(Registers.A, value_high)
+        self.cycle_count += 10
 
     # movw ax,0fe20h              ;89 20          saddrp
     def _opcode_0x89(self, opcode):
         address = self._consume_saddrp()
-        value_low = self.read_memory(address)
+        value_low = self._bus_read(address)
         self.write_gp_reg(Registers.X, value_low)
-        value_high = self.read_memory(address+1)
+        value_high = self._bus_read(address+1)
         self.write_gp_reg(Registers.A, value_high)
+        self.cycle_count += 6
 
     # sub 0fe20h,#0abh            ;98 20 ab       saddr
     def _opcode_0x98(self, opcode):
         address = self._consume_saddr()
-        a = self.read_memory(address)
+        a = self._bus_read(address)
         b = self._consume_byte()
         result = self._operation_sub(a, b)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # movw 0fe20h,ax              ;99 20          saddrp
     def _opcode_0x99(self, opcode):
         address = self._consume_saddrp()
         value_low = self.read_gp_reg(Registers.X)
-        self.write_memory(address, value_low)
+        self._bus_write(address, value_low)
         value_high = self.read_gp_reg(Registers.A)
-        self.write_memory(address+1, value_high)
+        self._bus_write(address+1, value_high)
+        self.cycle_count += 6
 
     # movw !0abceh,ax             ;03 ce ab       addr16p
     def _opcode_0x03(self, opcode):
         address = self._consume_addr16p()
         value_low = self.read_gp_reg(Registers.X)
-        self.write_memory(address, value_low)
+        self._bus_write(address, value_low)
         value_high = self.read_gp_reg(Registers.A)
-        self.write_memory(address+1, value_high)
+        self._bus_write(address+1, value_high)
+        self.cycle_count += 10
 
     # subc 0fe20h,#0abh           ;b8 20 ab       saddr
     def _opcode_0xb8(self, opcode):
         address = self._consume_saddr()
-        a = self.read_memory(address)
+        a = self._bus_read(address)
         b = self._consume_byte()
         result = self._operation_subc(a, b)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # movw 0fffeh,ax              ;b9 fe          sfrp
     def _opcode_0xb9(self, opcode):
         address = self._consume_sfrp()
         value_low = self.read_gp_reg(Registers.X)
-        self.write_memory(address, value_low)
+        self._bus_write(address, value_low)
         value_high = self.read_gp_reg(Registers.A)
-        self.write_memory(address+1, value_high)
+        self._bus_write(address+1, value_high)
+        self.cycle_count += 6
 
     # br !0abcdh                  ;9b cd ab
     def _opcode_0x9b(self, opcode):
         address = self._consume_addr16()
         self.pc = address
+        self.cycle_count += 6
 
     # mov r,#byte                 ;a0..a7 xx
     def _opcode_0xa0_to_0xa7(self, opcode):
         reg = _reg(opcode)
         immbyte = self._consume_byte()
         self.write_gp_reg(reg, immbyte)
+        self.cycle_count += 4
 
     # mov a,x ... mov a,h           ;60..67 except 61
     def _opcode_0x60_to_0x67_except_0x61(self, opcode):
         reg = _reg(opcode)
         value = self.read_gp_reg(reg)
         self.write_gp_reg(Registers.A, value)
+        self.cycle_count += 2
 
     # mov x,a ... mov h,a           ;70..77 except 71
     def _opcode_0x70_to_0x77_except_0x71(self, opcode):
         reg = _reg(opcode)
         value = self.read_gp_reg(Registers.A)
         self.write_gp_reg(reg, value)
+        self.cycle_count += 2
 
     # mov a,!addr16                 ;8e
     def _opcode_0x8e(self, opcode):
         address = self._consume_addr16()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
+        self.cycle_count += 8
 
     # mov !addr16,a               ;9e cd ab
     def _opcode_0x9e(self, opcode):
         address = self._consume_addr16()
         value = self.read_gp_reg(Registers.A)
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 8
 
     # mov a,0fe20h                ;F0 20          saddr
     # mov a,psw                   ;f0 1e          (psw=saddr ff1e)
     def _opcode_0xf0(self, opcode):
         address = self._consume_saddr()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
+        self.cycle_count += 4
 
     # mov 0fe20h,a                ;f2 20          saddr
     # mov psw,a                   ;f2 1e          (psw=saddr ff1e)
     def _opcode_0xf2(self, opcode):
         address = self._consume_saddr()
         value = self.read_gp_reg(Registers.A)
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 4
 
     # mov a,0fffeh                ;f4 fe          sfr
     def _opcode_0xf4(self, opcode):
         address = self._consume_sfr()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
         self.write_memory(address, value)
+        self.cycle_count += 4
 
     # mov 0fffeh,a                ;f6 fe          sfr
     def _opcode_0xf6(self, opcode):
         address = self._consume_sfr()
         value = self.read_gp_reg(Registers.A)
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 4
 
     # mov 0fe20h,#0abh            ;11 20 ab       saddr
     # mov psw,#0abh               ;11 1e ab
     def _opcode_0x11(self, opcode):
         address = self._consume_saddr()
         value = self._consume_byte()
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 6
 
     # mov 0fffeh, #0abh           ;13 fe ab       sfr
     def _opcode_0x13(self, opcode):
         address = self._consume_sfr()
         value = self._consume_byte()
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 6
 
     # add a,[hl+b]                ;31 0b
     def _opcode_0x31_0x0b_add(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_b()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_add(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # sub a,[hl+c]                ;31 1a
     def _opcode_0x31_0x1a_sub(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_c()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # sub a,[hl+b]                ;31 1b
     def _opcode_0x31_0x1b_sub(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_b()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # addc a,[hl+b]               ;31 2b
     def _opcode_0x31_0x2b_addc(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_b()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # subc a,[hl+c]               ;31 3a
     def _opcode_0x31_0x3a_subc(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_c()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_subc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # subc a,[hl+b]               ;31 3b
     def _opcode_0x31_0x3b_subc(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_b()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_subc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # cmp a,[hl+c]                ;31 4a
     def _opcode_0x31_0x4a_cmp(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_c()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         self._operation_sub(a, b)
+        self.cycle_count += 8
 
     # cmp a,[hl+b]                ;31 4b
     def _opcode_0x31_0x4b_cmp(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_b()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         self._operation_sub(a, b)
+        self.cycle_count += 8
 
     # add a,[hl+c]                ;31 0a
     def _opcode_0x31_0x0a_add(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_c()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_add(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # addc a,[hl+c]               ;31 2a
     def _opcode_0x31_0x2a_addc(self, opcode2):
         a = self.read_gp_reg(Registers.A)
         address = self._based_hl_c()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # bt a.bit,$label32             ;31 0e fd
     def _opcode_0x31_0x0e_to_0x7e_bt(self, opcode2):
@@ -1021,6 +1114,7 @@ class Processor(object):
         displacement = self._consume_byte()
         value = self.read_gp_reg(Registers.A)
         self._operation_bt(value, bit, displacement)
+        self.cycle_count += 8
 
     # bf a.0,$label64             ;31 0f fd
     def _opcode_0x31_0x0f_to_0x7f_bf(self, opcode2):
@@ -1028,30 +1122,34 @@ class Processor(object):
         displacement = self._consume_byte()
         value = self.read_gp_reg(Registers.A)
         self._operation_bf(value, bit, displacement)
+        self.cycle_count += 8
 
     # bf [hl].0,$label80          ;31 87 fd
     def _opcode_0x31_0x87_to_0xf7_bf(self, opcode2):
         bit = _bit(opcode2)
         displacement = self._consume_byte()
         address = self.read_gp_regpair(RegisterPairs.HL)
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self._operation_bf(value, bit, displacement)
+        self.cycle_count += 10
 
     # bf 0fffeh.0,$label56        ;31 07 fe fc    sfr
     def _opcode_0x31_0x07_to_0x77_bf(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
         displacement = self._consume_byte()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self._operation_bf(value, bit, displacement)
+        self.cycle_count += 10
 
     # bf psw.0,$label72           ;31 03 1e fc
     def _opcode_0x31_0x03_to_0x73_bf(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
         displacement = self._consume_byte()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self._operation_bf(value, bit, displacement)
+        self.cycle_count += 10
 
     # btclr a.0,$label104         ;31 0d fd
     def _opcode_0x31_0x0d_to_0x7d_btclr(self, opcode2):
@@ -1060,97 +1158,109 @@ class Processor(object):
         value = self.read_gp_reg(Registers.A)
         result = self._operation_btclr(value, bit, displacement)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # bt 0fffeh.0,$label24        ;31 06 fe fc    sfr
     def _opcode_0x31_0x06_to_0x76_bt(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
         displacement = self._consume_byte()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self._operation_bt(value, bit, displacement)
+        self.cycle_count += 10
 
     # btclr [hl].0,$label120      ;31 85 fd
     def _opcode_0x31_0x05_to_0x75_btclr(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
         displacement = self._consume_byte()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_btclr(value, bit, displacement)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 10
 
     # btclr [hl].0,$label120      ;31 85 fd
     def _opcode_0x31_0x85_to_0xf5_btclr(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
         displacement = self._consume_byte()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_btclr(value, bit, displacement)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 10
 
     # btclr 0fe20h.0,$label88     ;31 01 20 fc    saddr
     def _opcode_0x31_0x01_to_0x71_btclr(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
         displacement = self._consume_byte()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_btclr(value, bit, displacement)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 10
 
     # bt [hl].0,$label40          ;31 86 fd
     def _opcode_0x31_0x86_to_0xf6_bt(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
         displacement = self._consume_byte()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self._operation_bt(value, bit, displacement)
+        self.cycle_count += 10
 
     # and a,[hl+c]                ;31 5a
     def _opcode_0x31_0x5a_and(self, opcode2):
         address = self._based_hl_c()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         a = self.read_gp_reg(Registers.A)
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # and a,[hl+b]                ;31 5b
     def _opcode_0x31_0x5b_and(self, opcode2):
         address = self._based_hl_b()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         a = self.read_gp_reg(Registers.A)
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # or a,[hl+c]                 ;31 6a
     def _opcode_0x31_0x6a_or(self, opcode2):
         address = self._based_hl_c()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         a = self.read_gp_reg(Registers.A)
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # or a,[hl+b]                 ;31 6b
     def _opcode_0x31_0x6b_or(self, opcode2):
         address = self._based_hl_b()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         a = self.read_gp_reg(Registers.A)
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # xor a,[hl+c]                ;31 7a
     def _opcode_0x31_0x7a_xor(self, opcode2):
         address = self._based_hl_c()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         a = self.read_gp_reg(Registers.A)
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # xor a,[hl+b]                ;31 7b
     def _opcode_0x31_0x7b_xor(self, opcode2):
         address = self._based_hl_b()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         a = self.read_gp_reg(Registers.A)
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # rol4 [hl]                   ;31 80
     def _opcode_0x31_0x80_rol4(self, opcode2):
@@ -1162,7 +1272,7 @@ class Processor(object):
         a_low_nib = a & 0x0f
         a_high_nib = a >> 4
 
-        dest = self.read_memory(address)
+        dest = self._bus_read(address)
         dest_low_nib = dest & 0x0f
         dest_high_nib = dest >> 4
 
@@ -1170,7 +1280,8 @@ class Processor(object):
         self.write_gp_reg(Registers.A, a)
 
         dest = (dest_low_nib << 4) | a_low_nib
-        self.write_memory(address, dest)
+        self._bus_write(address, dest)
+        self.cycle_count += 10
 
     # ror4 [hl]                   ;31 90
     def _opcode_0x31_0x90_ror4(self, opcode2):
@@ -1182,7 +1293,7 @@ class Processor(object):
         a_low_nib = a & 0x0f
         a_high_nib = a >> 4
 
-        dest = self.read_memory(address)
+        dest = self._bus_read(address)
         dest_low_nib = dest & 0x0f
         dest_high_nib = dest >> 4
 
@@ -1190,7 +1301,8 @@ class Processor(object):
         self.write_gp_reg(Registers.A, a)
 
         dest = (a_low_nib << 4) | dest_high_nib
-        self.write_memory(address, dest)
+        self._bus_write(address, dest)
+        self.cycle_count += 10
 
     # divuw c                     ;31 82
     def _opcode_0x31_0x82_divuw(self, opcode2):
@@ -1204,6 +1316,7 @@ class Processor(object):
             remainder = ax % c
         self.write_gp_regpair(RegisterPairs.AX, quotient)
         self.write_gp_reg(Registers.C, remainder)
+        self.cycle_count += 25
 
     # mulu x                      ;31 88
     def _opcode_0x31_0x88_mulu(self, opcode2):
@@ -1211,61 +1324,70 @@ class Processor(object):
         x = self.read_gp_reg(Registers.X)
         product = a * x
         self.write_gp_regpair(RegisterPairs.AX, product)
+        self.cycle_count += 16
 
     # xch a,[hl+c]                ;31 8a
     def _opcode_0x31_0x8a_xch(self, opcode2):
         address = self._based_hl_c()
-        other_value = self.read_memory(address)
+        other_value = self._bus_read(address)
         a_value = self.read_gp_reg(Registers.A)
         self.write_gp_reg(Registers.A, other_value)
-        self.write_memory(address, a_value)
+        self._bus_write(address, a_value)
+        self.cycle_count += 8
 
     # xch a,[hl+b]                ;31 8b
     def _opcode_0x31_0x8b_xch(self, opcode2):
         address = self._based_hl_b()
-        other_value = self.read_memory(address)
+        other_value = self._bus_read(address)
         a_value = self.read_gp_reg(Registers.A)
         self.write_gp_reg(Registers.A, other_value)
-        self.write_memory(address, a_value)
+        self._bus_write(address, a_value)
+        self.cycle_count += 8
 
     # br ax                       ;31 98
     def _opcode_0x31_0x98_br(self, opcode2):
         self.pc = self.read_gp_regpair(RegisterPairs.AX)
+        self.cycle_count += 8
 
     # cmp a,!0abcdh               ;48 cd ab
     def _opcode_0x48(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_addr16()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         self._operation_sub(a, b)
+        self.cycle_count += 8
 
     # cmp a,[hl+0abh]             ;49 ab
     def _opcode_0x49(self, opcode):
         a = self.read_gp_reg(Registers.A)
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         self._operation_sub(a, b)
+        self.cycle_count += 8
 
     # cmp a,#0abh                 ;4d ab
     def _opcode_0x4d(self, opcode):
         a = self.read_gp_reg(Registers.A)
         b = self._consume_byte()
         self._operation_sub(a, b)
+        self.cycle_count += 4
 
     # cmp a,0fe20h                ;4e 20          saddr
     def _opcode_0x4e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         self._operation_sub(a, b)
+        self.cycle_count += 4
 
     # cmp a,[hl]                  ;4f
     def _opcode_0x4f(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         self._operation_sub(a, b)
+        self.cycle_count += 4
 
     # adjba                       ;61 80
     def _opcode_0x61_0x80_adjba(self, opcode2):
@@ -1315,6 +1437,7 @@ class Processor(object):
             psw |= Flags.Z
         self.write_psw(psw)
         self.write_gp_reg(Registers.A, a)
+        self.cycle_count += 4
 
     # adjbs                       ;61 90
     def _opcode_0x61_0x90_adjbs(self, opcode2):
@@ -1352,11 +1475,13 @@ class Processor(object):
             psw |= Flags.Z
         self.write_psw(psw)
         self.write_gp_reg(Registers.A, a)
+        self.cycle_count += 4
 
     # sel rb0                     ;61 d0
     def _opcode_0x61_0xd0_to_0xf8_sel_rb(self, opcode2):
         banks_by_opcode2 = {0xD0: 0, 0xD8: 1, 0xF0: 2, 0xF8: 3}
         self.write_rb(banks_by_opcode2[opcode2])
+        self.cycle_count += 4
 
     # or a,x                      ;61 68
     def _opcode_0x61_0x68_to_0x6f_or(self, opcode2):
@@ -1365,6 +1490,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # or a,a                      ;61 61
     def _opcode_0x61_0x61_to_0x67_or(self, opcode2):
@@ -1373,6 +1499,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_or(a, b)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 4
 
     # and a,x                     ;61 58
     def _opcode_0x61_0x58_to_0x5f_and(self, opcode2):
@@ -1381,6 +1508,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # cmp reg,a                   ;61 40..47
     def _opcode_0x61_0x40_to_0x47_cmp(self, opcode2):
@@ -1388,6 +1516,7 @@ class Processor(object):
         a = self.read_gp_reg(reg)
         b = self.read_gp_reg(Registers.A)
         self._operation_sub(a, b)
+        self.cycle_count += 4
 
     # cmp a,reg                   ;61 48..4f
     def _opcode_0x61_48_to_4f_cmp(self, opcode2):
@@ -1395,6 +1524,7 @@ class Processor(object):
         reg = _reg(opcode2)
         b = self.read_gp_reg(reg)
         self._operation_sub(a, b)
+        self.cycle_count += 4
 
     # and x,a                     ;61 50
     def _opcode_0x61_0x50_to_0x57_and(self, opcode2):
@@ -1403,6 +1533,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_and(a, b)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 4
 
     # xor a,x                     ;61 78
     def _opcode_0x61_0x78_to_0x7f_xor(self, opcode2):
@@ -1411,6 +1542,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # xor x,a                     ;61 70
     def _opcode_0x61_0x70_to_0x77_xor(self, opcode2):
@@ -1419,6 +1551,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_xor(a, b)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 4
 
     # set1 a.0                    ;61 8a
     def _opcode_0x61_0x8a_to_0xfa_set1(self, opcode2):
@@ -1426,6 +1559,7 @@ class Processor(object):
         bit = _bit(opcode2)
         result = self._operation_set1(a, bit)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # clr1 a.0                    ;61 8b
     def _opcode_0x61_0x8b_to_0xfb_clr1(self, opcode2):
@@ -1433,6 +1567,7 @@ class Processor(object):
         bit = _bit(opcode2)
         result = self._operation_clr1(a, bit)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # mov1 cy,a.0                 ;61 8c
     def _opcode_0x61_0x8c_to_0xfc_mov1(self, opcode2):
@@ -1441,6 +1576,7 @@ class Processor(object):
         dest = self.read_psw()
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 4
 
     # mov1 a.0,cy                 ;61 89
     def _opcode_0x61_0x89_to_0xf9_mov1(self, opcode2):
@@ -1449,6 +1585,7 @@ class Processor(object):
         dest = self.read_gp_reg(Registers.A)
         result = self._operation_mov1(src, 0, dest, bit)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # and1 cy,a.0                 ;61 8d
     def _opcode_0x61_0x8d_to_0xfd_and1(self, opcode2):
@@ -1457,6 +1594,7 @@ class Processor(object):
         dest = self.read_psw()
         result = self._operation_and1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 4
 
     # or1 cy,a.0                  ;61 8e
     def _opcode_0x61_0x8e_to_0xfe_or1(self, opcode2):
@@ -1465,6 +1603,7 @@ class Processor(object):
         dest = self.read_psw()
         result = self._operation_or1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 4
 
     # xor1 cy,a.0                 ;61 8f
     def _opcode_0x61_0x8f_to_0xff_xor1(self, opcode2):
@@ -1473,6 +1612,7 @@ class Processor(object):
         dest = self.read_psw()
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 4
 
     # add a,x                     ;61 08
     def _opcode_0x61_0x08_to_0x0f_add(self, opcode2):
@@ -1481,6 +1621,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_add(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # addc a,x                    ;61 28
     def _opcode_0x61_0x28_to_0x2f_addc(self, opcode2):
@@ -1489,6 +1630,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_addc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # sub reg,a                   ;61 10..17
     def _opcode_0x61_0x10_to_0x17_sub(self, opcode2):
@@ -1497,6 +1639,7 @@ class Processor(object):
         b = self.read_gp_reg(Registers.A)
         result = self._operation_sub(a, b)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 4
 
     # subc reg,a                  ;61 30..37
     def _opcode_0x61_0x30_to_0x37_subc(self, opcode2):
@@ -1505,6 +1648,7 @@ class Processor(object):
         b = self.read_gp_reg(Registers.A)
         result = self._operation_subc(a, b)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 4
 
     # subc a,reg                  ;61 38..3f
     def _opcode_0x61_0x38_to_0x3f_subc(self, opcode2):
@@ -1513,6 +1657,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_subc(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # sub a,reg                   ;61 18..1f
     def _opcode_0x61_0x18_to_0x1f_except_0x11(self, opcode2):
@@ -1521,6 +1666,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_sub(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # add x,a                     ;61 00
     def _opcode_0x61_0x00_to_0x07_add(self, opcode2):
@@ -1529,6 +1675,7 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_add(a, b)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 4
 
     # addc x,a                    ;61 20
     def _opcode_0x61_0x20_to_0x27_addc(self, opcode2):
@@ -1537,182 +1684,203 @@ class Processor(object):
         b = self.read_gp_reg(reg)
         result = self._operation_addc(a, b)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 4
 
     # set1 [hl].0                 ;71 82
     def _opcode_0x71_0x82_to_0xf2_set1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_set1(value, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # clr1 0fffeh.0               ;71 0b fe       sfr
     def _opcode_0x71_0x0b_to_0x7b_clr1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_clr1(value, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # set1 0fffeh.0               ;71 0a fe       sfr
     def _opcode_0x71_0x0a_to_0x7a_set1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_set1(value, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # clr1 [hl].0                 ;71 83
     def _opcode2_0x71_0x83_to_0xf3_clr1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_clr1(value, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # mov1 cy,0fffeh.0            ;71 0c fe       sfr
     def _opcode_0x71_0x0c_to_0x7c_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_gp_reg(Registers.A)
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # mov1 0fffeh.0,cy            ;71 09 fe       sfr
     def _opcode_0x71_0x09_to_0x79_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
         src = self.read_psw()
-        dest = self.read_memory(address)
+        dest = self._bus_read(address)
         result = self._operation_mov1(src, 0, dest, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # mov1 0fe20h.0,cy            ;71 01 20       saddr
     def _opcode_0x71_0x01_to_0x71_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
         src = self.read_psw()
-        dest = self.read_memory(address)
+        dest = self._bus_read(address)
         result = self._operation_mov1(src, 0, dest, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # mov1 cy,0fe20h.0            ;71 04 20       saddr
     def _opcode_0x71_0x04_to_0x74_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # mov1 cy,[hl].0              ;71 84
     def _opcode_0x71_0x84_to_0xf4_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # mov1 [hl].0,cy              ;71 81
     def _opcode_0x71_0x81_to_0xf1_mov1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
         src = self.read_psw()
-        dest = self.read_memory(address)
+        dest = self._bus_read(address)
         result = self._operation_mov1(src, 0, dest, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # and1 cy,[hl].0              ;71 85
     def _opcode_0x71_0x85_to_0xf5_and1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_and1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # and1 cy,0fffeh.0            ;71 0d fe       sfr
     def _opcode_0x71_0x0d_to_0x7d_and1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_and1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # and1 cy,0fe20h.0            ;71 05 20       saddr
     def _opcode_0x71_0x05_to_0x75_and1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_and1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # or1 cy,0fffeh.0             ;71 0e fe       sfr
     def _opcode_0x71_0x0e_to_0x7e_or1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_or1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # or1 cy,[hl].0               ;71 86
     def _opcode_0x71_0x86_to_0xf6_or1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_or1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # or1 cy,0fe20h.0             ;71 06 20       saddr
     def _opcode_0x71_0x06_to_0x76_or1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_or1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # xor1 cy,[hl].0              ;71 87
     def _opcode_0x71_0x87_to_0xf7_xor1(self, opcode2):
         bit = _bit(opcode2)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # xor1 cy,0fffeh.0            ;71 0f fe       sfr
     def _opcode_0x71_0x0f_to_0x7f(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_sfr()
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # xor1 cy,0fe20h.0            ;71 07 20       saddr
     def _opcode_0x71_0x07_to_0x77_xor1(self, opcode2):
         bit = _bit(opcode2)
         address = self._consume_saddr()
-        src = self.read_memory(address)
+        src = self._bus_read(address)
         dest = self.read_psw()
         result = self._operation_xor1(src, bit, dest, 0)
         self.write_psw(result)
+        self.cycle_count += 6
 
     # or a,[hl+0abh]              ;69 ab
     def _opcode_0x69(self, opcode):
         a = self.read_gp_reg(Registers.A)
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # or a,#0abh                  ;6d ab
     def _opcode_0x6d(self, opcode):
@@ -1720,55 +1888,62 @@ class Processor(object):
         b = self._consume_byte()
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # or a,0fe20h                 ;6e 20          saddr
     def _opcode_0x6e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # or a,[hl]                   ;6f
     def _opcode_0x6f(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # bt 0fe20h.bit,$label8         ;8c 20 fd       saddr
     def _opcode_0x8c_to_0xfc_bt(self, opcode):
         bit = _bit(opcode)
         address = self._consume_saddr()
         displacement = self._consume_byte()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self._operation_bt(value, bit, displacement)
+        self.cycle_count += 8
 
     # or 0fe20h,#0abh             ;e8 20 ab      saddr
     def _opcode_0xe8(self, opcode):
         address = self._consume_saddr()
-        a = self.read_memory(address)
+        a = self._bus_read(address)
         b = self._consume_byte()
         result = self._operation_or(a, b)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # or a,!0abcdh                ;68 cd ab
     def _opcode_0x68(self, opcode):
         address = self._consume_addr16()
         a = self.read_gp_reg(Registers.A)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_or(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # and a,[hl+0abh]             ;59 ab
     def _opcode_0x59(self, opcode):
         a = self.read_gp_reg(Registers.A)
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # and a,#0abh                 ;5d ab
     def _opcode_0x5d(self, opcode):
@@ -1776,63 +1951,71 @@ class Processor(object):
         b = self._consume_byte()
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # and a,0fe20h                ;5e 20          saddr
     def _opcode_0x5e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # and a,[hl]                  ;5f
     def _opcode_0x5f(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # and a,!0abcdh               ;58 cd ab
     def _opcode_0x58(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_addr16()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_and(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # and 0fe20h,#0abh            ;d8 20 ab       saddr
     def _opcode_0xd8(self, opcode):
         address = self._consume_saddr()
-        a = self.read_memory(address)
+        a = self._bus_read(address)
         b = self._consume_byte()
         result = self._operation_and(a, b)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # xor a,!0abcdh               ;78 cd ab
     def _opcode_0x78(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_addr16()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # xor a,[hl+0abh]             ;79 ab
     def _opcode_0x79(self, opcode):
         a = self.read_gp_reg(Registers.A)
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 8
 
     # xor 0fe20h,#0abh            ;f8 20 ab       saddr
     def _opcode_0xf8(self, opcode):
         address = self._consume_saddr()
-        a = self.read_memory(address)
+        a = self._bus_read(address)
         b = self._consume_byte()
         result = self._operation_xor(a, b)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # xor a,#0abh                 ;7d ab
     def _opcode_0x7d(self, opcode):
@@ -1840,68 +2023,78 @@ class Processor(object):
         b = self._consume_byte()
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # xor a,0fe20h                ;7e 20          saddr
     def _opcode_0x7e(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self._consume_saddr()
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # xor a,[hl]                  ;7f
     def _opcode_0x7f(self, opcode):
         a = self.read_gp_reg(Registers.A)
         address = self.read_gp_regpair(RegisterPairs.HL)
-        b = self.read_memory(address)
+        b = self._bus_read(address)
         result = self._operation_xor(a, b)
         self.write_gp_reg(Registers.A, result)
+        self.cycle_count += 4
 
     # mov a,[de]                  ;85
     def _opcode_0x85(self, opcode):
         address = self.read_gp_regpair(RegisterPairs.DE)
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
+        self.cycle_count += 4
 
     # mov [de],a                  ;95
     def _opcode_0x95(self, opcode):
         address = self.read_gp_regpair(RegisterPairs.DE)
         value = self.read_gp_reg(Registers.A)
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 4
 
     # mov a,[hl]                  ;87
     def _opcode_0x87(self, opcode):
         address = self.read_gp_regpair(RegisterPairs.HL)
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
+        self.cycle_count += 4
 
     # add 0fe20h,#0abh            ;88 20 ab       saddr
     def _opcode_0x88(self, opcode):
         address = self._consume_saddr()
-        a = self.read_memory(address)
+        a = self._bus_read(address)
         b = self._consume_byte()
         result = self._operation_add(a, b)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # addc 0fe20h,#0abh           ;a8 20 ab       saddr
     def _opcode_0xa8(self, opcode):
         address = self._consume_saddr()
-        a = self.read_memory(address)
+        a = self._bus_read(address)
         b = self._consume_byte()
         result = self._operation_addc(a, b)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 6
 
     # mov [hl],a                  ;97
     def _opcode_0x97(self, opcode):
         address = self.read_gp_regpair(RegisterPairs.HL)
         value = self.read_gp_reg(Registers.A)
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 4
 
     # call !0abcdh                ;9a cd ab
     def _opcode_0x9a(self, opcode):
         address = self._consume_addr16()
         self._push_word(self.pc)
         self.pc = address
+        self.cycle_count += 7
 
     # SET1 0fe20h.7               ;7A 20          saddr
     # SET1 PSW.7                  ;7A 1E          (psw=saddr ff1e)
@@ -1909,9 +2102,10 @@ class Processor(object):
     def _opcode_0x0a_to_0x7a_set1(self, opcode):
         bit = _bit(opcode)
         address = self._consume_saddr()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_set1(value, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 4
 
     # clr1 0fe20h.0               ;0b 20          saddr
     # clr1 psw.0                  ;0b 1e
@@ -1919,23 +2113,27 @@ class Processor(object):
     def _opcode_0x0b_to_0x7b_clr(self, opcode):
         bit = _bit(opcode)
         address = self._consume_saddr()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_clr1(value, bit)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 4
 
     # ret                         ;af
     def _opcode_0xaf(self, opcode):
         self.pc = self._pop_word()
+        self.cycle_count += 6
 
     # reti                        ;8f
     def _opcode_0x8f(self, opcode):
         self.pc = self._pop_word()
         self.write_psw(self._pop())
+        self.cycle_count += 6
 
     # retb                        ;9f
     def _opcode_0x9f(self, opcode):
         self.pc = self._pop_word()
         self.write_psw(self._pop())
+        self.cycle_count += 6
 
     # brk                         ;bf
     def _opcode_0xbf(self, opcode):
@@ -1944,12 +2142,14 @@ class Processor(object):
         self._push_word(self.pc)
         self.write_psw(psw & ~Flags.IE)
         self.pc = self.read_memory_word(self.BRK_VECTOR_ADDRESS)
+        self.cycle_count += 6
 
     # br $label7                  ;fa fe
     def _opcode_0xfa(self, opcode):
         displacement = self._consume_byte()
         address = _resolve_rel(self.pc, displacement)
         self.pc = address
+        self.cycle_count += 6
 
     # bc $label3                  ;8d fe
     def _opcode_0x8d(self, opcode):
@@ -1957,6 +2157,7 @@ class Processor(object):
         if self.read_psw() & Flags.CY:
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
+        self.cycle_count += 6
 
     # bnc $label3                 ;9d fe
     def _opcode_0x9d(self, opcode):
@@ -1964,6 +2165,7 @@ class Processor(object):
         if self.read_psw() & Flags.CY == 0:
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
+        self.cycle_count += 6
 
     # bz $label5                  ;ad fe
     def _opcode_0xad(self, opcode):
@@ -1971,6 +2173,7 @@ class Processor(object):
         if self.read_psw() & Flags.Z:
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
+        self.cycle_count += 6
 
     # bnz $label5                 ;bd fe
     def _opcode_0xbd(self, opcode):
@@ -1978,15 +2181,17 @@ class Processor(object):
         if self.read_psw() & Flags.Z == 0:
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
+        self.cycle_count += 6
 
     # movw 0fe20h,#0abcdh         ;ee 20 cd ab    saddrp
     # movw sp,#0abcdh             ;ee 1c cd ab  (SP=0xFF1C)
     def _opcode_0xee(self, opcode):
         address = self._consume_saddrp()
         value_low = self._consume_byte()
-        self.write_memory(address, value_low)
+        self._bus_write(address, value_low)
         value_high = self._consume_byte()
-        self.write_memory(address+1, value_high)
+        self._bus_write(address+1, value_high)
+        self.cycle_count += 8
 
     # inc x                       ;40
     # ...
@@ -1996,6 +2201,7 @@ class Processor(object):
         value = self.read_gp_reg(reg)
         result = self._operation_inc(value)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 2
 
     # dec x                       ;50
     # ...
@@ -2005,20 +2211,23 @@ class Processor(object):
         value = self.read_gp_reg(reg)
         result = self._operation_dec(value)
         self.write_gp_reg(reg, result)
+        self.cycle_count += 2
 
     # inc 0fe20h                  ;81 20          saddr
     def _opcode_0x81(self, opcode):
         address = self._consume_saddr()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_inc(value)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 4
 
     # dec 0fe20h                  ;91 20          saddr
     def _opcode_0x91(self, opcode):
         address = self._consume_saddr()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         result = self._operation_dec(value)
-        self.write_memory(address, result)
+        self._bus_write(address, result)
+        self.cycle_count += 4
 
     # 0c 00          0c = callf 0800h-08ffh
     # ...
@@ -2028,6 +2237,7 @@ class Processor(object):
         offset = self._consume_byte()
         self._push_word(self.pc)
         self.pc = base + offset
+        self.cycle_count += 5
 
     # callt [0040h]               ;c1
     # ...
@@ -2038,6 +2248,7 @@ class Processor(object):
         address = self.read_memory_word(vector_address)
         self._push_word(self.pc)
         self.pc = address
+        self.cycle_count += 6
 
     # dbnz c,$label1              ;8a fe
     def _opcode_0x8a(self, opcode):
@@ -2049,6 +2260,7 @@ class Processor(object):
         if c != 0:
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
+        self.cycle_count += 6
 
     # dbnz b,$label2              ;8b fe
     def _opcode_0x8b(self, opcode):
@@ -2060,64 +2272,73 @@ class Processor(object):
         if c != 0:
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
+        self.cycle_count += 6
 
     # dbnz 0fe20h,$label0         ;04 20 fd       saddr
     def _opcode_0x04(self, opcode):
         value_address = self._consume_saddr()
         displacement = self._consume_byte()
-        value = self.read_memory(value_address) - 1
+        value = self._bus_read(value_address) - 1
         if value < 0:
             value = 0xFF
-        self.write_memory(value_address, value)
+        self._bus_write(value_address, value)
         if value != 0:
             address = _resolve_rel(self.pc, displacement)
             self.pc = address
+        self.cycle_count += 8
 
     # movw ax,0fffeh              ;a9 fe          sfrp
     def _opcode_0xa9(self, opcode):
         address = self._consume_sfrp()
-        value_low = self.read_memory(address)
+        value_low = self._bus_read(address)
         self.write_gp_reg(Registers.X, value_low)
-        value_high = self.read_memory(address + 1)
+        value_high = self._bus_read(address + 1)
         self.write_gp_reg(Registers.A, value_high)
+        self.cycle_count += 6
 
     # mov a,[hl+c]                ;aa
     def _opcode_0xaa(self, opcode):
         address = self._based_hl_c()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
+        self.cycle_count += 6
 
     # mov a,[hl+b]                ;ab
     def _opcode_0xab(self, opcode):
         address = self._based_hl_b()
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
+        self.cycle_count += 6
 
     # mov a,[hl+0abh]             ;ae ab
     def _opcode_0xae(self, opcode):
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        value = self.read_memory(address)
+        value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
+        self.cycle_count += 8
 
     # mov [hl+c],a                ;ba
     def _opcode_0xba(self, opcode):
         address = self._based_hl_c()
         value = self.read_gp_reg(Registers.A)
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 6
 
     # mov [hl+b],a                ;bb
     def _opcode_0xbb(self, opcode):
         address = self._based_hl_b()
         value = self.read_gp_reg(Registers.A)
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 6
 
     # mov [hl+0abh],a             ;be ab
     def _opcode_0xbe(self, opcode):
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
         value = self.read_gp_reg(Registers.A)
-        self.write_memory(address, value)
+        self._bus_write(address, value)
+        self.cycle_count += 8
 
     # movw ax,bc                  ;c2
     # movw ax,de                  ;c4
@@ -2126,6 +2347,7 @@ class Processor(object):
         regpair = _regpair(opcode)
         value = self.read_gp_regpair(regpair)
         self.write_gp_regpair(RegisterPairs.AX, value)
+        self.cycle_count += 4
 
     # movw bc,ax                  ;d2
     # movw de,ax                  ;d4
@@ -2134,23 +2356,26 @@ class Processor(object):
         regpair = _regpair(opcode)
         value = self.read_gp_regpair(RegisterPairs.AX)
         self.write_gp_regpair(regpair, value)
+        self.cycle_count += 4
 
     # xch a,[hl+0abh]             ;de ab
     def _opcode_0xde(self, opcode):
         imm = self._consume_byte()
         address = self._based_hl_imm(imm)
-        other_value = self.read_memory(address)
+        other_value = self._bus_read(address)
         a_value = self.read_gp_reg(Registers.A)
         self.write_gp_reg(Registers.A, other_value)
-        self.write_memory(address, a_value)
+        self._bus_write(address, a_value)
+        self.cycle_count += 8
 
     # movw 0fffeh,#0abcdh         ;fe fe cd ab    sfrp
     def _opcode_0xfe(self, opcode):
         address = self._consume_sfrp()
         value_low = self._consume_byte()
-        self.write_memory(address, value_low)
+        self._bus_write(address, value_low)
         value_high = self._consume_byte()
-        self.write_memory(address+1, value_high)
+        self._bus_write(address+1, value_high)
+        self.cycle_count += 8
 
     # push ax                     ;b1
     # ...
@@ -2159,6 +2384,7 @@ class Processor(object):
         regpair = _regpair(opcode)
         value = self.read_gp_regpair(regpair)
         self._push_word(value)
+        self.cycle_count += 4
 
     # pop ax                      ;b0
     # ...
@@ -2167,6 +2393,7 @@ class Processor(object):
         regpair = _regpair(opcode)
         value = self._pop_word()
         self.write_gp_regpair(regpair, value)
+        self.cycle_count += 4
 
     # Operations
 
