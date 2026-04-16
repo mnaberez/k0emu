@@ -16,30 +16,15 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install asxxxx
-      run: |
-        wget --no-verbose https://github.com/6502org/6502.org/raw/74f5d0c0f9b73d5e353bde7b3b25ea7f43b527a1/public/tools/asm/asxs5p50.zip
-        unzip -q asxs5p50.zip
-        make -C asxv5pxx/asxmak/linux/build all
-        echo "$PWD/asxv5pxx/asxmak/linux/build" >> $GITHUB_PATH
-
-    - name: Install srecord
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y srecord
-
     - name: Show Python version
       run: python -V
-
-    - name: Assemble debugger firmware
-      run: make -C k0emu/debugger/firmware
 
     - name: Install dependencies
       run: $PIP install k0dasm

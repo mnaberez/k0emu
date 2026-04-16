@@ -13,4 +13,3 @@
 __pycache__/
 build/
 dist/
-k0emu/debugger/testprogs/results/emulator/

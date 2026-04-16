@@ -8,7 +8,7 @@ k0emu is an instruction set emulator for running Renesas (NEC) 78K0 binaries.  I
 
 k0emu was developed to aid in reverse engineering of the `Volkswagen Premium V <https://github.com/mnaberez/vwradio>`_ car radios made by Delco.  These radios use the undocumented NEC µPD78F0831Y microcontroller, which is similar to the `µPD78F0833Y <https://web.archive.org/web/20180328161019/https://www.renesas.com/en-us/doc/DocumentServer/021/U13892EJ2V0UM00.pdf>`_.  A companion program, `k0dasm <https://github.com/mnaberez/k0dasm>`_, was also developed for this project.
 
-Since no open source 78K0 emulator could be found at the time of development, a hardware test harness was built.  The harness is included with k0emu and is based on the µPD78F0831Y.  Instructions were first implemented as described in the documentation.  Test programs were then written and run on both k0emu and the real hardware.  When the results of k0emu were different, k0emu was fixed to behave like the hardware.  This process gives confidence that k0emu implements the instructions correctly.
+Since no open source 78K0 emulator could be found at the time of development, a hardware [test harness](https://github.com/mnaberez/k0test) based on the µPD78F0831Y was built.  Instructions were first implemented as described in the documentation.  Test programs were then written and run on both k0emu and the real hardware.  When the results of k0emu were different, k0emu was fixed to behave like the hardware.  This process gives confidence that k0emu implements the instructions correctly.
 
 Features
 --------
