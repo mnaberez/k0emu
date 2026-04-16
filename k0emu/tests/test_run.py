@@ -2,13 +2,13 @@ import io
 import unittest
 from k0emu.devices import MemoryDevice
 from k0emu.processor import Processor
-from k0emu.run import Runner
+from k0emu.run import Runner, print_memory_map
 
 
 def _make_runner(code):
     proc = Processor()
     mem = MemoryDevice("test_memory", size=0x10000)
-    proc.bus.add_device([(0x0000, 0xFFFF)], mem)
+    proc.bus.add_device(mem, (0x0000, 0xFFFF))
     for i, byte in enumerate(code):
         mem.write(i, byte)
     output = io.StringIO()
@@ -66,3 +66,24 @@ class RunTests(unittest.TestCase):
         lines = runner.output.getvalue().strip().split("\n")
         self.assertEqual(len(lines), 1)
         self.assertIn("NOT IMPLEMENTED", lines[0])
+
+
+class PrintMemoryMapTests(unittest.TestCase):
+
+    def test_prints_all_regions(self):
+        output = io.StringIO()
+        print_memory_map(output)
+        text = output.getvalue()
+        self.assertIn("rom", text)
+        self.assertIn("expansion_ram", text)
+        self.assertIn("high_speed_ram", text)
+        self.assertIn("register_file", text)
+        self.assertIn("watchdog", text)
+
+    def test_shows_address_ranges(self):
+        output = io.StringIO()
+        print_memory_map(output)
+        text = output.getvalue()
+        self.assertIn("0000-EFFF", text)
+        self.assertIn("FF42-FF42", text)
+        self.assertIn("FFF9-FFF9", text)

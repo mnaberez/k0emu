@@ -19,7 +19,7 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem)
+        bus.add_device(mem, (0x1000, 0x1003))
         mem.write(2, 0x42)
         self.assertEqual(bus.read(0x1002), 0x42)
 
@@ -27,7 +27,7 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem)
+        bus.add_device(mem, (0x1000, 0x1003))
         bus.write(0x1001, 0x42)
         self.assertEqual(mem.read(1), 0x42)
 
@@ -37,7 +37,7 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
-        bus.add_device([(0x8000, 0x8003)], mem)
+        bus.add_device(mem, (0x8000, 0x8003))
         bus.write(0x8003, 0x42)
         self.assertEqual(mem.read(3), 0x42)
 
@@ -60,8 +60,8 @@ class BusTests(unittest.TestCase):
         bus = Bus(proc)
         mem_a = MemoryDevice("a", size=4)
         mem_b = MemoryDevice("b", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem_a)
-        bus.add_device([(0x2000, 0x2003)], mem_b)
+        bus.add_device(mem_a, (0x1000, 0x1003))
+        bus.add_device(mem_b, (0x2000, 0x2003))
         bus.write(0x1000, 0x11)
         bus.write(0x2000, 0x22)
         self.assertEqual(bus.read(0x1000), 0x11)
@@ -74,37 +74,37 @@ class BusTests(unittest.TestCase):
         bus = Bus(proc)
         mem_a = MemoryDevice("a", size=4)
         mem_b = MemoryDevice("b", size=2)
-        bus.add_device([(0x1000, 0x1003)], mem_a)
+        bus.add_device(mem_a, (0x1000, 0x1003))
         with self.assertRaises(ValueError):
-            bus.add_device([(0x1000, 0x1001)], mem_b)
+            bus.add_device(mem_b, (0x1000, 0x1001))
 
     def test_start_negative_raises(self):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=1)
         with self.assertRaises(ValueError):
-            bus.add_device([(-1, -1)], mem)
+            bus.add_device(mem, (-1, -1))
 
     def test_end_past_address_space_raises(self):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=2)
         with self.assertRaises(ValueError):
-            bus.add_device([(0xFFFF, 0x10000)], mem)
+            bus.add_device(mem, (0xFFFF, 0x10000))
 
     def test_start_greater_than_end_raises(self):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
         with self.assertRaises(ValueError):
-            bus.add_device([(0x1003, 0x1000)], mem)
+            bus.add_device(mem, (0x1003, 0x1000))
 
     def test_range_size_mismatch_raises(self):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
         with self.assertRaises(ValueError):
-            bus.add_device([(0x1000, 0x1001)], mem)
+            bus.add_device(mem, (0x1000, 0x1001))
 
     # non-contiguous ranges
 
@@ -112,7 +112,7 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=3)
-        bus.add_device([(0x1000, 0x1000), (0x2000, 0x2001)], mem)
+        bus.add_device(mem, (0x1000, 0x1000), (0x2000, 0x2001))
         bus.write(0x1000, 0xAA)  # register 0
         bus.write(0x2000, 0xBB)  # register 1
         bus.write(0x2001, 0xCC)  # register 2
@@ -127,7 +127,7 @@ class BusTests(unittest.TestCase):
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
         self.assertIsNone(mem.bus)
-        bus.add_device([(0x1000, 0x1003)], mem)
+        bus.add_device(mem, (0x1000, 0x1003))
         self.assertIs(mem.bus, bus)
 
     # reset
@@ -136,7 +136,7 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem)
+        bus.add_device(mem, (0x1000, 0x1003))
         mem.ticks = 99
         bus.reset()
         # BaseDevice.reset() is a no-op, but processor.reset() is called
@@ -155,8 +155,8 @@ class BusTests(unittest.TestCase):
         bus = Bus(proc)
         mem_a = MemoryDevice("a", size=4)
         mem_b = MemoryDevice("b", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem_a)
-        bus.add_device([(0x2000, 0x2003)], mem_b)
+        bus.add_device(mem_a, (0x1000, 0x1003))
+        bus.add_device(mem_b, (0x2000, 0x2003))
         bus.tick(5)
         self.assertEqual(mem_a.ticks, 5)
         self.assertEqual(mem_b.ticks, 5)
@@ -165,7 +165,7 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem)
+        bus.add_device(mem, (0x1000, 0x1003))
         bus.tick(3)
         bus.tick(7)
         self.assertEqual(mem.ticks, 10)
@@ -176,7 +176,7 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("my_ram", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem)
+        bus.add_device(mem, (0x1000, 0x1003))
         self.assertIs(bus.device("my_ram"), mem)
 
     def test_device_raises_for_unknown_name(self):
@@ -191,7 +191,7 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem)
+        bus.add_device(mem, (0x1000, 0x1003))
         mem.write(0, 0x42)
         self.assertEqual(bus[0x1000], 0x42)
 
@@ -199,8 +199,55 @@ class BusTests(unittest.TestCase):
         proc = _FakeProcessor()
         bus = Bus(proc)
         mem = MemoryDevice("test", size=4)
-        bus.add_device([(0x1000, 0x1003)], mem)
+        bus.add_device(mem, (0x1000, 0x1003))
         bus[0x1001] = 0x42
         self.assertEqual(mem.read(1), 0x42)
+
+    # memory map
+
+    def test_memory_map_empty_bus(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        entries = bus.memory_map()
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0][0], 0x0000)
+        self.assertEqual(entries[0][1], 0xFFFF)
+        self.assertEqual(entries[0][2].name, "unmapped")
+
+    def test_memory_map_single_device(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        mem = MemoryDevice("ram", size=4)
+        bus.add_device(mem, (0x1000, 0x1003))
+        entries = bus.memory_map()
+        self.assertEqual(entries[0], (0x0000, 0x0FFF, bus._unmapped))
+        self.assertEqual(entries[1], (0x1000, 0x1003, mem))
+        self.assertEqual(entries[2], (0x1004, 0xFFFF, bus._unmapped))
+        self.assertEqual(len(entries), 3)
+
+    def test_memory_map_contiguous_addresses_collapsed(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        mem = MemoryDevice("ram", size=0x1000)
+        bus.add_device(mem, (0x2000, 0x2FFF))
+        entries = [(s, e, d.name) for s, e, d in bus.memory_map()]
+        self.assertEqual(entries[1], (0x2000, 0x2FFF, "ram"))
+
+    def test_memory_map_non_contiguous_device_has_two_entries(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        mem = MemoryDevice("scattered", size=3)
+        bus.add_device(mem, (0x1000, 0x1000), (0x2000, 0x2001))
+        names = [(s, e, d.name) for s, e, d in bus.memory_map()]
+        self.assertIn((0x1000, 0x1000, "scattered"), names)
+        self.assertIn((0x2000, 0x2001, "scattered"), names)
+
+    def test_memory_map_returns_device_objects(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        mem = MemoryDevice("ram", size=4)
+        bus.add_device(mem, (0x1000, 0x1003))
+        entries = bus.memory_map()
+        self.assertIs(entries[1][2], mem)
 
 

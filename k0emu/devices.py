@@ -58,5 +58,5 @@ class RegisterFileDevice(MemoryDevice):
     REGS_PER_BANK = 8
     SIZE = NUM_BANKS * REGS_PER_BANK
 
-    def __init__(self):
-        super().__init__("register_file", size=self.SIZE)
+    def __init__(self, name):
+        super().__init__(name, size=self.SIZE)

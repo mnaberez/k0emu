@@ -1,5 +1,6 @@
 '''
 Usage: k0emu <rom.bin>
+       k0emu --map
 
 '''
 import sys
@@ -68,10 +69,23 @@ class Runner(object):
                 break
 
 
+def print_memory_map(output=None):
+    if output is None:
+        output = sys.stdout
+    proc = make_processor()
+    for start, end, device in proc.bus.memory_map():
+        size = end - start + 1
+        output.write("  %04X-%04X  %5d  %s\n" % (start, end, size, device.name))
+
+
 def main():
     if len(sys.argv) < 2:
         sys.stderr.write(__doc__)
         sys.exit(1)
+
+    if sys.argv[1] == '--map':
+        print_memory_map()
+        sys.exit(0)
 
     runner = Runner()
     with open(sys.argv[1], 'rb') as f:

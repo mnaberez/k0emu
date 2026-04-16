@@ -19,12 +19,12 @@ class Bus(object):
 
     # device registration
 
-    def add_device(self, address_ranges, device):
+    def add_device(self, device, *address_ranges):
         """Register a device for one or more address ranges.
 
-        address_ranges: list of (start, end) tuples of bus addresses,
-                inclusive.  The device's registers are mapped sequentially
-                across the given ranges, allowing a single device model to
+        address_ranges: (start, end) tuples of bus addresses, inclusive.
+                The device's registers are mapped sequentially across
+                the given ranges, allowing a single device model to
                 be mapped to non-contigous addresses in the memory map.
         """
         register = 0
@@ -56,6 +56,22 @@ class Bus(object):
             if dev.name == name:
                 return dev
         raise KeyError("No device named %r" % name)
+
+    def memory_map(self):
+        """Return a list of (start, end, device) tuples describing the
+        memory map.  Contiguous addresses mapped to the same device
+        are collapsed into a single entry."""
+        entries = []
+        start = 0
+        current = self._devices_by_address[0]
+        for address in range(self.ADDRESS_SPACE_SIZE):
+            device = self._devices_by_address[address]
+            if device is not current:
+                entries.append((start, address - 1, current))
+                start = address
+                current = device
+        entries.append((start, self.ADDRESS_SPACE_SIZE - 1, current))
+        return entries
 
     # bus operations
 

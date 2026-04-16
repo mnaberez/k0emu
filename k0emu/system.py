@@ -1,4 +1,4 @@
-from k0emu.devices import MemoryDevice, RegisterFileDevice
+from k0emu.devices import MemoryDevice, RegisterFileDevice, WatchdogDevice
 from k0emu.processor import Processor
 
 
@@ -8,18 +8,18 @@ def make_processor():
     proc = Processor()
 
     rom = MemoryDevice("rom", size=0xF000, fill=0xFF, writable=False)
-    proc.bus.add_device([(0x0000, 0xEFFF)], rom)
+    proc.bus.add_device(rom, (0x0000, 0xEFFF))
 
     expansion_ram = MemoryDevice("expansion_ram", size=0x0800)
-    proc.bus.add_device([(0xF000, 0xF7FF)], expansion_ram)
+    proc.bus.add_device(expansion_ram, (0xF000, 0xF7FF))
 
     reserved = MemoryDevice("reserved", size=0x0300, fill=0x08, writable=False)
-    proc.bus.add_device([(0xF800, 0xFAFF)], reserved)
+    proc.bus.add_device(reserved, (0xF800, 0xFAFF))
 
     high_speed_ram = MemoryDevice("high_speed_ram", size=0x03E0)
-    proc.bus.add_device([(0xFB00, 0xFEDF)], high_speed_ram)
+    proc.bus.add_device(high_speed_ram, (0xFB00, 0xFEDF))
 
-    register_file = RegisterFileDevice()
-    proc.bus.add_device([(0xFEE0, 0xFEFF)], register_file)
+    register_file = RegisterFileDevice("register_file")
+    proc.bus.add_device(register_file, (0xFEE0, 0xFEFF))
 
     return proc
