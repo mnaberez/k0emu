@@ -7,8 +7,6 @@ class Processor(object):
     REGISTERS_BASE_ADDRESS = 0xFEF8
     SP_ADDRESS = 0xFF1C
     PSW_ADDRESS = 0xFF1E
-    INTERNAL_HIGH_SPEED_RAM_START = 0xFB00
-    INTERNAL_HIGH_SPEED_RAM_END = 0xFEFF
 
     def __init__(self, bus=None):
         if bus is None:
@@ -34,7 +32,13 @@ class Processor(object):
         handler = self._opcode_map_unprefixed.get(opcode, self._opcode_not_implemented)
         handler(opcode)
         self._total_cycles += self._inst_cycles
+
         self.bus.tick(self._inst_cycles)
+
+        if self.read_psw() & Flags.IE:  # enabled
+            pending = self.bus.pending_interrupt
+            if pending is not None:
+                self._service_interrupt(pending)
 
     @property
     def total_cycles(self):
@@ -44,33 +48,37 @@ class Processor(object):
     def inst_cycles(self):
         return self._inst_cycles
 
-    def _is_internal_ram(self, address):
-        return (self.INTERNAL_HIGH_SPEED_RAM_START <= address
-                <= self.INTERNAL_HIGH_SPEED_RAM_END)
-
     def _bus_read(self, address):
         """Read a data operand byte via the bus.  Costs 1 bus clock
-        plus a penalty when outside internal high-speed RAM."""
-        self._inst_cycles +=1
-        if not self._is_internal_ram(address):
-            self._inst_cycles +=1
+        plus a penalty for non-high-speed devices."""
+        self._inst_cycles += 1
+        if not self.bus.is_high_speed(address):
+            self._inst_cycles += 1
         return self.bus.read(address)
 
     def _bus_write(self, address, value):
         """Write a data operand byte via the bus.  Costs 1 bus clock
-        plus a penalty when outside internal high-speed RAM."""
-        self._inst_cycles +=1
-        if not self._is_internal_ram(address):
-            self._inst_cycles +=1
+        plus a penalty for non-high-speed devices."""
+        self._inst_cycles += 1
+        if not self.bus.is_high_speed(address):
+            self._inst_cycles += 1
         self.bus.write(address, value)
 
-    def interrupt(self, isr_address):
+    def _service_interrupt(self, pending):
+        if (self.read_psw() & Flags.ISP) and not pending.high_priority:
+            return  # low-priority blocked by high-priority ISR
+
+        self.bus.acknowledge_interrupt(pending)
+
+        # Push PSW and PC, clear IE, set ISP if high priority
         self._push(self.read_psw())
-        self.write_psw(self.read_psw() & ~Flags.IE)
+        psw = self.read_psw() & ~Flags.IE
+        if pending.high_priority:
+            psw |= Flags.ISP
+        self.write_psw(psw)
         self._push_word(self.pc)
-        self.pc = isr_address
 
-
+        self.pc = self.read_memory_word(pending.vector_address)
 
     def _init_opcode_map_unprefixed(self):
         D = {

@@ -10,6 +10,8 @@ class Bus(object):
         self._devices_by_address = [self._unmapped] * self.ADDRESS_SPACE_SIZE
         self._device_registers_by_address = [0] * self.ADDRESS_SPACE_SIZE
         self._all_devices = set()
+        self._intc = None
+        self.pending_interrupt = None
 
     def __getitem__(self, address):
         return self.read(address)
@@ -73,9 +75,8 @@ class Bus(object):
         entries.append((start, self.ADDRESS_SPACE_SIZE - 1, current))
         return entries
 
-    # bus operations
-
     def reset(self):
+        self.pending_interrupt = None
         for device in self._all_devices:
             device.reset()
         self.processor.reset()
@@ -84,6 +85,11 @@ class Bus(object):
         """Inform all devices that cycles have elapsed."""
         for device in self._all_devices:
             device.tick(cycles)
+
+    # data operations
+
+    def is_high_speed(self, address):
+        return self._devices_by_address[address].high_speed
 
     def read(self, address):
         device = self._devices_by_address[address]
@@ -94,3 +100,29 @@ class Bus(object):
         device = self._devices_by_address[address]
         register = self._device_registers_by_address[address]
         device.write(register, value)
+
+    # interrupts
+
+    def set_interrupt_controller(self, intc_device):
+        self._intc = intc_device
+
+    def interrupt(self, device, device_int):
+        """Request an interrupt.  Called by peripheral devices."""
+        self._intc.interrupt(device, device_int)
+
+    def acknowledge_interrupt(self, pending):
+        """Clear the IF flag for the given pending interrupt."""
+        self._intc.acknowledge_interrupt(pending.source_index)
+        self.pending_interrupt = None
+
+
+class PendingInterrupt(object):
+    """Interrupt waiting to be serviced.
+
+    Created by the interrupt controller during tick() and placed
+    on the bus for the processor to consume.
+    """
+    def __init__(self, source_index, high_priority, vector_address):
+        self.source_index = source_index
+        self.high_priority = high_priority
+        self.vector_address = vector_address

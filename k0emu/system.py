@@ -1,4 +1,6 @@
-from k0emu.devices import MemoryDevice, RegisterFileDevice, WatchdogDevice
+from k0emu.devices import (MemoryDevice, RegisterFileDevice,
+                           InterruptControllerDevice, WatchdogDevice,
+                           WatchTimerDevice)
 from k0emu.processor import Processor
 
 
@@ -16,13 +18,23 @@ def make_processor():
     reserved = MemoryDevice("reserved", size=0x0300, fill=0x08, writable=False)
     proc.bus.add_device(reserved, (0xF800, 0xFAFF))
 
-    high_speed_ram = MemoryDevice("high_speed_ram", size=0x03E0)
+    high_speed_ram = MemoryDevice("high_speed_ram", size=0x03E0, high_speed=True)
     proc.bus.add_device(high_speed_ram, (0xFB00, 0xFEDF))
 
-    register_file = RegisterFileDevice("register_file")
+    register_file = RegisterFileDevice("register_file", high_speed=True)
     proc.bus.add_device(register_file, (0xFEE0, 0xFEFF))
+
+    intc = InterruptControllerDevice("intc")
+    proc.bus.add_device(intc, (0xFFE0, 0xFFEB))
+    proc.bus.set_interrupt_controller(intc)
+
+    watch_timer = WatchTimerDevice("watch_timer")
+    proc.bus.add_device(watch_timer, (0xFF41, 0xFF41))
+    intc.connect(watch_timer, watch_timer.INT_PRESCALER, intc.INTWTNI0)
+    intc.connect(watch_timer, watch_timer.INT_WATCH, intc.INTWTN0)
 
     watchdog = WatchdogDevice("watchdog")
     proc.bus.add_device(watchdog, (0xFF42, 0xFF42), (0xFFF9, 0xFFF9))
+    intc.connect(watchdog, watchdog.INT_OVERFLOW, intc.INTWDT)
 
     return proc

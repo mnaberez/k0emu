@@ -1,6 +1,8 @@
 import unittest
 from k0emu.bus import Bus
-from k0emu.devices import MemoryDevice, RegisterFileDevice, WatchdogDevice
+from k0emu.devices import (MemoryDevice, RegisterFileDevice,
+                           InterruptControllerDevice, WatchdogDevice,
+                           WatchTimerDevice)
 
 
 class MemoryDeviceTests(unittest.TestCase):
@@ -118,6 +120,290 @@ class RegisterFileDeviceTests(unittest.TestCase):
             rf.read(32)
 
 
+class _DummyDevice(object):
+    """Minimal device for testing interrupt connections."""
+    INT_0 = 0
+    INT_1 = 1
+
+
+def _make_intc_on_bus():
+    """Create an InterruptControllerDevice on a bus with a dummy device
+    connected to INTP0 and INTP1 for testing."""
+    proc = _FakeProcessor()
+    bus = Bus(proc)
+    intc = InterruptControllerDevice("intc")
+    bus.add_device(intc, (0xFFE0, 0xFFEB))
+    bus.set_interrupt_controller(intc)
+    dev = _DummyDevice()
+    intc.connect(dev, _DummyDevice.INT_0, InterruptControllerDevice.INTP0)
+    intc.connect(dev, _DummyDevice.INT_1, InterruptControllerDevice.INTP1)
+    return intc, dev
+
+
+class InterruptControllerDeviceTests(unittest.TestCase):
+
+    # defaults
+
+    def test_name(self):
+        intc = InterruptControllerDevice("intc")
+        self.assertEqual(intc.name, "intc")
+
+    def test_size(self):
+        intc = InterruptControllerDevice("intc")
+        self.assertEqual(intc.size, 12)
+
+    def test_if_registers_reset_to_zero(self):
+        intc = InterruptControllerDevice("intc")
+        for i in range(4):
+            self.assertEqual(intc.read(i), 0x00)
+
+    def test_mk_registers_reset_to_ff(self):
+        intc = InterruptControllerDevice("intc")
+        for i in range(4, 8):
+            self.assertEqual(intc.read(i), 0xFF)
+
+    def test_pr_registers_reset_to_ff(self):
+        intc = InterruptControllerDevice("intc")
+        for i in range(8, 12):
+            self.assertEqual(intc.read(i), 0xFF)
+
+    # read/write
+
+    def test_write_then_read(self):
+        intc = InterruptControllerDevice("intc")
+        intc.write(InterruptControllerDevice.IF0L, 0x42)
+        self.assertEqual(intc.read(InterruptControllerDevice.IF0L), 0x42)
+
+    def test_write_mk_register(self):
+        intc = InterruptControllerDevice("intc")
+        intc.write(InterruptControllerDevice.MK0L, 0x00)
+        self.assertEqual(intc.read(InterruptControllerDevice.MK0L), 0x00)
+
+    def test_write_pr_register(self):
+        intc = InterruptControllerDevice("intc")
+        intc.write(InterruptControllerDevice.PR0L, 0x00)
+        self.assertEqual(intc.read(InterruptControllerDevice.PR0L), 0x00)
+
+    # reset
+
+    def test_reset_clears_if(self):
+        intc = InterruptControllerDevice("intc")
+        intc.write(InterruptControllerDevice.IF0L, 0xFF)
+        intc.reset()
+        self.assertEqual(intc.read(InterruptControllerDevice.IF0L), 0x00)
+
+    def test_reset_sets_mk_to_ff(self):
+        intc = InterruptControllerDevice("intc")
+        intc.write(InterruptControllerDevice.MK0L, 0x00)
+        intc.reset()
+        self.assertEqual(intc.read(InterruptControllerDevice.MK0L), 0xFF)
+
+    def test_reset_sets_pr_to_ff(self):
+        intc = InterruptControllerDevice("intc")
+        intc.write(InterruptControllerDevice.PR0L, 0x00)
+        intc.reset()
+        self.assertEqual(intc.read(InterruptControllerDevice.PR0L), 0xFF)
+
+    # interrupt
+
+    def test_interrupt_sets_if_bit(self):
+        intc, dev = _make_intc_on_bus()
+        intc.interrupt(dev, _DummyDevice.INT_0)
+        self.assertEqual(intc.read(InterruptControllerDevice.IF0L) & 0x02, 0x02)
+
+    def test_interrupt_preserves_other_bits(self):
+        intc, dev = _make_intc_on_bus()
+        intc.interrupt(dev, _DummyDevice.INT_0)
+        intc.interrupt(dev, _DummyDevice.INT_1)
+        self.assertEqual(intc.read(InterruptControllerDevice.IF0L) & 0x06, 0x06)
+
+    # pending interrupt (via tick -> bus.pending_interrupt)
+
+    def _tick_intc(self, intc):
+        """Tick the intc to evaluate pending interrupts onto the bus."""
+        intc.tick(1)
+        return intc.bus.pending_interrupt
+
+    def test_no_interrupt_when_none_pending(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.MK0L, 0x00)
+        self.assertIsNone(self._tick_intc(intc))
+
+    def test_no_interrupt_when_masked(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02)
+        self.assertIsNone(self._tick_intc(intc))
+
+    def test_low_priority_pending(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02)
+        intc.write(InterruptControllerDevice.MK0L, 0xFD)
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTP0)
+        self.assertFalse(pending.high_priority)
+        self.assertEqual(pending.vector_address, 0x0006)
+
+    def test_high_priority_pending(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02)
+        intc.write(InterruptControllerDevice.MK0L, 0xFD)
+        intc.write(InterruptControllerDevice.PR0L, 0xFD)     # high priority
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTP0)
+        self.assertTrue(pending.high_priority)
+        self.assertEqual(pending.vector_address, 0x0006)
+
+    # priority
+
+    def test_high_priority_wins_over_low_priority(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02); intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x04)
+        intc.write(InterruptControllerDevice.MK0L, 0xF9)
+        intc.write(InterruptControllerDevice.PR0L, 0xFB)     # INTP1 high, INTP0 low
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTP1)  # INTP1
+        self.assertTrue(pending.high_priority)
+
+    def test_default_priority_breaks_tie(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02); intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x04)  # INTP0 + INTP1
+        intc.write(InterruptControllerDevice.MK0L, 0xF9)
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTP0)  # INTP0 wins
+
+    def test_default_priority_breaks_tie_high(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02); intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x04)  # INTP0 + INTP1
+        intc.write(InterruptControllerDevice.MK0L, 0xF9)
+        intc.write(InterruptControllerDevice.PR0L, 0xF9)
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTP0)  # INTP0 wins
+
+    # sources across registers
+
+    def test_intwtni0_pending(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF1L, intc.read(InterruptControllerDevice.IF1L) | 0x01)
+        intc.write(InterruptControllerDevice.MK1L, 0xFE)
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTWTNI0)
+        self.assertEqual(pending.vector_address, 0x0024)
+
+    def test_intwtn0_pending(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF1H, intc.read(InterruptControllerDevice.IF1H) | 0x01)
+        intc.write(InterruptControllerDevice.MK1H, 0xFE)
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTWTN0)
+        self.assertEqual(pending.vector_address, 0x0034)
+
+    def test_intcsi30_pending(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0H, intc.read(InterruptControllerDevice.IF0H) | 0x10)
+        intc.write(InterruptControllerDevice.MK0H, 0xEF)
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTCSI30)
+        self.assertEqual(pending.vector_address, 0x001C)
+
+    def test_intwdt_pending(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x01)
+        intc.write(InterruptControllerDevice.MK0L, 0xFE)
+        pending = self._tick_intc(intc)
+        self.assertEqual(pending.source_index, InterruptControllerDevice.INTWDT)
+        self.assertEqual(pending.vector_address, 0x0004)
+
+    # acknowledge
+
+    def test_acknowledge_clears_if_flag(self):
+        intc = InterruptControllerDevice("intc")
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02)
+        intc.acknowledge_interrupt(InterruptControllerDevice.INTP0)  # source 1 = INTP0
+        self.assertEqual(intc.read(InterruptControllerDevice.IF0L), 0x00)
+
+    def test_acknowledge_preserves_other_flags(self):
+        intc = InterruptControllerDevice("intc")
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02); intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x04)
+        intc.acknowledge_interrupt(InterruptControllerDevice.INTP0)  # clear INTP0
+        self.assertEqual(intc.read(InterruptControllerDevice.IF0L), 0x04)
+
+    # bus access
+
+    def test_bus_write_mk(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        bus.write(0xFFE4, 0x00)  # MK0L
+        self.assertEqual(intc.read(InterruptControllerDevice.MK0L), 0x00)
+
+    def test_bus_read_if(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        intc = InterruptControllerDevice("intc")
+        bus.add_device(intc, (0xFFE0, 0xFFEB))
+        bus.set_interrupt_controller(intc)
+        intc.write(InterruptControllerDevice.IF0L, intc.read(InterruptControllerDevice.IF0L) | 0x02)
+        self.assertEqual(bus.read(0xFFE0), 0x02)
+
+    # bounds
+
+    def test_read_out_of_bounds_raises(self):
+        intc = InterruptControllerDevice("intc")
+        with self.assertRaises(IndexError):
+            intc.read(12)
+
+    def test_write_out_of_bounds_raises(self):
+        intc = InterruptControllerDevice("intc")
+        with self.assertRaises(IndexError):
+            intc.write(12, 0x00)
+
+
 class _FakeProcessor(object):
     def __init__(self):
         self.reset_count = 0
@@ -127,25 +413,28 @@ class _FakeProcessor(object):
 
 
 class _FakeIntc(object):
-    """Minimal stub for testing devices that set interrupt flags."""
+    """Minimal stub for testing devices that fire interrupts."""
     def __init__(self):
         self.name = "intc"
         self.bus = None
         self.size = 12  # IF0L..PR1L
         self.ticks = 0
-        self.flags = []  # list of (reg_offset, bit) tuples
+        self.requested = []  # list of (device, device_int) tuples
 
-    def set_flag(self, reg_offset, bit):
-        self.flags.append((reg_offset, bit))
+    def interrupt(self, device, device_int):
+        self.requested.append((device, device_int))
 
-    def read(self, offset):
+    def acknowledge_interrupt(self, source_index):
+        pass
+
+    def read(self, register):
         return 0
 
-    def write(self, offset, value):
+    def write(self, register, value):
         pass
 
     def reset(self):
-        self.flags = []
+        self.requested = []
 
     def tick(self, cycles):
         self.ticks += cycles
@@ -157,6 +446,7 @@ def _make_watchdog_on_bus():
     bus = Bus(proc)
     intc = _FakeIntc()
     bus.add_device(intc, (0xFFE0, 0xFFEB))
+    bus.set_interrupt_controller(intc)
     wd = WatchdogDevice("watchdog")
     bus.add_device(wd, (0xFF42, 0xFF42), (0xFFF9, 0xFFF9))
     return wd, proc, intc
@@ -279,7 +569,7 @@ class WatchdogDeviceTests(unittest.TestCase):
         wd, proc, intc = _make_watchdog_on_bus()
         wd.tick(100000)
         self.assertEqual(proc.reset_count, 0)
-        self.assertEqual(intc.flags, [])
+        self.assertEqual(intc.requested, [])
 
     def test_kick_clears_counter(self):
         wd, proc, intc = _make_watchdog_on_bus()
@@ -324,7 +614,7 @@ class WatchdogDeviceTests(unittest.TestCase):
         wd.write(WatchdogDevice.WDCS, 0x00)  # interval = 4096
         wd.write(WatchdogDevice.WDTM, 0x80)  # mode 0 (interval), start
         wd.tick(4096)
-        self.assertEqual(intc.flags, [(0, 0x01)])
+        self.assertEqual(intc.requested, [(wd, WatchdogDevice.INT_OVERFLOW)])
 
     def test_overflow_mode_interval_repeats(self):
         wd, proc, intc = _make_watchdog_on_bus()
@@ -332,7 +622,7 @@ class WatchdogDeviceTests(unittest.TestCase):
         wd.write(WatchdogDevice.WDTM, 0x80)
         wd.tick(4096)
         wd.tick(4096)
-        self.assertEqual(len(intc.flags), 2)
+        self.assertEqual(len(intc.requested), 2)
 
     def test_overflow_mode_interval_does_not_reset(self):
         wd, proc, intc = _make_watchdog_on_bus()
@@ -370,5 +660,287 @@ class WatchdogDeviceTests(unittest.TestCase):
         wd = WatchdogDevice("watchdog")
         with self.assertRaises(IndexError):
             wd.write(2, 0x00)
+
+
+def _make_watch_timer_on_bus():
+    """Create a WatchTimerDevice on a bus with a fake processor and intc."""
+    proc = _FakeProcessor()
+    bus = Bus(proc)
+    intc = _FakeIntc()
+    bus.add_device(intc, (0xFFE0, 0xFFEB))
+    bus.set_interrupt_controller(intc)
+    wt = WatchTimerDevice("watch_timer")
+    bus.add_device(wt, (0xFF41, 0xFF41))
+    return wt, proc, intc
+
+
+class WatchTimerDeviceTests(unittest.TestCase):
+
+    # defaults
+
+    def test_name(self):
+        wt = WatchTimerDevice("watch_timer")
+        self.assertEqual(wt.name, "watch_timer")
+
+    def test_size(self):
+        wt = WatchTimerDevice("watch_timer")
+        self.assertEqual(wt.size, 1)
+
+    def test_wtnm0_initially_zero(self):
+        wt = WatchTimerDevice("watch_timer")
+        self.assertEqual(wt.read(WatchTimerDevice.WTNM0), 0x00)
+
+    # register read/write
+
+    def test_write_then_read(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x73)
+        self.assertEqual(wt.read(WatchTimerDevice.WTNM0), 0x73)
+
+    # prescaler interval (INTWTNI0) - all 16 combinations
+
+    def test_prescaler_interval_fw128_n0(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x01)  # WTNM07=0, n=0
+        self.assertEqual(wt.prescaler_interval, (1 << 4) * 128)
+
+    def test_prescaler_interval_fw128_n1(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x11)  # WTNM07=0, n=1
+        self.assertEqual(wt.prescaler_interval, (1 << 5) * 128)
+
+    def test_prescaler_interval_fw128_n2(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x21)  # WTNM07=0, n=2
+        self.assertEqual(wt.prescaler_interval, (1 << 6) * 128)
+
+    def test_prescaler_interval_fw128_n3(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x31)  # WTNM07=0, n=3
+        self.assertEqual(wt.prescaler_interval, (1 << 7) * 128)
+
+    def test_prescaler_interval_fw128_n4(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x41)  # WTNM07=0, n=4
+        self.assertEqual(wt.prescaler_interval, (1 << 8) * 128)
+
+    def test_prescaler_interval_fw128_n5(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x51)  # WTNM07=0, n=5
+        self.assertEqual(wt.prescaler_interval, (1 << 9) * 128)
+
+    def test_prescaler_interval_fw128_n6(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x61)  # WTNM07=0, n=6
+        self.assertEqual(wt.prescaler_interval, (1 << 10) * 128)
+
+    def test_prescaler_interval_fw128_n7(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x71)  # WTNM07=0, n=7
+        self.assertEqual(wt.prescaler_interval, (1 << 11) * 128)
+
+    def test_prescaler_interval_fw64_n0(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x81)  # WTNM07=1, n=0
+        self.assertEqual(wt.prescaler_interval, (1 << 4) * 64)
+
+    def test_prescaler_interval_fw64_n1(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x91)  # WTNM07=1, n=1
+        self.assertEqual(wt.prescaler_interval, (1 << 5) * 64)
+
+    def test_prescaler_interval_fw64_n2(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0xA1)  # WTNM07=1, n=2
+        self.assertEqual(wt.prescaler_interval, (1 << 6) * 64)
+
+    def test_prescaler_interval_fw64_n3(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0xB1)  # WTNM07=1, n=3
+        self.assertEqual(wt.prescaler_interval, (1 << 7) * 64)
+
+    def test_prescaler_interval_fw64_n4(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0xC1)  # WTNM07=1, n=4
+        self.assertEqual(wt.prescaler_interval, (1 << 8) * 64)
+
+    def test_prescaler_interval_fw64_n5(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0xD1)  # WTNM07=1, n=5
+        self.assertEqual(wt.prescaler_interval, (1 << 9) * 64)
+
+    def test_prescaler_interval_fw64_n6(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0xE1)  # WTNM07=1, n=6
+        self.assertEqual(wt.prescaler_interval, (1 << 10) * 64)
+
+    def test_prescaler_interval_fw64_n7(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0xF1)  # WTNM07=1, n=7
+        self.assertEqual(wt.prescaler_interval, (1 << 11) * 64)
+
+    # prescaler interval - firmware configs
+
+    def test_prescaler_interval_firmware_conf_a(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x13)  # wtnm0_conf_a
+        self.assertEqual(wt.prescaler_interval, (1 << 5) * 128)  # 4096
+
+    def test_prescaler_interval_firmware_conf_b(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x73)  # wtnm0_conf_b
+        self.assertEqual(wt.prescaler_interval, (1 << 11) * 128)  # 262144
+
+    # watch interval (INTWTN0) - all 8 combinations
+
+    def test_watch_interval_fw128_sel0(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x03)  # WTNM07=0, sel=00
+        self.assertEqual(wt.watch_interval, (1 << 14) * 128)
+
+    def test_watch_interval_fw128_sel1(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x07)  # WTNM07=0, sel=01
+        self.assertEqual(wt.watch_interval, (1 << 13) * 128)
+
+    def test_watch_interval_fw128_sel2(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x0B)  # WTNM07=0, sel=10
+        self.assertEqual(wt.watch_interval, (1 << 5) * 128)
+
+    def test_watch_interval_fw128_sel3(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x0F)  # WTNM07=0, sel=11
+        self.assertEqual(wt.watch_interval, (1 << 4) * 128)
+
+    def test_watch_interval_fw64_sel0(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x83)  # WTNM07=1, sel=00
+        self.assertEqual(wt.watch_interval, (1 << 14) * 64)
+
+    def test_watch_interval_fw64_sel1(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x87)  # WTNM07=1, sel=01
+        self.assertEqual(wt.watch_interval, (1 << 13) * 64)
+
+    def test_watch_interval_fw64_sel2(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x8B)  # WTNM07=1, sel=10
+        self.assertEqual(wt.watch_interval, (1 << 5) * 64)
+
+    def test_watch_interval_fw64_sel3(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x8F)  # WTNM07=1, sel=11
+        self.assertEqual(wt.watch_interval, (1 << 4) * 64)
+
+    # tick: disabled
+
+    def test_tick_does_nothing_when_disabled(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.tick(1000000)
+        self.assertEqual(intc.requested, [])
+
+    # tick: INTWTNI0 (prescaler / interval timer)
+
+    def test_prescaler_fires_intwtni0(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x01)  # n=0, fw=128, interval=2048
+        wt.tick(2048)
+        self.assertEqual(intc.requested, [(wt, WatchTimerDevice.INT_PRESCALER)])
+
+    def test_prescaler_fires_at_exact_interval(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x01)  # interval=2048
+        wt.tick(2047)
+        self.assertEqual(intc.requested, [])
+        wt.tick(1)
+        self.assertEqual(intc.requested, [(wt, WatchTimerDevice.INT_PRESCALER)])
+
+    def test_prescaler_repeats(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x01)  # interval=2048
+        wt.tick(2048)
+        wt.tick(2048)
+        self.assertEqual(len(intc.requested), 2)
+
+    def test_prescaler_fires_without_wtnm01(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x01)  # WTNM00=1, WTNM01=0
+        wt.tick(2048)
+        self.assertEqual(intc.requested, [(wt, WatchTimerDevice.INT_PRESCALER)])
+
+    # tick: INTWTN0 (watch timer)
+
+    def test_watch_fires_intwtn0(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x0F)  # sel=11, fw=128, interval=2048, both started
+        wt.tick(2048)
+        # Both INTWTNI0 and INTWTN0 fire
+        self.assertIn((wt, WatchTimerDevice.INT_WATCH), intc.requested)
+
+    def test_watch_does_not_fire_without_wtnm01(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x0D)  # WTNM01=0, WTNM00=1
+        wt.tick(2048)
+        self.assertNotIn((wt, WatchTimerDevice.INT_WATCH), intc.requested)  # No INTWTN0
+
+    def test_watch_repeats(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x0F)  # sel=11, interval=2048
+        wt.tick(2048)
+        wt.tick(2048)
+        self.assertEqual(intc.requested.count((wt, WatchTimerDevice.INT_WATCH)), 2)
+
+    # enable/disable
+
+    def test_disable_clears_counters(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x01)  # enable, interval=2048
+        wt.tick(2000)  # close to overflow
+        wt.write(WatchTimerDevice.WTNM0, 0x00)  # disable
+        wt.write(WatchTimerDevice.WTNM0, 0x01)  # re-enable
+        wt.tick(2000)  # would have overflowed without clear
+        self.assertEqual(intc.requested, [])
+
+    def test_clearing_wtnm01_clears_watch_counter(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.write(WatchTimerDevice.WTNM0, 0x0F)  # both started, watch interval=2048
+        wt.tick(2000)  # close to watch overflow
+        wt.write(WatchTimerDevice.WTNM0, 0x0D)  # clear WTNM01
+        wt.write(WatchTimerDevice.WTNM0, 0x0F)  # restart WTNM01
+        wt.tick(2000)  # would have overflowed without clear
+        self.assertNotIn((wt, WatchTimerDevice.INT_WATCH), intc.requested)
+
+    # reset
+
+    def test_reset_clears_wtnm0(self):
+        wt = WatchTimerDevice("watch_timer")
+        wt.write(WatchTimerDevice.WTNM0, 0x73)
+        wt.reset()
+        self.assertEqual(wt.read(WatchTimerDevice.WTNM0), 0x00)
+
+    # bus access
+
+    def test_bus_write_wtnm0(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.bus.write(0xFF41, 0x73)
+        self.assertEqual(wt.read(WatchTimerDevice.WTNM0), 0x73)
+
+    def test_bus_read_wtnm0(self):
+        wt, proc, intc = _make_watch_timer_on_bus()
+        wt.bus.write(0xFF41, 0x73)
+        self.assertEqual(wt.bus.read(0xFF41), 0x73)
+
+    # bounds
+
+    def test_read_out_of_bounds_raises(self):
+        wt = WatchTimerDevice("watch_timer")
+        with self.assertRaises(IndexError):
+            wt.read(1)
+
+    def test_write_out_of_bounds_raises(self):
+        wt = WatchTimerDevice("watch_timer")
+        with self.assertRaises(IndexError):
+            wt.write(1, 0x00)
 
 
