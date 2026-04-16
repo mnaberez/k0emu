@@ -70,8 +70,7 @@ class Processor(object):
         self._push_word(self.pc)
         self.pc = isr_address
 
-    def __str__(self):
-        return RegisterTrace.generate(self)
+
 
     def _init_opcode_map_unprefixed(self):
         D = {
@@ -2856,30 +2855,3 @@ class Flags(object):
     RBS1   = 2**5
     Z      = 2**6
     IE     = 2**7
-
-class RegisterTrace:
-    NamedRegisterPairs = (
-        ('AX', RegisterPairs.AX),
-        ('BC', RegisterPairs.BC),
-        ('DE', RegisterPairs.DE),
-        ('HL', RegisterPairs.HL)
-    )
-
-    @classmethod
-    def generate(klass, processor):
-        s = ""
-        for name, reg in klass.NamedRegisterPairs:
-            s += "%s=%04X " % (name, processor.read_gp_regpair(reg))
-        s += "SP=%04X" % processor.read_sp()
-
-        psw = processor.read_psw()
-        s += " [IE:%d RB:%d ISP:%d Z:%d AC:%d CY:%d]" % (
-            int(bool(psw & Flags.IE)),
-            processor.read_rb(),
-            int(bool(psw & Flags.ISP)),
-            int(bool(psw & Flags.Z)),
-            int(bool(psw & Flags.AC)),
-            int(bool(psw & Flags.CY)),
-        )
-
-        return s

@@ -1,5 +1,5 @@
 import unittest
-from k0emu.devices.devices import MemoryDevice
+from k0emu.devices import MemoryDevice, RegisterFileDevice
 
 
 class MemoryDeviceTests(unittest.TestCase):
@@ -71,5 +71,49 @@ class MemoryDeviceTests(unittest.TestCase):
         mem.tick(3)
         mem.tick(5)
         self.assertEqual(mem.ticks, 8)
+
+
+class RegisterFileDeviceTests(unittest.TestCase):
+
+    # defaults
+
+    def test_name(self):
+        rf = RegisterFileDevice()
+        self.assertEqual(rf.name, "register_file")
+
+    def test_size_is_32_bytes(self):
+        rf = RegisterFileDevice()
+        self.assertEqual(rf.size, 32)
+
+    def test_initialized_to_zero(self):
+        rf = RegisterFileDevice()
+        for i in range(32):
+            self.assertEqual(rf.read(i), 0)
+
+    # layout: bank 3 at offset 0, bank 0 at offset 24
+
+    def test_bank0_at_top(self):
+        rf = RegisterFileDevice()
+        rf.write(24, 0x42)  # bank 0, register X
+        self.assertEqual(rf.read(24), 0x42)
+
+    def test_bank3_at_bottom(self):
+        rf = RegisterFileDevice()
+        rf.write(0, 0x42)  # bank 3, register X
+        self.assertEqual(rf.read(0), 0x42)
+
+    def test_banks_are_independent(self):
+        rf = RegisterFileDevice()
+        rf.write(24, 0xAA)  # bank 0, register X
+        rf.write(0, 0xBB)   # bank 3, register X
+        self.assertEqual(rf.read(24), 0xAA)
+        self.assertEqual(rf.read(0), 0xBB)
+
+    # bounds
+
+    def test_out_of_bounds_raises(self):
+        rf = RegisterFileDevice()
+        with self.assertRaises(IndexError):
+            rf.read(32)
 
 

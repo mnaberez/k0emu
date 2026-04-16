@@ -1,6 +1,6 @@
 import unittest
 import sys
-from k0emu.devices.devices import MemoryDevice
+from k0emu.devices import MemoryDevice
 from k0emu.processor import Processor, Registers, RegisterPairs, Flags
 
 

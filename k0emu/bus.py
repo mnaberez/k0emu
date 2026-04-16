@@ -1,4 +1,4 @@
-from k0emu.devices.base import BaseDevice
+from k0emu.devices import BaseDevice
 
 
 class Bus(object):

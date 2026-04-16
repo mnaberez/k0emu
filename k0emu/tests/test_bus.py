@@ -1,6 +1,6 @@
 import unittest
 from k0emu.bus import Bus
-from k0emu.devices.devices import MemoryDevice
+from k0emu.devices import MemoryDevice
 
 
 class _FakeProcessor(object):

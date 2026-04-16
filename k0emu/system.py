@@ -1,4 +1,4 @@
-from k0emu.devices.devices import MemoryDevice
+from k0emu.devices import MemoryDevice, RegisterFileDevice
 from k0emu.processor import Processor
 
 
@@ -19,7 +19,7 @@ def make_processor():
     high_speed_ram = MemoryDevice("high_speed_ram", size=0x03E0)
     proc.bus.add_device(0xFB00, 0xFEDF, high_speed_ram)
 
-    register_file = MemoryDevice("register_file", size=0x0020)
+    register_file = RegisterFileDevice()
     proc.bus.add_device(0xFEE0, 0xFEFF, register_file)
 
     sfr = MemoryDevice("sfr", size=0x0100)
