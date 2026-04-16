@@ -69,6 +69,21 @@ class RegisterFileDevice(MemoryDevice):
         super().__init__(name, size=self.SIZE, high_speed=high_speed)
 
 
+class ProcessorStatusDevice(MemoryDevice):
+    """Stack pointer and program status word at FF1C-FF1E.
+
+    Registers:
+        0: SPL  (FF1C) - stack pointer low byte
+        1: SPH  (FF1D) - stack pointer high byte
+        2: PSW  (FF1E) - program status word
+    """
+
+    SIZE = 3
+
+    def __init__(self, name, high_speed=False):
+        super().__init__(name, size=self.SIZE, high_speed=high_speed)
+
+
 class WatchdogDevice(BaseDevice):
     """Watchdog timer.
 

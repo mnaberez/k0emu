@@ -1,6 +1,6 @@
 from k0emu.devices import (MemoryDevice, RegisterFileDevice,
-                           InterruptControllerDevice, WatchdogDevice,
-                           WatchTimerDevice)
+                           ProcessorStatusDevice, InterruptControllerDevice,
+                           WatchdogDevice, WatchTimerDevice)
 from k0emu.processor import Processor
 
 
@@ -23,6 +23,9 @@ def make_processor():
 
     register_file = RegisterFileDevice("register_file", high_speed=True)
     proc.bus.add_device(register_file, (0xFEE0, 0xFEFF))
+
+    processor_status = ProcessorStatusDevice("processor_status")
+    proc.bus.add_device(processor_status, (0xFF1C, 0xFF1E))
 
     intc = InterruptControllerDevice("intc")
     proc.bus.add_device(intc, (0xFFE0, 0xFFEB))

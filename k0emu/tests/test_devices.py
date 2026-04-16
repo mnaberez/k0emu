@@ -1,8 +1,8 @@
 import unittest
 from k0emu.bus import Bus
 from k0emu.devices import (MemoryDevice, RegisterFileDevice,
-                           InterruptControllerDevice, WatchdogDevice,
-                           WatchTimerDevice)
+                           ProcessorStatusDevice, InterruptControllerDevice,
+                           WatchdogDevice, WatchTimerDevice)
 
 
 class MemoryDeviceTests(unittest.TestCase):
@@ -118,6 +118,69 @@ class RegisterFileDeviceTests(unittest.TestCase):
         rf = RegisterFileDevice("register_file")
         with self.assertRaises(IndexError):
             rf.read(32)
+
+
+class ProcessorStatusDeviceTests(unittest.TestCase):
+
+    # defaults
+
+    def test_name(self):
+        ps = ProcessorStatusDevice("processor_status")
+        self.assertEqual(ps.name, "processor_status")
+
+    def test_size(self):
+        ps = ProcessorStatusDevice("processor_status")
+        self.assertEqual(ps.size, 3)
+
+    def test_initialized_to_zero(self):
+        ps = ProcessorStatusDevice("processor_status")
+        self.assertEqual(ps.read(0), 0x00)  # SPL
+        self.assertEqual(ps.read(1), 0x00)  # SPH
+        self.assertEqual(ps.read(2), 0x00)  # PSW
+
+    # read/write
+
+    def test_write_spl(self):
+        ps = ProcessorStatusDevice("processor_status")
+        ps.write(0, 0x1C)
+        self.assertEqual(ps.read(0), 0x1C)
+
+    def test_write_sph(self):
+        ps = ProcessorStatusDevice("processor_status")
+        ps.write(1, 0xFE)
+        self.assertEqual(ps.read(1), 0xFE)
+
+    def test_write_psw(self):
+        ps = ProcessorStatusDevice("processor_status")
+        ps.write(2, 0x42)
+        self.assertEqual(ps.read(2), 0x42)
+
+    # bus access
+
+    def test_bus_write_sp(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        ps = ProcessorStatusDevice("processor_status")
+        bus.add_device(ps, (0xFF1C, 0xFF1E))
+        bus.write(0xFF1C, 0x1C)
+        bus.write(0xFF1D, 0xFE)
+        self.assertEqual(ps.read(0), 0x1C)
+        self.assertEqual(ps.read(1), 0xFE)
+
+    def test_bus_read_psw(self):
+        proc = _FakeProcessor()
+        bus = Bus(proc)
+        ps = ProcessorStatusDevice("processor_status")
+        bus.add_device(ps, (0xFF1C, 0xFF1E))
+        ps.write(2, 0x42)
+        self.assertEqual(bus.read(0xFF1E), 0x42)
+
+    # bounds
+
+    def test_out_of_bounds_raises(self):
+        ps = ProcessorStatusDevice("processor_status")
+        with self.assertRaises(IndexError):
+            ps.read(3)
 
 
 class _DummyDevice(object):
