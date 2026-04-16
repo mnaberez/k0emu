@@ -22,4 +22,7 @@ def make_processor():
     register_file = RegisterFileDevice("register_file")
     proc.bus.add_device(register_file, (0xFEE0, 0xFEFF))
 
+    watchdog = WatchdogDevice("watchdog")
+    proc.bus.add_device(watchdog, (0xFF42, 0xFF42), (0xFFF9, 0xFFF9))
+
     return proc

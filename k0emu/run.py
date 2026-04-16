@@ -75,7 +75,7 @@ def print_memory_map(output=None):
     proc = make_processor()
     for start, end, device in proc.bus.memory_map():
         size = end - start + 1
-        output.write("  %04X-%04X  %5d  %s\n" % (start, end, size, device.name))
+        output.write("  %04X-%04X  %5d  %-20s  %s\n" % (start, end, size, device.name, type(device).__name__))
 
 
 def main():
