@@ -1,6 +1,7 @@
 class BaseDevice(object):
     def __init__(self, name):
         self.name = name
+        self.bus = None
         self.size = 0
         self.ticks = 0
 

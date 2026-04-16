@@ -2,11 +2,13 @@ from k0emu.devices import BaseDevice
 
 
 class Bus(object):
+    ADDRESS_SPACE_SIZE = 2**16  # 64K address space
+
     def __init__(self, processor):
         self.processor = processor
         self._unmapped = BaseDevice("unmapped")
-        self._devices_by_address = [self._unmapped] * 0x10000
-        self._dev_bases_by_address = [0] * 0x10000
+        self._devices_by_address = [self._unmapped] * self.ADDRESS_SPACE_SIZE
+        self._device_registers_by_address = [0] * self.ADDRESS_SPACE_SIZE
         self._all_devices = set()
 
     def __getitem__(self, address):
@@ -17,12 +19,35 @@ class Bus(object):
 
     # device registration
 
-    def add_device(self, start, end, device):
-        """Register a device for an address range (inclusive).
-        The device sees local addresses 0 through (end - start)."""
-        for address in range(start, end + 1):
-            self._devices_by_address[address] = device
-            self._dev_bases_by_address[address] = start
+    def add_device(self, address_ranges, device):
+        """Register a device for one or more address ranges.
+
+        address_ranges: list of (start, end) tuples of bus addresses,
+                inclusive.  The device's registers are mapped sequentially
+                across the given ranges, allowing a single device model to
+                be mapped to non-contigous addresses in the memory map.
+        """
+        register = 0
+        for start, end in address_ranges:
+            if (start < 0) or (end >= self.ADDRESS_SPACE_SIZE) or (start > end):
+                raise ValueError("address range 0x%04X-0x%04X out of bounds" %
+                                 (start, end))
+
+            for address in range(start, end + 1):
+                existing_device = self._devices_by_address[address]
+                if existing_device is not self._unmapped:
+                    raise ValueError("address 0x%04X already mapped to %s" %
+                                     (address, existing_device.name))
+
+                self._devices_by_address[address] = device
+                self._device_registers_by_address[address] = register
+                register += 1
+
+        if register != device.size:
+            raise ValueError("%s: ranges cover %d bytes but device size is %d" %
+                             (device.name, register, device.size))
+
+        device.bus = self
         self._all_devices.add(device)
 
     def device(self, name):
@@ -46,10 +71,10 @@ class Bus(object):
 
     def read(self, address):
         device = self._devices_by_address[address]
-        local_address = address - self._dev_bases_by_address[address]
-        return device.read(local_address)
+        register = self._device_registers_by_address[address]
+        return device.read(register)
 
     def write(self, address, value):
         device = self._devices_by_address[address]
-        local_address = address - self._dev_bases_by_address[address]
-        device.write(local_address, value)
+        register = self._device_registers_by_address[address]
+        device.write(register, value)

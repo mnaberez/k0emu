@@ -8,7 +8,7 @@ from k0emu.run import Runner
 def _make_runner(code):
     proc = Processor()
     mem = MemoryDevice("test_memory", size=0x10000)
-    proc.bus.add_device(0x0000, 0xFFFF, mem)
+    proc.bus.add_device([(0x0000, 0xFFFF)], mem)
     for i, byte in enumerate(code):
         mem.write(i, byte)
     output = io.StringIO()

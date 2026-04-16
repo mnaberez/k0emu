@@ -7,7 +7,7 @@ from k0emu.processor import Processor, Registers, RegisterPairs, Flags
 def _make_processor():
     proc = Processor()
     mem = MemoryDevice("test_memory", size=0x10000)
-    proc.bus.add_device(0x0000, 0xFFFF, mem)
+    proc.bus.add_device([(0x0000, 0xFFFF)], mem)
     return proc, mem
 
 

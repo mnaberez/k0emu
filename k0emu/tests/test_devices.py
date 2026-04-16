@@ -1,4 +1,5 @@
 import unittest
+from k0emu.bus import Bus
 from k0emu.devices import MemoryDevice, RegisterFileDevice
 
 
@@ -115,5 +116,3 @@ class RegisterFileDeviceTests(unittest.TestCase):
         rf = RegisterFileDevice()
         with self.assertRaises(IndexError):
             rf.read(32)
-
-
