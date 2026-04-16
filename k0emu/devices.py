@@ -5,15 +5,15 @@ class BaseDevice(object):
         self.size = 0
         self.ticks = 0
 
-    def _check_bounds(self, offset):
-        if offset < 0 or offset >= self.size:
-            raise IndexError("%s: offset 0x%04X out of range (size=0x%04X)" %
-                             (self.name, offset, self.size))
+    def _check_bounds(self, register):
+        if register < 0 or register >= self.size:
+            raise IndexError("%s: register 0x%04X out of range (size=0x%04X)" %
+                             (self.name, register, self.size))
 
-    def read(self, address):
+    def read(self, register):
         return 0
 
-    def write(self, address, value):
+    def write(self, register, value):
         pass
 
     def reset(self):
@@ -33,21 +33,21 @@ class MemoryDevice(BaseDevice):
         self._data = bytearray([fill]) * size
         self._writable = writable
 
-    def read(self, offset):
-        self._check_bounds(offset)
-        return self._data[offset]
+    def read(self, register):
+        self._check_bounds(register)
+        return self._data[register]
 
-    def write(self, offset, value):
-        self._check_bounds(offset)
+    def write(self, register, value):
+        self._check_bounds(register)
         if self._writable:
-            self._data[offset] = value
+            self._data[register] = value
 
-    def load(self, offset, data):
+    def load(self, register, data):
         """Write directly to backing store, bypassing the writable flag.
         Used for loading firmware images and test code."""
-        self._check_bounds(offset)
-        self._check_bounds(offset + len(data) - 1)
-        self._data[offset:offset + len(data)] = data
+        self._check_bounds(register)
+        self._check_bounds(register + len(data) - 1)
+        self._data[register:register + len(data)] = data
 
 
 class RegisterFileDevice(MemoryDevice):
