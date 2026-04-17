@@ -3608,6 +3608,40 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
+    # mov1 cy,sfr.bit preserves other PSW bits
+    def test_71_0c_mov1_cy_sfr_preserves_psw(self):
+        proc, _ = _make_processor()
+        code = [0x71, 0x2c, 0xfe]  # mov1 cy,0fffeh.2
+        proc.write_memory_bytes(0, code)
+        proc.write_memory(0xfffe, 0x04)  # bit 2 set
+        proc.write_psw(Flags.IE | Flags.Z)  # set IE and Z
+        proc.write_gp_reg(Registers.A, 0x00)  # A=0 (different from PSW)
+        proc.step()
+        # CY should be set, IE and Z should be preserved
+        self.assertEqual(proc.read_psw(), Flags.IE | Flags.Z | Flags.CY)
+
+    def test_71_0c_mov1_cy_sfr_clears_cy(self):
+        proc, _ = _make_processor()
+        code = [0x71, 0x2c, 0xfe]  # mov1 cy,0fffeh.2
+        proc.write_memory_bytes(0, code)
+        proc.write_memory(0xfffe, 0x00)  # bit 2 clear
+        proc.write_psw(Flags.IE | Flags.CY)  # IE set, CY set
+        proc.write_gp_reg(Registers.A, 0xFF)  # A=FF (different from PSW)
+        proc.step()
+        # CY should be cleared, IE should be preserved, A should not affect PSW
+        self.assertEqual(proc.read_psw(), Flags.IE)
+
+    def test_71_0c_mov1_cy_sfr_does_not_use_register_a(self):
+        proc, _ = _make_processor()
+        code = [0x71, 0x0c, 0xfe]  # mov1 cy,0fffeh.0
+        proc.write_memory_bytes(0, code)
+        proc.write_memory(0xfffe, 0x01)  # bit 0 set
+        proc.write_psw(Flags.IE)  # PSW = 0x80
+        proc.write_gp_reg(Registers.A, 0x20)  # A = 0x20 (RBS1 bit)
+        proc.step()
+        # Should set CY and preserve IE.  Must NOT set RBS1 from A.
+        self.assertEqual(proc.read_psw(), Flags.IE | Flags.CY)
+
     # mov1 0fffeh.0,cy            ;71 09 fe       sfr
     def test_71_09_mov1_sfr_bit_0_cy(self):
         proc, _ = _make_processor()

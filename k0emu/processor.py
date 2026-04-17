@@ -1746,7 +1746,7 @@ class Processor(object):
         bit = _bit(opcode2)
         address = self._consume_sfr()
         src = self._bus_read(address)
-        dest = self.read_gp_reg(Registers.A)
+        dest = self.read_psw()
         result = self._operation_mov1(src, bit, dest, 0)
         self.write_psw(result)
         self._inst_cycles +=2
