@@ -18,6 +18,7 @@ class Processor(object):
         self._init_opcode_map_prefix_0x71()
         self._total_cycles = 0
         self._inst_cycles = 0
+        self._interrupt_delayed = False
         self.pc = 0
 
     def reset(self):
@@ -27,18 +28,18 @@ class Processor(object):
         self._inst_cycles = 0
 
     def step(self):
+        # fetch and execute the instruction
         self._inst_cycles = 0
         opcode = self._consume_byte()
         handler = self._opcode_map_unprefixed.get(opcode, self._opcode_not_implemented)
         handler(opcode)
         self._total_cycles += self._inst_cycles
 
+        # clock peripherals by number of cycles instruction consumed
         self.bus.tick(self._inst_cycles)
 
-        if self.read_psw() & Flags.IE:  # enabled
-            pending = self.bus.pending_interrupt
-            if pending is not None:
-                self._service_interrupt(pending)
+        # service interrupt
+        self._service_interrupt()
 
     @property
     def total_cycles(self):
@@ -64,20 +65,31 @@ class Processor(object):
             self._inst_cycles += 1
         self.bus.write(address, value)
 
-    def _service_interrupt(self, pending):
-        if (self.read_psw() & Flags.ISP) and not pending.high_priority:
-            return  # low-priority blocked by high-priority ISR
+    def _service_interrupt(self):
+        # according to the programming manual, after EI or RETI, the 
+        # one instruction is executed before acknowledging any interrupt.
+        if self._interrupt_delayed:
+            self._interrupt_delayed = False
+            return
+
+        psw = self.read_psw()
+
+        if not (psw & Flags.IE):
+            return  # interrupts must be enabled
+        if psw & Flags.ISP:
+            return  # must not already be in a high priority interrupt
+
+        pending = self.bus.pending_interrupt
+        if pending is None:
+            return
 
         self.bus.acknowledge_interrupt(pending)
-
-        # Push PSW and PC, clear IE, set ISP if high priority
-        self._push(self.read_psw())
-        psw = self.read_psw() & ~Flags.IE
+        self._push(psw)
+        psw &= ~Flags.IE
         if pending.high_priority:
             psw |= Flags.ISP
         self.write_psw(psw)
         self._push_word(self.pc)
-
         self.pc = self.read_memory_word(pending.vector_address)
 
     def _init_opcode_map_unprefixed(self):
@@ -455,9 +467,11 @@ class Processor(object):
         # xor1 cy,0fe20h.0            ;71 07 20       saddr
         for opcode2 in (0x07, 0x17, 0x27, 0x37, 0x47, 0x57, 0x67, 0x77):
             D[opcode2] = self._opcode_0x71_0x07_to_0x77_xor1
+        # halt                        ;71 10
+        D[0x10] = self._opcode_0x71_0x10_halt
+
         self._opcode_map_prefix_0x71 = D
 
-    # not implemented
     def _opcode_not_implemented(self, opcode):
         raise NotImplementedError()
 
@@ -1705,15 +1719,6 @@ class Processor(object):
         self.write_gp_reg(reg, result)
         self._inst_cycles += 2
 
-    # set1 [hl].0                 ;71 82
-    def _opcode_0x71_0x82_to_0xf2_set1(self, opcode2):
-        bit = _bit(opcode2)
-        address = self.read_gp_regpair(RegisterPairs.HL)
-        value = self._bus_read(address)
-        result = self._operation_set1(value, bit)
-        self._bus_write(address, result)
-        self._inst_cycles += 2
-
     # clr1 0fffeh.0               ;71 0b fe       sfr
     def _opcode_0x71_0x0b_to_0x7b_clr1(self, opcode2):
         bit = _bit(opcode2)
@@ -1731,6 +1736,21 @@ class Processor(object):
         result = self._operation_set1(value, bit)
         self._bus_write(address, result)
         self._inst_cycles += 1
+
+    # halt                            ;71 10
+    def _opcode_0x71_0x10_halt(self, opcode):
+        while self.bus.pending_interrupt is None:
+            self._total_cycles += 1
+            self.bus.tick(1)
+
+    # set1 [hl].0                 ;71 82
+    def _opcode_0x71_0x82_to_0xf2_set1(self, opcode2):
+        bit = _bit(opcode2)
+        address = self.read_gp_regpair(RegisterPairs.HL)
+        value = self._bus_read(address)
+        result = self._operation_set1(value, bit)
+        self._bus_write(address, result)
+        self._inst_cycles += 2
 
     # clr1 [hl].0                 ;71 83
     def _opcode2_0x71_0x83_to_0xf3_clr1(self, opcode2):
@@ -2124,6 +2144,9 @@ class Processor(object):
         value = self._bus_read(address)
         result = self._operation_set1(value, bit)
         self._bus_write(address, result)
+        # after EI (set1 PSW.7), interrupt acknowledge must be delayed
+        if (address == self.PSW_ADDRESS) and (bit == 7):
+            self._interrupt_delayed = True
 
     # clr1 0fe20h.0               ;0b 20          saddr
     # clr1 psw.0                  ;0b 1e
@@ -2144,6 +2167,7 @@ class Processor(object):
     def _opcode_0x8f(self, opcode):
         self.pc = self._pop_word()
         self.write_psw(self._pop())
+        self._interrupt_delayed = True
         self._inst_cycles += 2
 
     # retb                        ;9f
