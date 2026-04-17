@@ -12,14 +12,19 @@ class Processor(object):
         if bus is None:
             bus = Bus(self)
         self.bus = bus
-        self._init_opcode_map_unprefixed()
-        self._init_opcode_map_prefix_0x31()
-        self._init_opcode_map_prefix_0x61()
-        self._init_opcode_map_prefix_0x71()
+        self._init_opcodes()
         self._total_cycles = 0
         self._inst_cycles = 0
         self._interrupt_delayed = False
         self.pc = 0
+
+    @property
+    def total_cycles(self):
+        return self._total_cycles
+
+    @property
+    def inst_cycles(self):
+        return self._inst_cycles
 
     def reset(self):
         self.write_sp(0)
@@ -31,41 +36,15 @@ class Processor(object):
         # fetch and execute the instruction
         self._inst_cycles = 0
         opcode = self._consume_byte()
-        handler = self._opcode_map_unprefixed.get(opcode, self._opcode_not_implemented)
+        handler = self._opcodes_unprefixed[opcode]
         handler(opcode)
         self._total_cycles += self._inst_cycles
 
         # clock peripherals by number of cycles instruction consumed
         self.bus.tick(self._inst_cycles)
 
-        # service interrupt
-        self._service_interrupt()
+        # remaining code is for servicing interrupts ------------------------
 
-    @property
-    def total_cycles(self):
-        return self._total_cycles
-
-    @property
-    def inst_cycles(self):
-        return self._inst_cycles
-
-    def _bus_read(self, address):
-        """Read a data operand byte via the bus.  Costs 1 bus clock
-        plus a penalty for non-high-speed devices."""
-        self._inst_cycles += 1
-        if not self.bus.is_high_speed(address):
-            self._inst_cycles += 1
-        return self.bus.read(address)
-
-    def _bus_write(self, address, value):
-        """Write a data operand byte via the bus.  Costs 1 bus clock
-        plus a penalty for non-high-speed devices."""
-        self._inst_cycles += 1
-        if not self.bus.is_high_speed(address):
-            self._inst_cycles += 1
-        self.bus.write(address, value)
-
-    def _service_interrupt(self):
         # according to the programming manual, after EI or RETI, the 
         # one instruction is executed before acknowledging any interrupt.
         if self._interrupt_delayed:
@@ -92,7 +71,29 @@ class Processor(object):
         self._push_word(self.pc)
         self.pc = self.read_memory_word(pending.vector_address)
 
-    def _init_opcode_map_unprefixed(self):
+    def _bus_read(self, address):
+        """Read a data operand byte via the bus.  Costs 1 bus clock
+        plus a penalty for non-high-speed devices."""
+        self._inst_cycles += 1
+        if not self.bus.is_high_speed(address):
+            self._inst_cycles += 1
+        return self.bus.read(address)
+
+    def _bus_write(self, address, value):
+        """Write a data operand byte via the bus.  Costs 1 bus clock
+        plus a penalty for non-high-speed devices."""
+        self._inst_cycles += 1
+        if not self.bus.is_high_speed(address):
+            self._inst_cycles += 1
+        self.bus.write(address, value)
+
+    def _init_opcodes(self):
+        self._init_opcodes_unprefixed()
+        self._init_opcodes_prefix_0x31()
+        self._init_opcodes_prefix_0x61()
+        self._init_opcodes_prefix_0x71()
+
+    def _init_opcodes_unprefixed(self):
         D = {
             0x00: self._opcode_0x00, # nop
             0x01: self._opcode_0x01, # not1 cy
@@ -264,9 +265,9 @@ class Processor(object):
         # callt [0040h] ... callt [007eh]
         for opcode in range(0xc1, 0x100, 2):
             D[opcode] = self._opcode_0xc1_to_0xff_callt
-        self._opcode_map_unprefixed = D
+        self._opcodes_unprefixed = self._opcode_handlers_dict_to_tuple(D)
 
-    def _init_opcode_map_prefix_0x31(self):
+    def _init_opcodes_prefix_0x31(self):
         D = {
             0x0a: self._opcode_0x31_0x0a_add,   # add a,[hl+c]                ;31 0a
             0x0b: self._opcode_0x31_0x0b_add,   # add a,[hl+b]                ;31 0b
@@ -326,9 +327,9 @@ class Processor(object):
         # bt [hl].0,$label40          ;31 86 fd
         for opcode2 in (0x86, 0x96, 0xa6, 0xb6, 0xc6, 0xd6, 0xe6, 0xf6):
             D[opcode2] = self._opcode_0x31_0x86_to_0xf6_bt
-        self._opcode_map_prefix_0x31 = D
+        self._opcodes_prefix_0x31 = self._opcode_handlers_dict_to_tuple(D)
 
-    def _init_opcode_map_prefix_0x61(self):
+    def _init_opcodes_prefix_0x61(self):
         D = {
             0x80: self._opcode_0x61_0x80_adjba,     # adjba                       ;61 80
             0x90: self._opcode_0x61_0x90_adjbs,     # adjbs                       ;61 90
@@ -405,9 +406,9 @@ class Processor(object):
         # subc reg,a                  ;61 30..37
         for opcode in (0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37):
             D[opcode] = self._opcode_0x61_0x30_to_0x37_subc
-        self._opcode_map_prefix_0x61 = D
+        self._opcodes_prefix_0x61 = self._opcode_handlers_dict_to_tuple(D)
 
-    def _init_opcode_map_prefix_0x71(self):
+    def _init_opcodes_prefix_0x71(self):
         D = {}
 
         # set1 sfr.bit
@@ -469,8 +470,14 @@ class Processor(object):
             D[opcode2] = self._opcode_0x71_0x07_to_0x77_xor1
         # halt                        ;71 10
         D[0x10] = self._opcode_0x71_0x10_halt
+        self._opcodes_prefix_0x71 = self._opcode_handlers_dict_to_tuple(D)
 
-        self._opcode_map_prefix_0x71 = D
+    def _opcode_handlers_dict_to_tuple(self, handlers_by_opcode):
+        handlers = []
+        for opcode in range(256):
+            h = handlers_by_opcode.get(opcode, self._opcode_not_implemented)
+            handlers.append(h)
+        return tuple(handlers)
 
     def _opcode_not_implemented(self, opcode):
         raise NotImplementedError()
@@ -478,19 +485,19 @@ class Processor(object):
     # prefix 0x31
     def _opcode_0x31(self, opcode):
         opcode2 = self._consume_byte()
-        handler = self._opcode_map_prefix_0x31.get(opcode2, self._opcode_not_implemented)
+        handler = self._opcodes_prefix_0x31[opcode2]
         handler(opcode2)
 
     # prefix 0x61
     def _opcode_0x61(self, opcode):
         opcode2 = self._consume_byte()
-        handler = self._opcode_map_prefix_0x61.get(opcode2, self._opcode_not_implemented)
+        handler = self._opcodes_prefix_0x61[opcode2]
         handler(opcode2)
 
     # prefix 0x71
     def _opcode_0x71(self, opcode):
         opcode2 = self._consume_byte()
-        handler = self._opcode_map_prefix_0x71.get(opcode2, self._opcode_not_implemented)
+        handler = self._opcodes_prefix_0x71[opcode2]
         handler(opcode2)
 
     # nop
