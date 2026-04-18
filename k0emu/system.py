@@ -1,9 +1,10 @@
 from k0emu.devices import (MemoryDevice, RegisterFileDevice,
-                           ProcessorStatusDevice, PortDevice,
-                           ADCDevice, I2CDevice, I2CTargetStub,
-                           EepromDevice, CSI30Device, UPD16432BDevice,
+                           ProcessorStatusDevice, HackPortsDevice,
+                           ADCDevice, I2CControllerDevice, SPIControllerDevice,
                            InterruptControllerDevice,
                            WatchdogDevice, WatchTimerDevice)
+from k0emu.i2c import StubI2CTarget, M24C04
+from k0emu.spi import UPD16432B
 from k0emu.processor import Processor
 
 
@@ -27,7 +28,7 @@ def make_processor():
     register_file = RegisterFileDevice("register_file", high_speed=True)
     proc.bus.add_device(register_file, (0xFEE0, 0xFEFF))
 
-    ports = PortDevice("ports")
+    ports = HackPortsDevice("ports")
     proc.bus.add_device(ports, (0xFF00, 0xFF09))
 
 
@@ -38,20 +39,24 @@ def make_processor():
     proc.bus.add_device(intc, (0xFFE0, 0xFFEB))
     proc.bus.set_interrupt_controller(intc)
 
-    i2c = I2CDevice("i2c")
+    i2c = I2CControllerDevice("iic0")
     proc.bus.add_device(i2c, (0xFF1F, 0xFF1F), (0xFFA8, 0xFFAA))
     intc.connect(i2c, i2c.INT_TRANSFER, intc.INTIIC0)
     eeprom_data = bytearray(512)
-    i2c.add_target(0x50, EepromDevice(eeprom_data, page_offset=0))
-    i2c.add_target(0x51, EepromDevice(eeprom_data, page_offset=256))
-    i2c.add_target(0x1C, I2CTargetStub())  # SAA7705H audio DSP
-    i2c.add_target(0x22, I2CTargetStub())  # TDA7476 audio
+    i2c.add_target(0x50, M24C04(eeprom_data, page_offset=0))
+    i2c.add_target(0x51, M24C04(eeprom_data, page_offset=256))
+    i2c.add_target(0x1C, StubI2CTarget())  # SAA7705H audio DSP
+    i2c.add_target(0x22, StubI2CTarget())  # TDA7476 audio
 
-    upd = UPD16432BDevice()
-    csi30 = CSI30Device("csi30")
-    csi30.upd = upd
+    upd = UPD16432B()
+    csi30 = SPIControllerDevice("csi30", stb_port=0xFF04, stb_bit=0x80)
+    csi30.target = upd
     proc.bus.add_device(csi30, (0xFF1A, 0xFF1A), (0xFFB0, 0xFFB0))
     intc.connect(csi30, csi30.INT_TRANSFER, intc.INTCSI30)
+
+    csi31 = SPIControllerDevice("csi31")
+    proc.bus.add_device(csi31, (0xFF1B, 0xFF1B), (0xFFB8, 0xFFB8))
+    intc.connect(csi31, csi31.INT_TRANSFER, intc.INTCSI31)
 
     adc = ADCDevice("adc", result=0xF0)
     proc.bus.add_device(adc, (0xFF17, 0xFF17), (0xFF80, 0xFF81))
@@ -79,7 +84,7 @@ def populate_eeprom(proc):
     Must be called after loading firmware into ROM.
     """
     rom = proc.bus.device("rom")
-    i2c = proc.bus.device("i2c")
+    i2c = proc.bus.device("iic0")
     eeprom_data = i2c._targets[0x50]._data
 
     # Block 1: ROM 0x0080 (0x4F bytes) -> EEPROM 0x0010

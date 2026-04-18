@@ -302,7 +302,7 @@ class WatchTimerDevice(BaseDevice):
         return (1 << exp) * self._fw_divisor
 
 
-class I2CDevice(BaseDevice):
+class I2CControllerDevice(BaseDevice):
     """I2C serial interface controller (IIC0).
 
     Registers:
@@ -311,7 +311,7 @@ class I2CDevice(BaseDevice):
         2: IICS0  (FFA9) - status
         3: IICCL0 (FFAA) - clock selection
 
-    Operates as I2C bus master.  When firmware triggers a start
+    Operates as I2C bus controller.  When firmware triggers a start
     condition, the controller reads the address byte from IIC0,
     matches it against registered target devices, and completes
     the transfer immediately (no clock-level simulation).
@@ -336,7 +336,7 @@ class I2CDevice(BaseDevice):
     SPT0  = 0x01  # stop condition trigger
 
     # IICS0 bits
-    MSTS0 = 0x80  # master status
+    MSTS0 = 0x80  # controller status
     EXC0  = 0x40  # extension code
     COI0  = 0x20  # address match
     TRC0  = 0x08  # transmit/receive
@@ -418,7 +418,7 @@ class I2CDevice(BaseDevice):
         i2c_addr = addr_byte >> 1
         self._is_read = bool(addr_byte & 0x01)
 
-        self._iics0 = self.MSTS0 | self.TRC0  # master, transmit mode
+        self._iics0 = self.MSTS0 | self.TRC0  # controller, transmit mode
 
         if i2c_addr in self._targets:
             self._active_target = self._targets[i2c_addr]
@@ -466,68 +466,8 @@ class I2CDevice(BaseDevice):
         self.bus.interrupt(self, self.INT_TRANSFER)
 
 
-class I2CTargetStub(object):
-    """Stub I2C target that ACKs everything and returns a configurable value.
-    Used for peripherals we don't fully emulate yet."""
 
-    def __init__(self, read_value=0xFF):
-        self._read_value = read_value
-
-    def i2c_start(self, is_read):
-        pass
-
-    def i2c_stop(self):
-        pass
-
-    def i2c_read(self):
-        return self._read_value
-
-    def i2c_write(self, data):
-        return True  # ACK
-
-
-class EepromDevice(object):
-    """M24C04 I2C EEPROM (512 bytes).
-
-    This is an I2C target, not a bus device.  It is registered on the
-    I2CDevice via add_target() at two I2C addresses: 0x50 for the lower
-    256 bytes and 0x51 for the upper 256 bytes.
-
-    Both addresses share the same backing store.  The page_offset
-    parameter to the constructor selects which half (0 or 256).
-    """
-
-    def __init__(self, data, page_offset):
-        self._data = data
-        self._page_offset = page_offset
-        self._address = 0
-        self._address_set = False
-
-    def i2c_start(self, is_read):
-        if not is_read:
-            self._address_set = False
-
-    def i2c_stop(self):
-        pass
-
-    def i2c_read(self):
-        addr = self._page_offset + self._address
-        value = self._data[addr]
-        self._address = (self._address + 1) % 256
-        return value
-
-    def i2c_write(self, data):
-        if not self._address_set:
-            self._address = data
-            self._address_set = True
-        else:
-            addr = self._page_offset + self._address
-            self._data[addr] = data
-            self._address = (self._address + 1) % 256
-        return True  # ACK
-
-
-class PortDevice(MemoryDevice):
+class HackPortsDevice(MemoryDevice):
     """Port I/O data registers (P0-P9 at FF00-FF09).
 
     This is a simplified implementation that returns whatever was last
@@ -590,195 +530,69 @@ class PortDevice(MemoryDevice):
             self._data[i] = self._DEFAULTS[i]
 
 
-class UPD16432BDevice(object):
-    """NEC uPD16432B LCD controller.
 
-    This is an SPI target behind CSI30, not a bus device.  It processes
-    commands from the radio to update display RAM, pictograph RAM,
-    chargen RAM, and LED output latches.  It also provides key scan data.
-    """
+class SPIControllerDevice(BaseDevice):
+    """3-wire serial I/O (clocked serial interface).
 
-    RAM_NONE = 0xFF
-    RAM_DISPLAY = 0
-    RAM_PICTOGRAPH = 1
-    RAM_CHARGEN = 2
-    RAM_LED = 3
-
-    DISPLAY_RAM_SIZE = 0x19
-    PICTOGRAPH_RAM_SIZE = 0x08
-    CHARGEN_RAM_SIZE = 0x70
-    LED_RAM_SIZE = 0x01
-
-    def __init__(self):
-        self.display_ram = bytearray(self.DISPLAY_RAM_SIZE)
-        self.pictograph_ram = bytearray(self.PICTOGRAPH_RAM_SIZE)
-        self.chargen_ram = bytearray(self.CHARGEN_RAM_SIZE)
-        self.led_ram = bytearray(self.LED_RAM_SIZE)
-        self.key_data = bytearray(4)
-        self.dirty_flags = 0
-        self._ram_area = self.RAM_NONE
-        self._ram_size = 0
-        self._address = 0
-        self._increment = False
-        self._cmd_buf = []
-
-    def spi_begin(self):
-        """STB asserted (high) — start of SPI command."""
-        self._cmd_buf = []
-
-    def spi_exchange(self, tx_byte):
-        """Exchange one SPI byte.  Returns the byte to send back (MISO)."""
-        self._cmd_buf.append(tx_byte)
-        index = len(self._cmd_buf) - 1
-        if index < len(self.key_data) and len(self._cmd_buf) > 0:
-            if (self._cmd_buf[0] & 0x44) == 0x44:
-                return self.key_data[index]
-        return 0x00
-
-    def spi_end(self):
-        """STB deasserted (low) — end of SPI command, process it."""
-        if len(self._cmd_buf) == 0:
-            return
-        if (self._cmd_buf[0] & 0x44) == 0x44:
-            return
-        self._process_command()
-
-    def _process_command(self):
-        cmd_type = self._cmd_buf[0] & 0xC0
-        if cmd_type == 0x40:
-            self._process_data_setting()
-        elif cmd_type == 0x80:
-            self._process_address_setting()
-        if self._ram_area != self.RAM_NONE and len(self._cmd_buf) > 1:
-            for b in self._cmd_buf[1:]:
-                self._write_data_byte(b)
-
-    def _process_data_setting(self):
-        mode = self._cmd_buf[0] & 0x07
-        ram_map = {
-            self.RAM_DISPLAY:    (self.display_ram, self.DISPLAY_RAM_SIZE),
-            self.RAM_PICTOGRAPH: (self.pictograph_ram, self.PICTOGRAPH_RAM_SIZE),
-            self.RAM_CHARGEN:    (self.chargen_ram, self.CHARGEN_RAM_SIZE),
-            self.RAM_LED:        (self.led_ram, self.LED_RAM_SIZE),
-        }
-        if mode in ram_map:
-            self._ram_area = mode
-            _, self._ram_size = ram_map[mode]
-        else:
-            self._ram_area = self.RAM_NONE
-            self._ram_size = 0
-            self._address = 0
-        if mode in (self.RAM_DISPLAY, self.RAM_PICTOGRAPH):
-            self._increment = not bool(self._cmd_buf[0] & 0x08)
-        else:
-            self._increment = True
-            self._address = 0
-
-    def _process_address_setting(self):
-        address = self._cmd_buf[0] & 0x1F
-        if self._ram_area == self.RAM_CHARGEN:
-            if address < 0x10:
-                self._address = address * 7
-            else:
-                self._address = 0
-        else:
-            self._address = address
-            self._wrap_address()
-
-    def _write_data_byte(self, b):
-        if self._ram_area == self.RAM_DISPLAY:
-            if self._address < self.DISPLAY_RAM_SIZE:
-                if self.display_ram[self._address] != b:
-                    self.display_ram[self._address] = b
-                    self.dirty_flags |= (1 << self.RAM_DISPLAY)
-        elif self._ram_area == self.RAM_PICTOGRAPH:
-            if self._address < self.PICTOGRAPH_RAM_SIZE:
-                if self.pictograph_ram[self._address] != b:
-                    self.pictograph_ram[self._address] = b
-                    self.dirty_flags |= (1 << self.RAM_PICTOGRAPH)
-        elif self._ram_area == self.RAM_CHARGEN:
-            if self._address < self.CHARGEN_RAM_SIZE:
-                if self.chargen_ram[self._address] != b:
-                    self.chargen_ram[self._address] = b
-                    self.dirty_flags |= (1 << self.RAM_CHARGEN)
-        elif self._ram_area == self.RAM_LED:
-            if self._address < self.LED_RAM_SIZE:
-                if self.led_ram[self._address] != b:
-                    self.led_ram[self._address] = b
-                    self.dirty_flags |= (1 << self.RAM_LED)
-        else:
-            return
-        if self._increment:
-            self._address += 1
-            self._wrap_address()
-
-    def _wrap_address(self):
-        if self._ram_size > 0 and self._address >= self._ram_size:
-            self._address = 0
-
-
-class CSI30Device(BaseDevice):
-    """CSI30 serial interface.
+    The uPD78F0833Y has two identical channels: CSI30 and CSI31.
 
     Registers:
-        0: SIO30  (FF1A) - shift register
-        1: CSIM30 (FFB0) - mode control
+        0: SIO3x  - shift register
+        1: CSIM3x - mode control
 
-    When firmware writes a byte to SIO30, a transfer is initiated
-    and completed immediately.  Sets CSIIF30 interrupt flag.
+    When firmware writes a byte to SIO3x, a transfer is initiated
+    and completed immediately.  Sets the channel's interrupt flag.
 
-    Optionally has a UPD16432BDevice attached as the SPI target.
-    STB (chip select) is detected from P4.7 on each SIO30 write.
+    An optional SPI target can be attached.  When attached, the
+    stb_port and stb_bit parameters specify which port pin is used
+    as the chip select (active high).
     """
 
-    # Register offsets
-    SIO30  = 0  # FF1A: shift register
-    CSIM30 = 1  # FFB0: mode control
+    SIO  = 0
+    CSIM = 1
 
-    # Device interrupt
     INT_TRANSFER = 0
 
-    def __init__(self, name):
+    def __init__(self, name, stb_port=0xFF04, stb_bit=0x80):
         super().__init__(name)
         self.size = 2
-        self.upd = None  # optional UPD16432B target
+        self.target = None
+        self._stb_port = stb_port
+        self._stb_bit = stb_bit
         self.reset()
 
     def reset(self):
-        self._sio30 = 0x00
-        self._csim30 = 0x00
+        self._sio = 0x00
+        self._csim = 0x00
         self._stb_high = False
 
     def read(self, register):
         self._check_bounds(register)
-        if register == self.SIO30:
-            return self._sio30
-        return self._csim30
+        if register == self.SIO:
+            return self._sio
+        return self._csim
 
     def write(self, register, value):
         self._check_bounds(register)
-        if register == self.CSIM30:
-            self._csim30 = value
+        if register == self.CSIM:
+            self._csim = value
             return
 
-        # SIO30 write — initiate transfer
-        if self.upd is not None:
-            # Check STB state from P4.7 (FF04 bit 7)
-            p4 = self.bus.read(0xFF04)
-            stb_high = bool(p4 & 0x80)
+        if self.target is not None:
+            stb_high = bool(self.bus.read(self._stb_port) & self._stb_bit)
             if stb_high != self._stb_high:
                 if stb_high:
-                    self.upd.spi_begin()
+                    self.target.spi_begin()
                 else:
-                    self.upd.spi_end()
+                    self.target.spi_end()
                 self._stb_high = stb_high
 
             if self._stb_high:
-                self._sio30 = self.upd.spi_exchange(value)
+                self._sio = self.target.spi_exchange(value)
             else:
-                self._sio30 = 0xFF
+                self._sio = 0xFF
         else:
-            self._sio30 = 0xFF
+            self._sio = 0xFF
 
         self.bus.interrupt(self, self.INT_TRANSFER)
 
