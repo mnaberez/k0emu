@@ -267,8 +267,8 @@ class WatchTimerDevice(BaseDevice):
 
         prescaler_interval = self.prescaler_interval
         self._prescaler_counter += cycles
-        while self._prescaler_counter >= prescaler_interval:
-            self._prescaler_counter -= prescaler_interval
+        if self._prescaler_counter >= prescaler_interval:
+            self._prescaler_counter %= prescaler_interval
             self.bus.interrupt(self, self.INT_PRESCALER)
 
         if not (self._wtnm0 & self.WTNM01):
@@ -276,8 +276,8 @@ class WatchTimerDevice(BaseDevice):
 
         watch_interval = self.watch_interval
         self._watch_counter += cycles
-        while self._watch_counter >= watch_interval:
-            self._watch_counter -= watch_interval
+        if self._watch_counter >= watch_interval:
+            self._watch_counter %= watch_interval
             self.bus.interrupt(self, self.INT_WATCH)
 
     @property
@@ -300,6 +300,539 @@ class WatchTimerDevice(BaseDevice):
         n = (self._wtnm0 >> 2) & 0x03
         exp = self._WATCH_EXPONENTS[n]
         return (1 << exp) * self._fw_divisor
+
+
+class I2CDevice(BaseDevice):
+    """I2C serial interface controller (IIC0).
+
+    Registers:
+        0: IIC0   (FF1F) - shift register (data)
+        1: IICC0  (FFA8) - control
+        2: IICS0  (FFA9) - status
+        3: IICCL0 (FFAA) - clock selection
+
+    Operates as I2C bus master.  When firmware triggers a start
+    condition, the controller reads the address byte from IIC0,
+    matches it against registered target devices, and completes
+    the transfer immediately (no clock-level simulation).
+
+    Each completed byte transfer sets the IICIF0 interrupt flag.
+    """
+
+    # Register offsets
+    IIC0   = 0  # FF1F: shift register
+    IICC0  = 1  # FFA8: control
+    IICS0  = 2  # FFA9: status
+    IICCL0 = 3  # FFAA: clock selection
+
+    # IICC0 bits
+    IICE0 = 0x80  # I2C enable
+    LREL0 = 0x40  # exit communications
+    WREL0 = 0x20  # cancel wait
+    SPIE0 = 0x10  # stop interrupt enable
+    WTIM0 = 0x08  # wait timing
+    ACKE0 = 0x04  # acknowledge enable
+    STT0  = 0x02  # start condition trigger
+    SPT0  = 0x01  # stop condition trigger
+
+    # IICS0 bits
+    MSTS0 = 0x80  # master status
+    EXC0  = 0x40  # extension code
+    COI0  = 0x20  # address match
+    TRC0  = 0x08  # transmit/receive
+    ACKD0 = 0x04  # ACK detected
+    STD0  = 0x01  # stop detected
+
+    # Device interrupt
+    INT_TRANSFER = 0
+
+    def __init__(self, name):
+        super().__init__(name)
+        self.size = 4
+        self._targets = {}  # I2C 7-bit address -> target object
+        self.reset()
+
+    def add_target(self, i2c_address, target):
+        """Register an I2C target device at the given 7-bit address."""
+        self._targets[i2c_address] = target
+
+    def reset(self):
+        self._iic0 = 0x00
+        self._iicc0 = 0x00
+        self._iics0 = 0x00
+        self._iiccl0 = 0x00
+        self._active_target = None
+        self._is_read = False
+        self._waiting = False  # controller is in wait state
+
+    def read(self, register):
+        self._check_bounds(register)
+        if register == self.IIC0:
+            return self._iic0
+        elif register == self.IICC0:
+            return self._iicc0
+        elif register == self.IICS0:
+            return self._iics0
+        elif register == self.IICCL0:
+            val = self._iiccl0
+            if self._iicc0 & self.IICE0:
+                val |= 0x30  # DAD0=1, CLD0=1 (bus idle, lines high)
+            return val
+        return 0
+
+    def write(self, register, value):
+        self._check_bounds(register)
+        if register == self.IIC0:
+            self._iic0 = value
+            if self._waiting:
+                self._do_next_byte()
+        elif register == self.IICC0:
+            self._write_iicc0(value)
+        elif register == self.IICS0:
+            self._iics0 = value
+        elif register == self.IICCL0:
+            self._iiccl0 = value
+
+    def _write_iicc0(self, value):
+        old = self._iicc0
+        self._iicc0 = value
+
+        if not (value & self.IICE0):
+            self._iics0 = 0x00
+            self._active_target = None
+            self._waiting = False
+            return
+
+        if (value & self.STT0) and not (old & self.STT0):
+            self._do_start()
+
+        if (value & self.SPT0) and not (old & self.SPT0):
+            self._do_stop()
+
+        if (value & self.WREL0) and not (old & self.WREL0):
+            self._do_next_byte()
+
+    def _do_start(self):
+        """Handle start condition: read address byte from IIC0."""
+        addr_byte = self._iic0
+        i2c_addr = addr_byte >> 1
+        self._is_read = bool(addr_byte & 0x01)
+
+        self._iics0 = self.MSTS0 | self.TRC0  # master, transmit mode
+
+        if i2c_addr in self._targets:
+            self._active_target = self._targets[i2c_addr]
+            self._active_target.i2c_start(self._is_read)
+            self._iics0 |= self.ACKD0
+        else:
+            self._active_target = None
+
+        self._iicc0 &= ~self.STT0
+        self._waiting = True
+        self.bus.interrupt(self, self.INT_TRANSFER)
+
+    def _do_stop(self):
+        """Handle stop condition."""
+        if self._active_target is not None:
+            self._active_target.i2c_stop()
+            self._active_target = None
+        self._waiting = False
+        self._iics0 |= self.STD0
+        self._iicc0 &= ~self.SPT0
+        self.bus.interrupt(self, self.INT_TRANSFER)
+
+    def _do_next_byte(self):
+        """Handle wait release: transfer next data byte."""
+        self._iicc0 &= ~self.WREL0
+
+        if self._active_target is None:
+            self._iics0 &= ~self.ACKD0
+            self.bus.interrupt(self, self.INT_TRANSFER)
+            return
+
+        if self._is_read:
+            self._iic0 = self._active_target.i2c_read()
+            self._iics0 &= ~self.TRC0
+            self._iics0 |= self.ACKD0
+        else:
+            ack = self._active_target.i2c_write(self._iic0)
+            self._iics0 |= self.TRC0
+            if ack:
+                self._iics0 |= self.ACKD0
+            else:
+                self._iics0 &= ~self.ACKD0
+
+        self._waiting = True
+        self.bus.interrupt(self, self.INT_TRANSFER)
+
+
+class I2CTargetStub(object):
+    """Stub I2C target that ACKs everything and returns a configurable value.
+    Used for peripherals we don't fully emulate yet."""
+
+    def __init__(self, read_value=0xFF):
+        self._read_value = read_value
+
+    def i2c_start(self, is_read):
+        pass
+
+    def i2c_stop(self):
+        pass
+
+    def i2c_read(self):
+        return self._read_value
+
+    def i2c_write(self, data):
+        return True  # ACK
+
+
+class EepromDevice(object):
+    """M24C04 I2C EEPROM (512 bytes).
+
+    This is an I2C target, not a bus device.  It is registered on the
+    I2CDevice via add_target() at two I2C addresses: 0x50 for the lower
+    256 bytes and 0x51 for the upper 256 bytes.
+
+    Both addresses share the same backing store.  The page_offset
+    parameter to the constructor selects which half (0 or 256).
+    """
+
+    def __init__(self, data, page_offset):
+        self._data = data
+        self._page_offset = page_offset
+        self._address = 0
+        self._address_set = False
+
+    def i2c_start(self, is_read):
+        if not is_read:
+            self._address_set = False
+
+    def i2c_stop(self):
+        pass
+
+    def i2c_read(self):
+        addr = self._page_offset + self._address
+        value = self._data[addr]
+        self._address = (self._address + 1) % 256
+        return value
+
+    def i2c_write(self, data):
+        if not self._address_set:
+            self._address = data
+            self._address_set = True
+        else:
+            addr = self._page_offset + self._address
+            self._data[addr] = data
+            self._address = (self._address + 1) % 256
+        return True  # ACK
+
+
+class PortDevice(MemoryDevice):
+    """Port I/O data registers (P0-P9 at FF00-FF09).
+
+    This is a simplified implementation that returns whatever was last
+    written, with initial values chosen to make the firmware boot into
+    normal operation.  A proper implementation would model input vs
+    output pins using the port mode registers.
+
+    Initial values and the reasons they are needed:
+        P0 (FF00): 0xFB - P0.2 low prevents halt/wakeup mode
+        P1 (FF01): 0xFF - all high (pull-ups)
+        P2 (FF02): 0xFF - all high (pull-ups)
+        P3 (FF03): 0xFF - all high (pull-ups)
+        P4 (FF04): 0xFF - all high (pull-ups)
+        P5 (FF05): 0xFF - all high (pull-ups)
+        P6 (FF06): 0xFF - all high (pull-ups)
+        P7 (FF07): 0xFF - all high (pull-ups)
+        P8 (FF08): 0xFF - all high (pull-ups)
+        P9 (FF09): 0xFF - all high (pull-ups)
+    """
+
+    NUM_PORTS = 10
+
+    # Default pin states for normal radio operation
+    _DEFAULTS = [
+        0xFB,  # P0: P0.2 low prevents halt/wakeup mode
+        0xFF,  # P1
+        0xFF,  # P2
+        0xFF,  # P3
+        0xFF,  # P4
+        0xFF,  # P5
+        0xFF,  # P6
+        0xFF,  # P7
+        0xFF,  # P8
+        0xFF,  # P9: P9.0 high = S-Contact (ignition) on
+    ]
+
+    # Bits forced high on read (external input pins active)
+    _FORCE_HIGH = [
+        0x00,  # P0
+        0x00,  # P1
+        0x00,  # P2
+        0x00,  # P3
+        0x00,  # P4
+        0x00,  # P5
+        0x00,  # P6
+        0x00,  # P7
+        0x00,  # P8
+        0x00,  # P9: S-Contact off at boot
+    ]
+
+    def __init__(self, name):
+        super().__init__(name, size=self.NUM_PORTS)
+
+    def read(self, register):
+        self._check_bounds(register)
+        return self._data[register] | self._FORCE_HIGH[register]
+
+    def reset(self):
+        for i in range(self.NUM_PORTS):
+            self._data[i] = self._DEFAULTS[i]
+
+
+class UPD16432BDevice(object):
+    """NEC uPD16432B LCD controller.
+
+    This is an SPI target behind CSI30, not a bus device.  It processes
+    commands from the radio to update display RAM, pictograph RAM,
+    chargen RAM, and LED output latches.  It also provides key scan data.
+    """
+
+    RAM_NONE = 0xFF
+    RAM_DISPLAY = 0
+    RAM_PICTOGRAPH = 1
+    RAM_CHARGEN = 2
+    RAM_LED = 3
+
+    DISPLAY_RAM_SIZE = 0x19
+    PICTOGRAPH_RAM_SIZE = 0x08
+    CHARGEN_RAM_SIZE = 0x70
+    LED_RAM_SIZE = 0x01
+
+    def __init__(self):
+        self.display_ram = bytearray(self.DISPLAY_RAM_SIZE)
+        self.pictograph_ram = bytearray(self.PICTOGRAPH_RAM_SIZE)
+        self.chargen_ram = bytearray(self.CHARGEN_RAM_SIZE)
+        self.led_ram = bytearray(self.LED_RAM_SIZE)
+        self.key_data = bytearray(4)
+        self.dirty_flags = 0
+        self._ram_area = self.RAM_NONE
+        self._ram_size = 0
+        self._address = 0
+        self._increment = False
+        self._cmd_buf = []
+
+    def spi_begin(self):
+        """STB asserted (high) — start of SPI command."""
+        self._cmd_buf = []
+
+    def spi_exchange(self, tx_byte):
+        """Exchange one SPI byte.  Returns the byte to send back (MISO)."""
+        self._cmd_buf.append(tx_byte)
+        index = len(self._cmd_buf) - 1
+        if index < len(self.key_data) and len(self._cmd_buf) > 0:
+            if (self._cmd_buf[0] & 0x44) == 0x44:
+                return self.key_data[index]
+        return 0x00
+
+    def spi_end(self):
+        """STB deasserted (low) — end of SPI command, process it."""
+        if len(self._cmd_buf) == 0:
+            return
+        if (self._cmd_buf[0] & 0x44) == 0x44:
+            return
+        self._process_command()
+
+    def _process_command(self):
+        cmd_type = self._cmd_buf[0] & 0xC0
+        if cmd_type == 0x40:
+            self._process_data_setting()
+        elif cmd_type == 0x80:
+            self._process_address_setting()
+        if self._ram_area != self.RAM_NONE and len(self._cmd_buf) > 1:
+            for b in self._cmd_buf[1:]:
+                self._write_data_byte(b)
+
+    def _process_data_setting(self):
+        mode = self._cmd_buf[0] & 0x07
+        ram_map = {
+            self.RAM_DISPLAY:    (self.display_ram, self.DISPLAY_RAM_SIZE),
+            self.RAM_PICTOGRAPH: (self.pictograph_ram, self.PICTOGRAPH_RAM_SIZE),
+            self.RAM_CHARGEN:    (self.chargen_ram, self.CHARGEN_RAM_SIZE),
+            self.RAM_LED:        (self.led_ram, self.LED_RAM_SIZE),
+        }
+        if mode in ram_map:
+            self._ram_area = mode
+            _, self._ram_size = ram_map[mode]
+        else:
+            self._ram_area = self.RAM_NONE
+            self._ram_size = 0
+            self._address = 0
+        if mode in (self.RAM_DISPLAY, self.RAM_PICTOGRAPH):
+            self._increment = not bool(self._cmd_buf[0] & 0x08)
+        else:
+            self._increment = True
+            self._address = 0
+
+    def _process_address_setting(self):
+        address = self._cmd_buf[0] & 0x1F
+        if self._ram_area == self.RAM_CHARGEN:
+            if address < 0x10:
+                self._address = address * 7
+            else:
+                self._address = 0
+        else:
+            self._address = address
+            self._wrap_address()
+
+    def _write_data_byte(self, b):
+        if self._ram_area == self.RAM_DISPLAY:
+            if self._address < self.DISPLAY_RAM_SIZE:
+                if self.display_ram[self._address] != b:
+                    self.display_ram[self._address] = b
+                    self.dirty_flags |= (1 << self.RAM_DISPLAY)
+        elif self._ram_area == self.RAM_PICTOGRAPH:
+            if self._address < self.PICTOGRAPH_RAM_SIZE:
+                if self.pictograph_ram[self._address] != b:
+                    self.pictograph_ram[self._address] = b
+                    self.dirty_flags |= (1 << self.RAM_PICTOGRAPH)
+        elif self._ram_area == self.RAM_CHARGEN:
+            if self._address < self.CHARGEN_RAM_SIZE:
+                if self.chargen_ram[self._address] != b:
+                    self.chargen_ram[self._address] = b
+                    self.dirty_flags |= (1 << self.RAM_CHARGEN)
+        elif self._ram_area == self.RAM_LED:
+            if self._address < self.LED_RAM_SIZE:
+                if self.led_ram[self._address] != b:
+                    self.led_ram[self._address] = b
+                    self.dirty_flags |= (1 << self.RAM_LED)
+        else:
+            return
+        if self._increment:
+            self._address += 1
+            self._wrap_address()
+
+    def _wrap_address(self):
+        if self._ram_size > 0 and self._address >= self._ram_size:
+            self._address = 0
+
+
+class CSI30Device(BaseDevice):
+    """CSI30 serial interface.
+
+    Registers:
+        0: SIO30  (FF1A) - shift register
+        1: CSIM30 (FFB0) - mode control
+
+    When firmware writes a byte to SIO30, a transfer is initiated
+    and completed immediately.  Sets CSIIF30 interrupt flag.
+
+    Optionally has a UPD16432BDevice attached as the SPI target.
+    STB (chip select) is detected from P4.7 on each SIO30 write.
+    """
+
+    # Register offsets
+    SIO30  = 0  # FF1A: shift register
+    CSIM30 = 1  # FFB0: mode control
+
+    # Device interrupt
+    INT_TRANSFER = 0
+
+    def __init__(self, name):
+        super().__init__(name)
+        self.size = 2
+        self.upd = None  # optional UPD16432B target
+        self.reset()
+
+    def reset(self):
+        self._sio30 = 0x00
+        self._csim30 = 0x00
+        self._stb_high = False
+
+    def read(self, register):
+        self._check_bounds(register)
+        if register == self.SIO30:
+            return self._sio30
+        return self._csim30
+
+    def write(self, register, value):
+        self._check_bounds(register)
+        if register == self.CSIM30:
+            self._csim30 = value
+            return
+
+        # SIO30 write — initiate transfer
+        if self.upd is not None:
+            # Check STB state from P4.7 (FF04 bit 7)
+            p4 = self.bus.read(0xFF04)
+            stb_high = bool(p4 & 0x80)
+            if stb_high != self._stb_high:
+                if stb_high:
+                    self.upd.spi_begin()
+                else:
+                    self.upd.spi_end()
+                self._stb_high = stb_high
+
+            if self._stb_high:
+                self._sio30 = self.upd.spi_exchange(value)
+            else:
+                self._sio30 = 0xFF
+        else:
+            self._sio30 = 0xFF
+
+        self.bus.interrupt(self, self.INT_TRANSFER)
+
+
+class ADCDevice(BaseDevice):
+    """A/D converter (ADC00).
+
+    Registers:
+        0: ADCR00 (FF17) - conversion result
+        1: ADM00  (FF80) - mode control
+        2: ADS00  (FF81) - channel selection
+
+    When ADM00 bit 7 is set (conversion start), the conversion
+    completes immediately and ADIF00 is set in the interrupt
+    controller.  ADCR00 returns a fixed value.
+    """
+
+    ADCR00 = 0  # FF17: result
+    ADM00  = 1  # FF80: mode
+    ADS00  = 2  # FF81: channel select
+
+    INT_COMPLETE = 0
+
+    def __init__(self, name, result=0xFF):
+        super().__init__(name)
+        self.size = 3
+        self._result = result
+        self.reset()
+
+    def reset(self):
+        self._adcr00 = self._result
+        self._adm00 = 0x00
+        self._ads00 = 0x00
+
+    def read(self, register):
+        self._check_bounds(register)
+        if register == self.ADCR00:
+            return self._adcr00
+        elif register == self.ADM00:
+            return self._adm00
+        return self._ads00
+
+    def write(self, register, value):
+        self._check_bounds(register)
+        if register == self.ADCR00:
+            pass  # read-only
+        elif register == self.ADM00:
+            old = self._adm00
+            self._adm00 = value
+            if (value & 0x80) and not (old & 0x80):
+                self._adcr00 = self._result
+                self.bus.interrupt(self, self.INT_COMPLETE)
+        elif register == self.ADS00:
+            self._ads00 = value
 
 
 class InterruptControllerDevice(BaseDevice):
@@ -454,7 +987,11 @@ class InterruptControllerDevice(BaseDevice):
         self._regs[register] = value
 
     def tick(self, cycles):
-        """Evaluate pending interrupts and post result to the bus."""
+        """Evaluate pending interrupts and post result to the bus.
+        Only updates if no interrupt is already waiting to be acknowledged."""
+        if self.bus.pending_interrupt is not None:
+            return
+
         from k0emu.bus import PendingInterrupt
         best = None
 
