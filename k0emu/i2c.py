@@ -56,7 +56,13 @@ class M24C04(BaseI2CTarget):
 
     Both addresses share the same backing store.  The page_offset
     parameter to the constructor selects which half (0 or 256).
+
+    Page write: writes wrap within 16-byte page boundaries.
+    After a write transaction, the address counter points to
+    the start of the page that was written.
     """
+
+    PAGE_SIZE = 16
 
     def __init__(self, data, page_offset):
         self._data = data
@@ -84,5 +90,6 @@ class M24C04(BaseI2CTarget):
         else:
             addr = self._page_offset + self._address
             self._data[addr] = data
-            self._address = (self._address + 1) % 256
+            page_base = self._address & ~(self.PAGE_SIZE - 1)
+            self._address = page_base | ((self._address + 1) & (self.PAGE_SIZE - 1))
         return self.ACK

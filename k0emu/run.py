@@ -8,7 +8,7 @@ import sys
 
 from k0dasm.disassemble import disassemble
 from k0emu.processor import RegisterPairs, Flags
-from k0emu.system import make_processor, populate_eeprom, patch_rom, configure_interrupts
+from k0emu.system import make_processor
 
 
 class Runner(object):
@@ -18,10 +18,7 @@ class Runner(object):
 
     def load(self, rom_data):
         self.proc.bus.device("rom").load(0, rom_data)
-        populate_eeprom(self.proc)
-        patch_rom(self.proc)
         self.proc.bus.reset()
-        configure_interrupts(self.proc)
 
     def format_trace(self):
         proc = self.proc

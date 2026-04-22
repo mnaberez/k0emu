@@ -4,7 +4,7 @@ from k0emu.devices import (MemoryDevice, RegisterFileDevice,
                            ProcessorStatusDevice, InterruptControllerDevice,
                            I2CControllerDevice,
                            WatchdogDevice, WatchTimerDevice)
-from k0emu.i2c import StubI2CTarget
+from k0emu.i2c import BaseI2CTarget, StubI2CTarget
 
 
 class MemoryDeviceTests(unittest.TestCase):
@@ -1017,6 +1017,18 @@ class _FakeProcessor(object):
         self.reset_count += 1
 
 
+class _NackI2CTarget(BaseI2CTarget):
+    """I2C target that NACKs all writes."""
+    def i2c_start(self, is_read):
+        pass
+    def i2c_stop(self):
+        pass
+    def i2c_read(self):
+        return 0xFF
+    def i2c_write(self, data):
+        return self.NACK
+
+
 def _make_i2c_on_bus():
     proc = _FakeProcessor()
     bus = Bus(proc)
@@ -1032,11 +1044,10 @@ def _make_i2c_on_bus():
 class I2CControllerTests(unittest.TestCase):
 
     def _iicif0_set(self, intc):
-        return bool(intc.read(InterruptControllerDevice.IF0H) & 0x40)
+        return bool(intc.read(intc.IF0H) & 0x40)
 
     def _clear_iicif0(self, intc):
-        intc.write(InterruptControllerDevice.IF0H,
-                   intc.read(InterruptControllerDevice.IF0H) & ~0x40)
+        intc.write(intc.IF0H, intc.read(intc.IF0H) & ~0x40)
 
     # basics
 
@@ -1055,139 +1066,173 @@ class I2CControllerTests(unittest.TestCase):
 
     def test_iic0_write_read(self):
         i2c = I2CControllerDevice("iic0")
-        i2c.write(I2CControllerDevice.IIC0, 0x42)
-        self.assertEqual(i2c.read(I2CControllerDevice.IIC0), 0x42)
+        i2c.write(i2c.IIC0, 0x42)
+        self.assertEqual(i2c.read(i2c.IIC0), 0x42)
 
     def test_iiccl0_write_read(self):
         i2c = I2CControllerDevice("iic0")
-        i2c.write(I2CControllerDevice.IICCL0, 0x0C)
-        self.assertEqual(i2c.read(I2CControllerDevice.IICCL0), 0x0C)
+        i2c.write(i2c.IICCL0, 0x0C)
+        self.assertEqual(i2c.read(i2c.IICCL0), 0x0C)
 
     def test_disable_clears_status(self):
         i2c = I2CControllerDevice("iic0")
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0)
-        i2c.write(I2CControllerDevice.IICS0, 0xFF)
-        i2c.write(I2CControllerDevice.IICC0, 0x00)  # disable
-        self.assertEqual(i2c.read(I2CControllerDevice.IICS0), 0x00)
+        i2c.write(i2c.IICC0, i2c.IICE0)
+        i2c.write(i2c.IICS0, 0xFF)
+        i2c.write(i2c.IICC0, 0x00)  # disable
+        self.assertEqual(i2c.read(i2c.IICS0), 0x00)
 
     # writing
+
+    def _start_transaction(self, i2c, addr_byte):
+        """Set STT0, then write address byte to IIC0 (triggers _do_start).
+        This matches the firmware sequence: IICC0 first, then IIC0."""
+        i2c.write(i2c.IICC0, i2c.IICE0 | i2c.WTIM0
+                  | i2c.ACKE0 | i2c.STT0)
+        i2c.write(i2c.IIC0, addr_byte)
 
     def test_start_sets_iicif0(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
+        self._start_transaction(i2c, 0xA0)
         self.assertTrue(self._iicif0_set(intc))
 
     def test_start_sets_msts0_and_trc0(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
-        iics0 = i2c.read(I2CControllerDevice.IICS0)
-        self.assertTrue(iics0 & I2CControllerDevice.MSTS0)
-        self.assertTrue(iics0 & I2CControllerDevice.TRC0)
+        self._start_transaction(i2c, 0xA0)
+        iics0 = i2c.read(i2c.IICS0)
+        self.assertTrue(iics0 & i2c.MSTS0)
+        self.assertTrue(iics0 & i2c.TRC0)
 
     def test_start_sets_ackd0_when_target_present(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
-        self.assertTrue(i2c.read(I2CControllerDevice.IICS0) & I2CControllerDevice.ACKD0)
+        self._start_transaction(i2c, 0xA0)
+        self.assertTrue(i2c.read(i2c.IICS0) & i2c.ACKD0)
 
     def test_start_clears_ackd0_when_no_target(self):
         i2c, intc, bus = _make_i2c_on_bus()
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
-        self.assertFalse(i2c.read(I2CControllerDevice.IICS0) & I2CControllerDevice.ACKD0)
+        self._start_transaction(i2c, 0xA0)
+        self.assertFalse(i2c.read(i2c.IICS0) & i2c.ACKD0)
 
     def test_start_clears_stt0(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
-        self.assertFalse(i2c.read(I2CControllerDevice.IICC0) & I2CControllerDevice.STT0)
+        self._start_transaction(i2c, 0xA0)
+        self.assertFalse(i2c.read(i2c.IICC0) & i2c.STT0)
 
     def test_start_enters_wait_state(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
+        self._start_transaction(i2c, 0xA0)
         self.assertTrue(i2c._waiting)
 
     def test_data_write_triggers_transfer(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
+        self._start_transaction(i2c, 0xA0)
         self._clear_iicif0(intc)
-        i2c.write(I2CControllerDevice.IIC0, 0x42)
+        i2c.write(i2c.IIC0, 0x42)
         self.assertTrue(self._iicif0_set(intc))
 
     def test_data_write_gets_ack_from_target(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
+        self._start_transaction(i2c, 0xA0)
         self._clear_iicif0(intc)
-        i2c.write(I2CControllerDevice.IIC0, 0x42)
-        self.assertTrue(i2c.read(I2CControllerDevice.IICS0) & I2CControllerDevice.ACKD0)
+        i2c.write(i2c.IIC0, 0x42)
+        self.assertTrue(i2c.read(i2c.IICS0) & i2c.ACKD0)
 
     def test_stop_sets_std0(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.SPT0)
-        self.assertTrue(i2c.read(I2CControllerDevice.IICS0) & I2CControllerDevice.STD0)
+        self._start_transaction(i2c, 0xA0)
+        i2c.write(i2c.IICC0, i2c.IICE0 | i2c.WTIM0
+                  | i2c.ACKE0 | i2c.SPT0)
+        self.assertTrue(i2c.read(i2c.IICS0) & i2c.STD0)
 
     def test_stop_clears_waiting(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.SPT0)
+        self._start_transaction(i2c, 0xA0)
+        i2c.write(i2c.IICC0, i2c.IICE0 | i2c.WTIM0
+                  | i2c.ACKE0 | i2c.SPT0)
         self.assertFalse(i2c._waiting)
 
     def test_waiting_persists_across_bytes(self):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget()
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA0)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
+        self._start_transaction(i2c, 0xA0)
         self._clear_iicif0(intc)
         self.assertTrue(i2c._waiting)
-        i2c.write(I2CControllerDevice.IIC0, 0x10)
+        i2c.write(i2c.IIC0, 0x10)
         self._clear_iicif0(intc)
         self.assertTrue(i2c._waiting)
-        i2c.write(I2CControllerDevice.IIC0, 0x42)
+        i2c.write(i2c.IIC0, 0x42)
         self._clear_iicif0(intc)
         self.assertTrue(i2c._waiting)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.SPT0)
+        i2c.write(i2c.IICC0, i2c.IICE0 | i2c.WTIM0
+                  | i2c.ACKE0 | i2c.SPT0)
         self.assertFalse(i2c._waiting)
+
+    def test_nack_from_target_clears_ackd0(self):
+        i2c, intc, bus = _make_i2c_on_bus()
+        nacker = _NackI2CTarget()
+        i2c.add_target(0x50, nacker)
+        self._start_transaction(i2c, 0xA0)
+        self._clear_iicif0(intc)
+        i2c.write(i2c.IIC0, 0x42)
+        self.assertFalse(i2c.read(i2c.IICS0) & i2c.ACKD0)
+
+    def test_wrel0_triggers_next_byte(self):
+        i2c, intc, bus = _make_i2c_on_bus()
+        stub = StubI2CTarget(read_value=0x77)
+        i2c.add_target(0x50, stub)
+        self._start_transaction(i2c, 0xA1)  # read mode
+        self._clear_iicif0(intc)
+        i2c.write(i2c.IICC0, i2c.IICE0 | i2c.WTIM0
+                  | i2c.ACKE0 | i2c.WREL0)
+        self.assertEqual(i2c.read(i2c.IIC0), 0x77)
+        self.assertTrue(self._iicif0_set(intc))
+
+    def test_read_clears_trc0(self):
+        i2c, intc, bus = _make_i2c_on_bus()
+        stub = StubI2CTarget(read_value=0x42)
+        i2c.add_target(0x50, stub)
+        self._start_transaction(i2c, 0xA1)  # read mode
+        self.assertTrue(i2c.read(i2c.IICS0) & i2c.TRC0)  # TRC0 set after start
+        self._clear_iicif0(intc)
+        i2c.write(i2c.IIC0, 0xFF)  # trigger read
+        self.assertFalse(i2c.read(i2c.IICS0) & i2c.TRC0)  # TRC0 cleared
+
+    def test_disable_mid_transaction(self):
+        i2c, intc, bus = _make_i2c_on_bus()
+        stub = StubI2CTarget()
+        i2c.add_target(0x50, stub)
+        self._start_transaction(i2c, 0xA0)
+        self.assertTrue(i2c._waiting)
+        i2c.write(i2c.IICC0, 0x00)  # clear IICE0
+        self.assertFalse(i2c._waiting)
+        self.assertEqual(i2c.read(i2c.IICS0), 0x00)
+        self.assertIsNone(i2c._active_target)
+
+    def test_write_iic0_while_not_waiting_does_not_transfer(self):
+        i2c, intc, bus = _make_i2c_on_bus()
+        stub = StubI2CTarget()
+        i2c.add_target(0x50, stub)
+        i2c.write(i2c.IICC0, i2c.IICE0)  # enable but no start
+        i2c.write(i2c.IIC0, 0x42)
+        self.assertFalse(self._iicif0_set(intc))
 
     # reading
 
@@ -1195,10 +1240,8 @@ class I2CControllerTests(unittest.TestCase):
         i2c, intc, bus = _make_i2c_on_bus()
         stub = StubI2CTarget(read_value=0x42)
         i2c.add_target(0x50, stub)
-        i2c.write(I2CControllerDevice.IIC0, 0xA1)
-        i2c.write(I2CControllerDevice.IICC0, I2CControllerDevice.IICE0 | I2CControllerDevice.WTIM0
-                  | I2CControllerDevice.ACKE0 | I2CControllerDevice.STT0)
+        self._start_transaction(i2c, 0xA1)
         self._clear_iicif0(intc)
-        i2c.write(I2CControllerDevice.IIC0, 0xFF)
-        self.assertEqual(i2c.read(I2CControllerDevice.IIC0), 0x42)
+        i2c.write(i2c.IIC0, 0xFF)
+        self.assertEqual(i2c.read(i2c.IIC0), 0x42)
         self.assertTrue(self._iicif0_set(intc))

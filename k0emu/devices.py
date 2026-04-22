@@ -363,7 +363,8 @@ class I2CControllerDevice(BaseDevice):
         self._iiccl0 = 0x00
         self._active_target = None
         self._is_read = False
-        self._waiting = False  # controller is in wait state
+        self._waiting = False
+        self._start_pending = False
 
     def read(self, register):
         self._check_bounds(register)
@@ -384,7 +385,14 @@ class I2CControllerDevice(BaseDevice):
         self._check_bounds(register)
         if register == self.IIC0:
             self._iic0 = value
-            if self._waiting:
+            if self._start_pending:
+                # The firmware sets STT0 first, then writes the address
+                # byte to IIC0.  We deferred _do_start until now so that
+                # IIC0 contains the address byte, not stale data from
+                # the previous transaction.
+                self._start_pending = False
+                self._do_start()
+            elif self._waiting:
                 self._do_next_byte()
         elif register == self.IICC0:
             self._write_iicc0(value)
@@ -404,7 +412,12 @@ class I2CControllerDevice(BaseDevice):
             return
 
         if (value & self.STT0) and not (old & self.STT0):
-            self._do_start()
+            # On real hardware, setting STT0 generates a START condition
+            # on the I2C bus but does not send the address byte yet.
+            # The firmware writes the address byte to IIC0 after setting
+            # STT0.  We defer _do_start until the next IIC0 write so
+            # that we read the correct address byte.
+            self._start_pending = True
 
         if (value & self.SPT0) and not (old & self.SPT0):
             self._do_stop()
@@ -421,8 +434,9 @@ class I2CControllerDevice(BaseDevice):
         self._iics0 = self.MSTS0 | self.TRC0  # controller, transmit mode
 
         if i2c_addr in self._targets:
-            self._active_target = self._targets[i2c_addr]
-            self._active_target.i2c_start(self._is_read)
+            target = self._targets[i2c_addr]
+            target.i2c_start(self._is_read)
+            self._active_target = target
             self._iics0 |= self.ACKD0
         else:
             self._active_target = None
@@ -466,71 +480,6 @@ class I2CControllerDevice(BaseDevice):
         self.bus.interrupt(self, self.INT_TRANSFER)
 
 
-
-class HackPortsDevice(MemoryDevice):
-    """Port I/O data registers (P0-P9 at FF00-FF09).
-
-    This is a simplified implementation that returns whatever was last
-    written, with initial values chosen to make the firmware boot into
-    normal operation.  A proper implementation would model input vs
-    output pins using the port mode registers.
-
-    Initial values and the reasons they are needed:
-        P0 (FF00): 0xFB - P0.2 low prevents halt/wakeup mode
-        P1 (FF01): 0xFF - all high (pull-ups)
-        P2 (FF02): 0xFF - all high (pull-ups)
-        P3 (FF03): 0xFF - all high (pull-ups)
-        P4 (FF04): 0xFF - all high (pull-ups)
-        P5 (FF05): 0xFF - all high (pull-ups)
-        P6 (FF06): 0xFF - all high (pull-ups)
-        P7 (FF07): 0xFF - all high (pull-ups)
-        P8 (FF08): 0xFF - all high (pull-ups)
-        P9 (FF09): 0xFF - all high (pull-ups)
-    """
-
-    NUM_PORTS = 10
-
-    # Default pin states for normal radio operation
-    _DEFAULTS = [
-        0xFB,  # P0: P0.2 low prevents halt/wakeup mode
-        0xFF,  # P1
-        0xFF,  # P2
-        0xFF,  # P3
-        0xFF,  # P4
-        0xFF,  # P5
-        0xFF,  # P6
-        0xFF,  # P7
-        0xFF,  # P8
-        0xFF,  # P9: P9.0 high = S-Contact (ignition) on
-    ]
-
-    # Bits forced high on read (external input pins active)
-    _FORCE_HIGH = [
-        0x00,  # P0
-        0x00,  # P1
-        0x00,  # P2
-        0x00,  # P3
-        0x00,  # P4
-        0x00,  # P5
-        0x00,  # P6
-        0x00,  # P7
-        0x00,  # P8
-        0x00,  # P9: S-Contact off at boot
-    ]
-
-    def __init__(self, name):
-        super().__init__(name, size=self.NUM_PORTS)
-
-    def read(self, register):
-        self._check_bounds(register)
-        return self._data[register] | self._FORCE_HIGH[register]
-
-    def reset(self):
-        for i in range(self.NUM_PORTS):
-            self._data[i] = self._DEFAULTS[i]
-
-
-
 class SPIControllerDevice(BaseDevice):
     """3-wire serial I/O (clocked serial interface).
 
@@ -553,18 +502,15 @@ class SPIControllerDevice(BaseDevice):
 
     INT_TRANSFER = 0
 
-    def __init__(self, name, stb_port=0xFF04, stb_bit=0x80):
+    def __init__(self, name):
         super().__init__(name)
         self.size = 2
         self.target = None
-        self._stb_port = stb_port
-        self._stb_bit = stb_bit
         self.reset()
 
     def reset(self):
         self._sio = 0x00
         self._csim = 0x00
-        self._stb_high = False
 
     def read(self, register):
         self._check_bounds(register)
@@ -579,18 +525,7 @@ class SPIControllerDevice(BaseDevice):
             return
 
         if self.target is not None:
-            stb_high = bool(self.bus.read(self._stb_port) & self._stb_bit)
-            if stb_high != self._stb_high:
-                if stb_high:
-                    self.target.spi_begin()
-                else:
-                    self.target.spi_end()
-                self._stb_high = stb_high
-
-            if self._stb_high:
-                self._sio = self.target.spi_exchange(value)
-            else:
-                self._sio = 0xFF
+            self._sio = self.target.spi_exchange(value)
         else:
             self._sio = 0xFF
 
