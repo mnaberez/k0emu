@@ -1,16 +1,14 @@
 class BaseSPITarget(object):
     """Base class for SPI target devices."""
 
-    def spi_begin(self):
-        """STB asserted (high) — start of SPI command."""
+    def spi_select(self, selected):
+        """Chip select.  When true, the device is selected.  The
+        device detects asserted on the rising edge (False->True)
+        and deasserted on the falling edge (True->False)."""
         raise NotImplementedError
 
-    def spi_exchange(self, tx_byte):
-        """Exchange one SPI byte.  Returns the byte to send back (MISO)."""
-        raise NotImplementedError
-
-    def spi_end(self):
-        """STB deasserted (low) — end of SPI command, process it."""
+    def spi_exchange(self, rx_byte):
+        """Exchange one SPI byte.  Returns the byte to send back."""
         raise NotImplementedError
 
 
@@ -27,52 +25,79 @@ class UPD16432B(BaseSPITarget):
         self.chargen_ram = bytearray(7 * 0x10)
         self.led_ram = bytearray(1)
         self.key_data = bytearray(4)
-        self.dirty = False
 
-        self._cmd_buf = []
+        self._display_pixels = None
         self._current_ram = None
+
+        self._selected = False
         self._address = 0
         self._increment = False
-        self._display_pixels = None
+        self._key_index = 0
+        self._exc_func = self._exc_command
 
-    def spi_begin(self):
-        self._cmd_buf = []
+    def spi_select(self, selected):
+        if selected == self._selected:
+            return
 
-    def spi_exchange(self, tx_byte):
-        self._cmd_buf.append(tx_byte)
-        index = len(self._cmd_buf) - 1
-        if index < len(self.key_data) and len(self._cmd_buf) > 0:
-            if (self._cmd_buf[0] & 0xC7) == 0x44:
-                return self.key_data[index]
+        self._selected = selected
+        if selected:  # rising edge (asserted)
+            self._exc_func = self._exc_command
+
+    def spi_exchange(self, rx_byte):
+        if not self._selected:
+            return 0x00
+        return self._exc_func(rx_byte)
+
+    def _exc_command(self, rx_byte):
+        """ first byte received is a command """
+        if (rx_byte & 0xC7) == 0x44:  # key data request
+            self._key_index = 0
+            self._exc_func = self._exc_keys
+        else:
+            cmd_type = rx_byte & 0xC0
+            if cmd_type == 0x80:
+                self._process_address_setting_cmd(rx_byte)
+                self._exc_func = self._exc_data
+            elif cmd_type == 0x40:
+                self._process_data_setting_cmd(rx_byte)
+                self._exc_func = self._exc_data
+            else:
+                self._exc_func = self._exc_unknown
         return 0x00
 
-    def spi_end(self):
-        if len(self._cmd_buf) == 0:
-            return
-        if (self._cmd_buf[0] & 0xC7) == 0x44:
-            return
-        self._process_command()
-
-    def _process_command(self):
-        cmd = self._cmd_buf[0]
-        cmd_type = cmd & 0xC0
-        if cmd_type == 0x00:
-            self._process_display_setting()
-        elif cmd_type == 0x40:
-            self._process_data_setting()
-        elif cmd_type == 0x80:
-            self._process_address_setting()
-        elif cmd_type == 0xC0:
-            self._process_status()
+    def _exc_data(self, rx_byte):
+        """ byte received after data setting command byte"""
         if self._current_ram is not None:
-            for b in self._cmd_buf[1:]:
-                self._write_data_byte(b)
+            self._write_data_byte(rx_byte)
+        return 0x00
 
-    def _process_display_setting(self):
-        pass
+    def _exc_keys(self, rx_byte):
+        """ byte received after key data request byte """
+        value = self.key_data[self._key_index]
+        self._key_index += 1
+        self._key_index %= len(self.key_data) # wrap behavior is a guess
+        return value
 
-    def _process_data_setting(self):
-        cmd = self._cmd_buf[0]
+    def _exc_unknown(self, rx_byte):
+        """ byte received after unknown command byte """
+        return 0x00
+
+    # internal helpers
+
+    def _process_address_setting_cmd(self, cmd):
+        address = cmd & 0x1F
+        if self._current_ram is self.chargen_ram:
+            if address < 0x10:
+                self._address = address * 7
+            else:
+                self._address = 0
+        elif self._current_ram is None:
+            self._address = 0
+        else:
+            self._address = address
+            self._wrap_address()
+
+    def _process_data_setting_cmd(self, cmd):
         mode = cmd & 0x07
         ram_table = {
             0: self.display_ram,
@@ -91,38 +116,23 @@ class UPD16432B(BaseSPITarget):
             self._increment = True
             self._address = 0
 
-    def _process_address_setting(self):
-        address = self._cmd_buf[0] & 0x1F
-        if self._current_ram is self.chargen_ram:
-            if address < 0x10:
-                self._address = address * 7
-            else:
-                self._address = 0
-        elif self._current_ram is None:
-            self._address = 0
-        else:
-            self._address = address
-            self._wrap_address()
-
-    def _process_status(self):
-        pass
-
     def _write_data_byte(self, b):
         if self._address < len(self._current_ram):
             if self._current_ram[self._address] != b:
                 self._current_ram[self._address] = b
-                self.dirty = True
-                if self._current_ram is self.display_ram or \
-                   self._current_ram is self.chargen_ram:
+                if self._current_ram is self.display_ram:
+                    self._display_pixels = None
+                elif self._current_ram is self.chargen_ram:
                     self._display_pixels = None
         if self._increment:
             self._address += 1
             self._wrap_address()
 
     def _wrap_address(self):
-        if self._current_ram is not None:
-            if self._address >= len(self._current_ram):
-                self._address = 0
+        if self._address >= len(self._current_ram):
+            self._address = 0
+
+    # public methods
 
     def get_display_pixels(self):
         """Render display RAM to pixels.  Returns 7 bytes per

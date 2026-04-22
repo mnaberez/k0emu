@@ -5,10 +5,10 @@ from k0emu.spi import UPD16432B
 
 def _send(upd, spi_bytes):
     """Send a complete SPI command (STB high, exchange bytes, STB low)."""
-    upd.spi_begin()
+    upd.spi_select(True)
     for b in spi_bytes:
         upd.spi_exchange(b)
-    upd.spi_end()
+    upd.spi_select(False)
 
 
 class UPD16432B_InitTests(unittest.TestCase):
@@ -47,8 +47,8 @@ class UPD16432B_InitTests(unittest.TestCase):
 
     def test_empty_spi_command_does_not_raise(self):
         upd = UPD16432B()
-        upd.spi_begin()
-        upd.spi_end()
+        upd.spi_select(True)
+        upd.spi_select(False)
 
 
 class UPD16432B_DataSettingTests(unittest.TestCase):
@@ -316,50 +316,183 @@ class UPD16432B_WritingDataTests(unittest.TestCase):
 
 
 class UPD16432B_KeyDataTests(unittest.TestCase):
+    """Key scan read: command byte 0x4C (or any byte matching (cmd & 0xC7) == 0x44),
+    followed by 4 data bytes.  The command byte exchange returns 0x00; subsequent
+    data byte exchanges return key_data[0] through key_data[3].
 
-    def test_key_read_command_returns_key_data(self):
+    The firmware sends [0x4C, 0xFF, 0xFF, 0xFF, 0xFF] in a single STB cycle.
+    """
+
+    def test_command_byte_returns_zero(self):
         upd = UPD16432B()
-        upd.key_data[0] = 0x11
-        upd.key_data[1] = 0x22
-        upd.key_data[2] = 0x33
-        upd.key_data[3] = 0x44
-        cmd = 0x44  # key data read command
-        upd.spi_begin()
-        rx0 = upd.spi_exchange(cmd)
-        rx1 = upd.spi_exchange(0x00)
-        rx2 = upd.spi_exchange(0x00)
-        rx3 = upd.spi_exchange(0x00)
-        upd.spi_end()
+        upd.key_data[:] = [0x11, 0x22, 0x33, 0x44]
+        upd.spi_select(True)
+        rx = upd.spi_exchange(0x4C)
+        upd.spi_select(False)
+        self.assertEqual(rx, 0x00)
+
+    def test_data_bytes_return_key_data(self):
+        upd = UPD16432B()
+        upd.key_data[:] = [0x11, 0x22, 0x33, 0x44]
+        upd.spi_select(True)
+        upd.spi_exchange(0x4C)         # command byte
+        rx0 = upd.spi_exchange(0xFF)   # data byte 1
+        rx1 = upd.spi_exchange(0xFF)   # data byte 2
+        rx2 = upd.spi_exchange(0xFF)   # data byte 3
+        rx3 = upd.spi_exchange(0xFF)   # data byte 4
+        upd.spi_select(False)
         self.assertEqual(rx0, 0x11)
         self.assertEqual(rx1, 0x22)
         self.assertEqual(rx2, 0x33)
         self.assertEqual(rx3, 0x44)
 
-    def test_key_read_does_not_modify_ram(self):
+    def test_full_firmware_transaction(self):
+        """Firmware sends [0x4C, 0xFF, 0xFF, 0xFF, 0xFF] in one STB cycle."""
+        upd = UPD16432B()
+        upd.key_data[:] = [0xAA, 0xBB, 0xCC, 0xDD]
+        upd.spi_select(True)
+        rx_cmd  = upd.spi_exchange(0x4C)
+        rx_dat0 = upd.spi_exchange(0xFF)
+        rx_dat1 = upd.spi_exchange(0xFF)
+        rx_dat2 = upd.spi_exchange(0xFF)
+        rx_dat3 = upd.spi_exchange(0xFF)
+        upd.spi_select(False)
+        self.assertEqual(rx_cmd, 0x00)
+        self.assertEqual(rx_dat0, 0xAA)
+        self.assertEqual(rx_dat1, 0xBB)
+        self.assertEqual(rx_dat2, 0xCC)
+        self.assertEqual(rx_dat3, 0xDD)
+
+    def test_key_data_wraps(self):
+        upd = UPD16432B()
+        upd.key_data[:] = [0x11, 0x22, 0x33, 0x44]
+        upd.spi_select(True)
+        upd.spi_exchange(0x4C)
+        for _ in range(4):
+            upd.spi_exchange(0xFF)
+        rx_wrap = upd.spi_exchange(0xFF)  # 5th data byte wraps to key_data[0]
+        upd.spi_select(False)
+        self.assertEqual(rx_wrap, 0x11)
+
+    def test_all_key_read_command_variants(self):
+        """Any command byte where (cmd & 0xC7) == 0x44 is a key read.
+        Bits 3-5 select key matrix rows but don't affect which bytes come back."""
+        upd = UPD16432B()
+        upd.key_data[:] = [0xDE, 0xAD, 0xBE, 0xEF]
+        for cmd in range(256):
+            if (cmd & 0xC7) == 0x44:
+                upd.spi_select(True)
+                upd.spi_exchange(cmd)
+                rx = upd.spi_exchange(0xFF)
+                upd.spi_select(False)
+                self.assertEqual(rx, 0xDE,
+                    "cmd 0x%02X: expected 0xDE, got 0x%02X" % (cmd, rx))
+
+    def test_non_key_command_returns_zero(self):
+        upd = UPD16432B()
+        upd.key_data[:] = [0xFF, 0xFF, 0xFF, 0xFF]
+        upd.spi_select(True)
+        upd.spi_exchange(0x40)  # data setting, not key read
+        rx = upd.spi_exchange(0xFF)
+        upd.spi_select(False)
+        self.assertEqual(rx, 0x00)
+
+    def test_key_read_does_not_modify_any_ram(self):
         upd = UPD16432B()
         old_display = bytes(upd.display_ram)
-        cmd = 0x44  # key data read command
-        _send(upd, [cmd, 0x00, 0x00, 0x00])
+        old_picto = bytes(upd.pictograph_ram)
+        old_chargen = bytes(upd.chargen_ram)
+        old_led = bytes(upd.led_ram)
+        _send(upd, [0x4C, 0xFF, 0xFF, 0xFF, 0xFF])
         self.assertEqual(bytes(upd.display_ram), old_display)
+        self.assertEqual(bytes(upd.pictograph_ram), old_picto)
+        self.assertEqual(bytes(upd.chargen_ram), old_chargen)
+        self.assertEqual(bytes(upd.led_ram), old_led)
 
-
-class UPD16432B_DirtyTests(unittest.TestCase):
-
-    def test_not_dirty_initially(self):
+    def test_back_to_back_key_reads(self):
+        """Firmware sends two identical key read transactions per scan cycle."""
         upd = UPD16432B()
-        self.assertFalse(upd.dirty)
+        upd.key_data[:] = [0x01, 0x02, 0x03, 0x04]
+        for _ in range(2):
+            upd.spi_select(True)
+            upd.spi_exchange(0x4C)
+            rx = [upd.spi_exchange(0xFF) for _ in range(4)]
+            upd.spi_select(False)
+            self.assertEqual(rx, [0x01, 0x02, 0x03, 0x04])
 
-    def test_writing_new_value_sets_dirty(self):
+    def test_key_read_after_display_write(self):
         upd = UPD16432B()
-        _send(upd, [0b01000000])  # data setting: display ram
-        _send(upd, [0b10000000, 0x42])  # address 0, write 0x42
-        self.assertTrue(upd.dirty)
+        _send(upd, [0b01000000])  # select display ram
+        _send(upd, [0b10000000, 0x41, 0x42, 0x43])  # write 'ABC'
+        upd.key_data[:] = [0xDE, 0xAD, 0xBE, 0xEF]
+        upd.spi_select(True)
+        rx_cmd = upd.spi_exchange(0x4C)
+        rx = [upd.spi_exchange(0xFF) for _ in range(4)]
+        upd.spi_select(False)
+        self.assertEqual(rx_cmd, 0x00)
+        self.assertEqual(rx, [0xDE, 0xAD, 0xBE, 0xEF])
 
-    def test_writing_same_value_does_not_set_dirty(self):
+    def test_key_data_changes_between_reads(self):
         upd = UPD16432B()
-        _send(upd, [0b01000000])  # data setting: display ram
-        _send(upd, [0b10000000, 0x00])  # address 0, write 0x00 (same as init)
-        self.assertFalse(upd.dirty)
+        upd.key_data[:] = [0x00, 0x00, 0x00, 0x00]
+        upd.spi_select(True)
+        upd.spi_exchange(0x4C)
+        rx0 = upd.spi_exchange(0xFF)
+        upd.spi_select(False)
+        self.assertEqual(rx0, 0x00)
+        upd.key_data[0] = 0x80
+        upd.spi_select(True)
+        upd.spi_exchange(0x4C)
+        rx0 = upd.spi_exchange(0xFF)
+        upd.spi_select(False)
+        self.assertEqual(rx0, 0x80)
+
+
+class UPD16432B_SelectTests(unittest.TestCase):
+
+    def test_select_resets_receive_state(self):
+        upd = UPD16432B()
+        upd._exc_func = None  # corrupt the state
+        upd.spi_select(True)
+        self.assertEqual(upd._exc_func, upd._exc_command)
+
+    def test_deselect_after_write(self):
+        upd = UPD16432B()
+        _send(upd, [0b01000000])  # select display ram
+        upd.spi_select(True)
+        upd.spi_exchange(0b10000000)  # address 0
+        upd.spi_exchange(0x42)  # write 'B'
+        upd.spi_select(False)
+        self.assertEqual(upd.display_ram[0], 0x42)
+
+    def test_same_state_ignored(self):
+        upd = UPD16432B()
+        upd.spi_select(True)
+        upd._exc_func = None
+        upd.spi_select(True)
+        self.assertIsNone(upd._exc_func)
+
+    def test_exchange_while_deselected_ignored(self):
+        upd = UPD16432B()
+        _send(upd, [0b01000000])  # select display ram
+        # deselected: write should be ignored
+        upd.spi_exchange(0b10000000)  # address 0
+        upd.spi_exchange(0x42)  # write 'B'
+        self.assertEqual(upd.display_ram[0], 0x00)
+
+    def test_exchange_while_deselected_returns_zero(self):
+        upd = UPD16432B()
+        rx = upd.spi_exchange(0xFF)
+        self.assertEqual(rx, 0x00)
+
+    def test_key_read_via_select(self):
+        upd = UPD16432B()
+        upd.key_data[:] = [0xAA, 0xBB, 0xCC, 0xDD]
+        upd.spi_select(True)
+        upd.spi_exchange(0x4C)
+        rx = upd.spi_exchange(0xFF)
+        upd.spi_select(False)
+        self.assertEqual(rx, 0xAA)
 
 
 class UPD16432B_DisplayPixelsTests(unittest.TestCase):
