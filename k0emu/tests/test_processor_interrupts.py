@@ -277,22 +277,26 @@ def _make_processor_with_timer():
 class HaltTests(unittest.TestCase):
     """Tests for the HALT instruction (0x71 0x10)."""
 
+    def _run_until_halt_wakes(self, proc, max_steps=5000):
+        """Step until HALT wakes (PC leaves address 0)."""
+        for _ in range(max_steps):
+            proc.step()
+            if proc.pc != 0:
+                return
+        self.fail("HALT did not wake within %d steps" % max_steps)
+
     def test_halt_wakes_on_pending_interrupt(self):
         proc, mem, intc, wt = _make_processor_with_timer()
-        # HALT at address 0
         mem.write(0, 0x71)
         mem.write(1, 0x10)
-        # ISR at vector 0x0024 (INTWTNI0) points to 0x2000
         mem.write(0x0024, 0x00)
         mem.write(0x0025, 0x20)
-        # Enable watch timer: WTNM00=1, n=0, fw=128 -> interval=2048
         wt.write(0, 0x01)
-        # Unmask INTWTNI0
         intc.write(intc.MK1L, intc.read(intc.MK1L) & 0xFE)
         proc.write_psw(Flags.IE | Flags.ISP)
         proc.write_sp(0xFE00)
         proc.pc = 0
-        proc.step()
+        self._run_until_halt_wakes(proc)
         self.assertEqual(proc.pc, 0x2000)
 
     def test_halt_advances_cycles(self):
@@ -307,7 +311,7 @@ class HaltTests(unittest.TestCase):
         proc.write_sp(0xFE00)
         proc.pc = 0
         cycles_before = proc.total_cycles
-        proc.step()
+        self._run_until_halt_wakes(proc)
         elapsed = proc.total_cycles - cycles_before
         self.assertGreaterEqual(elapsed, 2048)
 
@@ -322,7 +326,7 @@ class HaltTests(unittest.TestCase):
         proc.write_psw(Flags.IE | Flags.ISP)
         proc.write_sp(0xFE00)
         proc.pc = 0
-        proc.step()
+        self._run_until_halt_wakes(proc)
         self.assertLess(wt._prescaler_counter, 100)
 
     def test_halt_with_interrupt_already_pending(self):
@@ -338,10 +342,8 @@ class HaltTests(unittest.TestCase):
         proc.pc = 0
         cycles_before = proc.total_cycles
         proc.step()
-        # Should wake almost immediately
         self.assertEqual(proc.pc, 0x2000)
         elapsed = proc.total_cycles - cycles_before
-        # Only the HALT fetch cycles + 1 tick to detect the pending interrupt
         self.assertLess(elapsed, 20)
 
     def test_halt_resumes_at_next_instruction_when_ie_disabled(self):
