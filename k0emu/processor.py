@@ -3,7 +3,7 @@ from k0emu.bus import Bus
 
 class Processor(object):
     RESET_VECTOR_ADDRESS = 0x0000
-    BRK_VECTOR_ADDRESS = 0x003F
+    BRK_VECTOR_ADDRESS = 0x003E
     REGISTERS_BASE_ADDRESS = 0xFEF8
     SP_ADDRESS = 0xFF1C
     PSW_ADDRESS = 0xFF1E
@@ -27,6 +27,7 @@ class Processor(object):
         return self._inst_cycles
 
     def reset(self):
+        self.write_psw(0x02)
         self.write_sp(0)
         self.pc = self.read_memory_word(self.RESET_VECTOR_ADDRESS)
         self._total_cycles = 0
@@ -45,7 +46,7 @@ class Processor(object):
 
         # remaining code is for servicing interrupts ------------------------
 
-        # according to the programming manual, after EI or RETI, the 
+        # according to the programming manual, after EI or RETI, the
         # one instruction is executed before acknowledging any interrupt.
         if self._interrupt_delayed:
             self._interrupt_delayed = False
@@ -55,21 +56,37 @@ class Processor(object):
 
         if not (psw & Flags.IE):
             return  # interrupts must be enabled
-        if psw & Flags.ISP:
-            return  # must not already be in a high priority interrupt
 
         pending = self.bus.pending_interrupt
         if pending is None:
             return
 
+        # ISP=0: high-priority interrupt servicing, only high-priority can preempt
+        # ISP=1: normal or low-priority servicing, all maskable interrupts acknowledged
+        if not (psw & Flags.ISP) and not pending.high_priority:
+            return
+
         self.bus.acknowledge_interrupt(pending)
         self._push(psw)
         psw &= ~Flags.IE
+        # ISP gets the PR value: high-priority (PR=0) -> ISP=0, low-priority (PR=1) -> ISP=1
         if pending.high_priority:
+            psw &= ~Flags.ISP
+        else:
             psw |= Flags.ISP
         self.write_psw(psw)
         self._push_word(self.pc)
         self.pc = self.read_memory_word(pending.vector_address)
+
+    def _check_interrupt_hold(self, address):
+        """Set interrupt hold if the address is PSW or an interrupt
+        control register (IF, MK, PR).  The manual requires that no
+        interrupt is acknowledged between an instruction that accesses
+        these registers and the next instruction."""
+        if address == self.PSW_ADDRESS:
+            self._interrupt_delayed = True
+        elif 0xFFE0 <= address <= 0xFFEA:
+            self._interrupt_delayed = True
 
     def _bus_read(self, address):
         """Read a data operand byte via the bus.  Costs 1 bus clock
@@ -655,10 +672,12 @@ class Processor(object):
     # push psw                    ;22
     def _opcode_0x22(self, opcode):
         self._push(self.read_psw())
+        self._interrupt_delayed = True
 
     # pop psw                     ;23
     def _opcode_0x23(self, opcode):
         self.write_psw(self._pop())
+        self._interrupt_delayed = True
 
     # ror a,1                     ;24
     def _opcode_0x24(self, opcode):
@@ -1035,7 +1054,6 @@ class Processor(object):
         address = self._consume_sfr()
         value = self._bus_read(address)
         self.write_gp_reg(Registers.A, value)
-        self.write_memory(address, value)
         self._inst_cycles += 1
 
     # mov 0fffeh,a                ;f6 fe          sfr
@@ -1746,9 +1764,10 @@ class Processor(object):
 
     # halt                            ;71 10
     def _opcode_0x71_0x10_halt(self, opcode):
-        while self.bus.pending_interrupt is None:
-            self._total_cycles += 1
-            self.bus.tick(1)
+        self._total_cycles += 1
+        self.bus.tick(1)
+        if self.bus.pending_interrupt is None:
+            self.pc -= 2  # re-execute halt (0x71 0x10)
 
     # set1 [hl].0                 ;71 82
     def _opcode_0x71_0x82_to_0xf2_set1(self, opcode2):
@@ -2151,9 +2170,6 @@ class Processor(object):
         value = self._bus_read(address)
         result = self._operation_set1(value, bit)
         self._bus_write(address, result)
-        # after EI (set1 PSW.7), interrupt acknowledge must be delayed
-        if (address == self.PSW_ADDRESS) and (bit == 7):
-            self._interrupt_delayed = True
 
     # clr1 0fe20h.0               ;0b 20          saddr
     # clr1 psw.0                  ;0b 1e
@@ -2181,6 +2197,7 @@ class Processor(object):
     def _opcode_0x9f(self, opcode):
         self.pc = self._pop_word()
         self.write_psw(self._pop())
+        self._interrupt_delayed = True
         self._inst_cycles += 2
 
     # brk                         ;bf
@@ -2662,19 +2679,29 @@ class Processor(object):
 
     def _consume_sfr(self):
         offset = self._consume_byte()
-        return _sfr(offset)
+        address = _sfr(offset)
+        self._check_interrupt_hold(address)
+        return address
 
     def _consume_sfrp(self):
         offset = self._consume_byte()
-        return _sfrp(offset)
+        address = _sfrp(offset)
+        self._check_interrupt_hold(address)
+        self._check_interrupt_hold(address + 1)
+        return address
 
     def _consume_saddr(self):
         offset = self._consume_byte()
-        return _saddr(offset)
+        address = _saddr(offset)
+        self._check_interrupt_hold(address)
+        return address
 
     def _consume_saddrp(self):
         offset = self._consume_byte()
-        return _saddrp(offset)
+        address = _saddrp(offset)
+        self._check_interrupt_hold(address)
+        self._check_interrupt_hold(address + 1)
+        return address
 
     def _based_hl_imm(self, imm):
         '''MOV A,[HL+byte]'''

@@ -8003,8 +8003,8 @@ class ProcessorTests(unittest.TestCase):
         code = [0xbf]
         proc.write_memory_bytes(0xc1d2, code)
         proc.pc = 0xc1d2
-        proc.write_memory(0x003f, 0xcd) # brk vector low
-        proc.write_memory(0x0040, 0xab) # brk vector high
+        proc.write_memory(0x003e, 0xcd) # brk vector low
+        proc.write_memory(0x003f, 0xab) # brk vector high
         proc.write_sp(0xfe12)
         proc.write_psw(0b10101010)
         proc.step()
