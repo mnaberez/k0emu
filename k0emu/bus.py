@@ -9,7 +9,7 @@ class Bus(object):
         self._unmapped = BaseDevice("unmapped")
         self._devices_by_address = [self._unmapped] * self.ADDRESS_SPACE_SIZE
         self._device_registers_by_address = [0] * self.ADDRESS_SPACE_SIZE
-        self._all_devices = set()
+        self._all_devices = []
         self._intc = None
         self.pending_interrupt = None
 
@@ -50,7 +50,7 @@ class Bus(object):
                              (device.name, register, device.size))
 
         device.bus = self
-        self._all_devices.add(device)
+        self._all_devices.append(device)
 
     def device(self, name):
         """Get a device by name."""

@@ -16,6 +16,7 @@ class Processor(object):
         self._total_cycles = 0
         self._inst_cycles = 0
         self._interrupt_delayed = False
+        self._halt_rewind_pending = False
         self.pc = 0
 
     @property
@@ -44,7 +45,19 @@ class Processor(object):
         # clock peripherals by number of cycles instruction consumed
         self.bus.tick(self._inst_cycles)
 
-        # remaining code is for servicing interrupts ------------------------
+        # HALT: by this point PC has advanced past the HALT instruction.  If
+        # no interrupt is pending, rewind PC by 2 (the length of HALT) so HALT
+        # re-executes on the next step.  If an interrupt is pending, PC is
+        # already correct because an interrupt breaks out of HALT.  The PC
+        # points to the instruction after HALT, which is the correct return
+        # address for the interrupt dispatcher to push.  Rewinding PC
+        # unconditionally would cause RETI to return to HALT, looping forever.
+        if self._halt_rewind_pending:
+            self._halt_rewind_pending = False
+            if self.bus.pending_interrupt is None:
+                self.pc -= 2
+
+        # remaining code is for dispatching interrupts ------------------------
 
         # according to the programming manual, after EI or RETI, the
         # one instruction is executed before acknowledging any interrupt.
@@ -1764,10 +1777,8 @@ class Processor(object):
 
     # halt                            ;71 10
     def _opcode_0x71_0x10_halt(self, opcode):
-        self._total_cycles += 1
-        self.bus.tick(1)
-        if self.bus.pending_interrupt is None:
-            self.pc -= 2  # re-execute halt (0x71 0x10)
+        self._inst_cycles += 1
+        self._halt_rewind_pending = True
 
     # set1 [hl].0                 ;71 82
     def _opcode_0x71_0x82_to_0xf2_set1(self, opcode2):
