@@ -1,6 +1,6 @@
 import unittest
 from k0emu.devices import MemoryDevice, InterruptControllerDevice, WatchTimerDevice
-from k0emu.processor import Processor, Flags, Registers
+from k0emu.processor import Processor, Flags, Registers, RunState
 
 
 class _TestPeripheral(object):
@@ -841,3 +841,94 @@ class InterruptHoldTests(unittest.TestCase):
         self.assertEqual(proc.pc, 1)
         proc.step()
         self.assertEqual(proc.pc, self.ISR_ADDR)
+
+
+class RunStateTests(unittest.TestCase):
+    """Tests for the run_state property on the Processor.
+
+    run_state is RUNNING while executing any instruction, including HALT
+    itself.  It becomes HALTED only after HALT completes and PC rewinds.
+    When an interrupt wakes the CPU from HALT, run_state returns to RUNNING.
+    """
+
+    HALT_ADDR = 0x0100
+    ISR_ADDR = 0x2000
+    WTNI_VECTOR = 0x0024
+
+    def _make_halt_test(self):
+        proc, mem, intc, wt = _make_processor_with_timer()
+        mem.write(self.HALT_ADDR, 0x71)
+        mem.write(self.HALT_ADDR + 1, 0x10)
+        mem.write(self.HALT_ADDR + 2, 0x00)  # NOP after HALT
+        mem.write(self.ISR_ADDR, 0x7A)       # EI
+        mem.write(self.ISR_ADDR + 1, 0x1E)
+        mem.write(self.ISR_ADDR + 2, 0x8F)   # RETI
+        mem.write(self.WTNI_VECTOR, self.ISR_ADDR & 0xFF)
+        mem.write(self.WTNI_VECTOR + 1, self.ISR_ADDR >> 8)
+        wt.write(0, 0x01)
+        intc.write(intc.MK1L, intc.read(intc.MK1L) & 0xFE)
+        proc.write_psw(Flags.IE | Flags.ISP)
+        proc.write_sp(0xFE00)
+        proc.pc = self.HALT_ADDR
+        return proc, mem, intc, wt
+
+    def test_initial_run_state_is_running(self):
+        """A freshly created processor is in the RUNNING state."""
+        proc = Processor()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
+
+    def test_nop_stays_running(self):
+        """Executing a NOP leaves run_state as RUNNING."""
+        proc, mem, intc, wt = _make_processor_with_timer()
+        mem.write(0, 0x00)  # NOP
+        proc.pc = 0
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
+
+    def test_halt_without_interrupt_becomes_halted(self):
+        """After HALT executes with no interrupt pending, run_state is HALTED."""
+        proc, mem, intc, wt = self._make_halt_test()
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.HALTED)
+
+    def test_halt_stays_halted_on_reexecution(self):
+        """Repeated HALT re-executions remain HALTED."""
+        proc, mem, intc, wt = self._make_halt_test()
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.HALTED)
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.HALTED)
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.HALTED)
+
+    def test_halt_with_pending_interrupt_stays_running(self):
+        """HALT with an interrupt already pending does not become HALTED."""
+        proc, mem, intc, wt = self._make_halt_test()
+        intc.write(intc.IF1L, 0x01)
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
+        self.assertEqual(proc.pc, self.ISR_ADDR)
+
+    def test_halt_wake_returns_to_running(self):
+        """When a timer interrupt wakes the CPU from HALT, run_state
+        returns to RUNNING."""
+        proc, mem, intc, wt = self._make_halt_test()
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.HALTED)
+        # Set the IF flag as if the timer fired
+        intc.write(intc.IF1L, 0x01)
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
+
+    def test_instruction_after_halt_is_running(self):
+        """After HALT wakes and ISR returns, the next instruction is RUNNING."""
+        proc, mem, intc, wt = self._make_halt_test()
+        proc.step()  # HALT, becomes HALTED
+        intc.write(intc.IF1L, 0x01)
+        proc.step()  # HALT wakes, dispatches to ISR, RUNNING
+        proc.step()  # EI
+        self.assertEqual(proc.run_state, RunState.RUNNING)
+        proc.step()  # RETI
+        self.assertEqual(proc.run_state, RunState.RUNNING)
+        proc.step()  # NOP after HALT
+        self.assertEqual(proc.run_state, RunState.RUNNING)

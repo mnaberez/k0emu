@@ -17,6 +17,7 @@ class Processor(object):
         self._inst_cycles = 0
         self._interrupt_delayed = False
         self._halt_rewind_pending = False
+        self.run_state = RunState.RUNNING
         self.pc = 0
 
     @property
@@ -33,8 +34,12 @@ class Processor(object):
         self.pc = self.read_memory_word(self.RESET_VECTOR_ADDRESS)
         self._total_cycles = 0
         self._inst_cycles = 0
+        self.run_state = RunState.RUNNING
 
     def step(self):
+        # running while executing any instruction
+        self.run_state = RunState.RUNNING
+
         # fetch and execute the instruction
         self._inst_cycles = 0
         opcode = self._consume_byte()
@@ -56,6 +61,7 @@ class Processor(object):
             self._halt_rewind_pending = False
             if self.bus.pending_interrupt is None:
                 self.pc -= 2
+                self.run_state = RunState.HALTED
 
         # remaining code is for dispatching interrupts ------------------------
 
@@ -2932,3 +2938,8 @@ class Flags(object):
     RBS1   = 2**5
     Z      = 2**6
     IE     = 2**7
+
+
+class RunState(object):
+    RUNNING = 0
+    HALTED = 1

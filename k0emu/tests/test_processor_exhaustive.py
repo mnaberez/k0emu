@@ -1,4 +1,4 @@
-"""Exhaustive tests for the processor emulation
+"""Exhaustive tests for the 78K/0 processor emulator.
 
 Tests operation helpers with brute-force 256x256 input combinations,
 verifies instruction side effects (only documented destinations change),
@@ -8,7 +8,7 @@ and validates flag preservation rules.
 import random
 import unittest
 from k0emu.devices import MemoryDevice
-from k0emu.processor import Processor, Registers, RegisterPairs, Flags
+from k0emu.processor import Processor, Registers, RegisterPairs, Flags, RunState
 
 
 def _make_processor():
@@ -671,6 +671,7 @@ class TestMovRegSideEffects(unittest.TestCase):
             before = _snapshot(proc)
             proc.write_memory_bytes(0, [opcode])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             # Only A should change (to the value of the source register)
@@ -694,6 +695,7 @@ class TestMovRegSideEffects(unittest.TestCase):
             before = _snapshot(proc)
             proc.write_memory_bytes(0, [opcode])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             self.assertEqual(after['regs'][reg], before['regs'][Registers.A],
@@ -723,6 +725,7 @@ class TestAluImmSideEffects(unittest.TestCase):
 
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
 
         changed_regs = {Registers.A} if changes_a else set()
@@ -774,6 +777,7 @@ class TestIncDecRegSideEffects(unittest.TestCase):
 
                 before = _snapshot(proc)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 after = _snapshot(proc)
 
                 # CY must be preserved
@@ -800,6 +804,7 @@ class TestIncDecRegSideEffects(unittest.TestCase):
 
                 before = _snapshot(proc)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 after = _snapshot(proc)
 
                 # CY must be preserved
@@ -821,6 +826,7 @@ class TestIncDecRegSideEffects(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x41])  # INC A
 
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected = (val + 1) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected)
@@ -838,6 +844,7 @@ class TestIncDecRegSideEffects(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x51])  # DEC A
 
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected = (val - 1) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected)
@@ -869,6 +876,7 @@ class TestIncwDecwSideEffects(unittest.TestCase):
                 proc.write_memory_bytes(0, [opcode])
                 before = _snapshot(proc)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 after = _snapshot(proc)
 
                 # No PSW bits should change at all
@@ -903,6 +911,7 @@ class TestIncwDecwSideEffects(unittest.TestCase):
                 proc.write_memory_bytes(0, [opcode])
                 before = _snapshot(proc)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 after = _snapshot(proc)
 
                 self.assertEqual(before['psw'], after['psw'],
@@ -921,6 +930,7 @@ class TestIncwDecwSideEffects(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0xFFFF)
         proc.write_memory_bytes(0, [0x80])  # INCW AX
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x0000)
 
     def test_decw_wraps(self):
@@ -930,6 +940,7 @@ class TestIncwDecwSideEffects(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0x0000)
         proc.write_memory_bytes(0, [0x90])  # DECW AX
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xFFFF)
 
 
@@ -955,6 +966,7 @@ class TestMovwRpImmSideEffects(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode, 0xCD, 0xAB])  # MOVW rp,#0xABCD
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             # No PSW changes
@@ -990,6 +1002,7 @@ class TestXchSideEffects(unittest.TestCase):
                     proc.write_memory_bytes(0, [opcode])
                     before = _snapshot(proc)
                     proc.step()
+                    self.assertEqual(proc.run_state, RunState.RUNNING)
                     after = _snapshot(proc)
 
                     self.assertEqual(after['regs'][Registers.A], r_val)
@@ -1015,6 +1028,7 @@ class TestCyManipSideEffects(unittest.TestCase):
 
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             self.assertTrue(after['psw'] & Flags.CY)
@@ -1031,6 +1045,7 @@ class TestCyManipSideEffects(unittest.TestCase):
 
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             self.assertFalse(after['psw'] & Flags.CY)
@@ -1047,6 +1062,7 @@ class TestCyManipSideEffects(unittest.TestCase):
 
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             expected_cy = Flags.CY if init_cy == 0 else 0
@@ -1080,6 +1096,7 @@ class TestPushPopSideEffects(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             # SP should decrease by 2
@@ -1119,6 +1136,7 @@ class TestPushPopSideEffects(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             # SP should increase by 2
@@ -1143,6 +1161,7 @@ class TestPushPopSideEffects(unittest.TestCase):
         # PUSH PSW (0x22)
         proc.write_memory_bytes(0, [0x22])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFDFF)
 
         # Corrupt PSW
@@ -1151,6 +1170,7 @@ class TestPushPopSideEffects(unittest.TestCase):
         # POP PSW (0x23)
         proc.write_memory_bytes(1, [0x23])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE00)
         self.assertEqual(proc.read_psw(), test_psw & PSW_MASK)
 
@@ -1169,6 +1189,7 @@ class TestRotateExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x24])  # ROR A,1
 
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 bit0 = a_val & 1
                 expected = (a_val >> 1) | (bit0 << 7)
@@ -1197,6 +1218,7 @@ class TestRotateExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x25])  # RORC A,1
 
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 old_cy = 1 if init_cy else 0
                 bit0 = a_val & 1
@@ -1223,6 +1245,7 @@ class TestRotateExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x26])  # ROL A,1
 
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 bit7 = (a_val >> 7) & 1
                 expected = ((a_val << 1) | bit7) & 0xFF
@@ -1248,6 +1271,7 @@ class TestRotateExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x27])  # ROLC A,1
 
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 old_cy = 1 if init_cy else 0
                 bit7 = (a_val >> 7) & 1
@@ -1284,6 +1308,7 @@ class TestRotateSideEffects(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
 
             # Only A and CY should change
@@ -1310,6 +1335,7 @@ class TestFlagPreservation(unittest.TestCase):
             proc.write_memory_bytes(0, [0x41])  # INC A
             proc.pc = 0
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_psw() & Flags.CY, psw_val & Flags.CY,
                 "INC A with PSW=0x%02x: CY was modified" % psw_val)
 
@@ -1326,6 +1352,7 @@ class TestFlagPreservation(unittest.TestCase):
             proc.write_memory_bytes(0, [0x51])  # DEC A
             proc.pc = 0
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_psw() & Flags.CY, psw_val & Flags.CY,
                 "DEC A with PSW=0x%02x: CY was modified" % psw_val)
 
@@ -1340,6 +1367,7 @@ class TestFlagPreservation(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x6d, 0x11])  # OR A,#0x11
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_psw() & Flags.CY, cy,
                     "OR A,#imm: CY modified (init CY=%d AC=%d)" % (cy, ac))
                 self.assertEqual(proc.read_psw() & Flags.AC, ac,
@@ -1356,6 +1384,7 @@ class TestFlagPreservation(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x5d, 0x42])  # AND A,#0x42
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_psw() & Flags.CY, cy)
                 self.assertEqual(proc.read_psw() & Flags.AC, ac)
 
@@ -1370,6 +1399,7 @@ class TestFlagPreservation(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x7d, 0x42])  # XOR A,#0x42
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_psw() & Flags.CY, cy)
                 self.assertEqual(proc.read_psw() & Flags.AC, ac)
 
@@ -1386,6 +1416,7 @@ class TestFlagPreservation(unittest.TestCase):
             proc.write_memory_bytes(0, [0x60])  # MOV A,X
             proc.pc = 0
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_psw(), psw_val,
                 "MOV A,X with PSW=0x%02x: PSW changed to 0x%02x" %
                 (psw_val, proc.read_psw()))
@@ -1402,6 +1433,7 @@ class TestFlagPreservation(unittest.TestCase):
             proc.write_memory_bytes(0, [0x12, 0xCD, 0xAB])  # MOVW BC,#0xABCD
             proc.pc = 0
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_psw(), psw_val,
                 "MOVW BC,#imm with PSW=0x%02x: PSW changed to 0x%02x" %
                 (psw_val, proc.read_psw()))
@@ -1420,6 +1452,7 @@ class TestFlagPreservation(unittest.TestCase):
             proc.write_memory_bytes(0, [0x30])  # XCH A,X
             proc.pc = 0
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_psw(), psw_val,
                 "XCH A,X with PSW=0x%02x: PSW changed to 0x%02x" %
                 (psw_val, proc.read_psw()))
@@ -1436,6 +1469,7 @@ class TestBranchInstructions(unittest.TestCase):
         # BC +5 (displacement 0x05 from PC after consuming the displacement byte)
         proc.write_memory_bytes(0, [0x8d, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2 + 5)
 
     def test_bc_not_taken(self):
@@ -1445,6 +1479,7 @@ class TestBranchInstructions(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory_bytes(0, [0x8d, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2)
 
     def test_bnc_taken(self):
@@ -1454,6 +1489,7 @@ class TestBranchInstructions(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory_bytes(0, [0x9d, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2 + 5)
 
     def test_bnc_not_taken(self):
@@ -1463,6 +1499,7 @@ class TestBranchInstructions(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory_bytes(0, [0x9d, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2)
 
     def test_bz_taken(self):
@@ -1472,6 +1509,7 @@ class TestBranchInstructions(unittest.TestCase):
         proc.write_psw(Flags.Z)
         proc.write_memory_bytes(0, [0xad, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2 + 5)
 
     def test_bz_not_taken(self):
@@ -1481,6 +1519,7 @@ class TestBranchInstructions(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory_bytes(0, [0xad, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2)
 
     def test_bnz_taken(self):
@@ -1490,6 +1529,7 @@ class TestBranchInstructions(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory_bytes(0, [0xbd, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2 + 5)
 
     def test_bnz_not_taken(self):
@@ -1499,6 +1539,7 @@ class TestBranchInstructions(unittest.TestCase):
         proc.write_psw(Flags.Z)
         proc.write_memory_bytes(0, [0xbd, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2)
 
     def test_bc_backward_branch(self):
@@ -1509,6 +1550,7 @@ class TestBranchInstructions(unittest.TestCase):
         proc.pc = 0x100
         proc.write_memory_bytes(0x100, [0x8d, 0xFC])  # -4 as signed
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         # PC after consuming = 0x102, displacement = -4 -> 0x0FE
         self.assertEqual(proc.pc, 0x102 + (-4) & 0xFFFF)
 
@@ -1522,6 +1564,7 @@ class TestBranchInstructions(unittest.TestCase):
             proc.write_memory(0xFE20, 1 << bit)  # saddr 0x20 -> 0xFE20
             proc.write_memory_bytes(0, [opcode, 0x20, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5,
                 "BT saddr.%d (bit set): should branch" % bit)
 
@@ -1531,6 +1574,7 @@ class TestBranchInstructions(unittest.TestCase):
             proc.write_memory(0xFE20, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [opcode, 0x20, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3,
                 "BT saddr.%d (bit clear): should not branch" % bit)
 
@@ -1544,6 +1588,7 @@ class TestBranchInstructions(unittest.TestCase):
             proc.write_gp_reg(Registers.A, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5,
                 "BT A.%d (bit set): should branch" % bit)
 
@@ -1553,6 +1598,7 @@ class TestBranchInstructions(unittest.TestCase):
             proc.write_gp_reg(Registers.A, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3,
                 "BT A.%d (bit clear): should not branch" % bit)
 
@@ -1566,6 +1612,7 @@ class TestBranchInstructions(unittest.TestCase):
             proc.write_gp_reg(Registers.A, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5,
                 "BF A.%d (bit clear): should branch" % bit)
 
@@ -1575,6 +1622,7 @@ class TestBranchInstructions(unittest.TestCase):
             proc.write_gp_reg(Registers.A, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3,
                 "BF A.%d (bit set): should not branch" % bit)
 
@@ -1596,6 +1644,7 @@ class TestSaddrAluInstructions(unittest.TestCase):
                     proc.write_memory_bytes(0, [0x88, 0x20, imm])
                     proc.pc = 0
                     proc.step()
+                    self.assertEqual(proc.run_state, RunState.RUNNING)
 
                     expected = (mem_val + imm) & 0xFF
                     self.assertEqual(proc.read_memory(0xFE20), expected,
@@ -1632,6 +1681,7 @@ class TestSaddrAluInstructions(unittest.TestCase):
                     proc.write_memory_bytes(0, [0x98, 0x20, imm])
                     proc.pc = 0
                     proc.step()
+                    self.assertEqual(proc.run_state, RunState.RUNNING)
 
                     expected = (mem_val - imm) & 0xFF
                     self.assertEqual(proc.read_memory(0xFE20), expected,
@@ -1656,6 +1706,7 @@ class TestSaddrAluInstructions(unittest.TestCase):
                     proc.write_memory_bytes(0, [0xa8, 0x20, imm])
                     proc.pc = 0
                     proc.step()
+                    self.assertEqual(proc.run_state, RunState.RUNNING)
 
                     cy = 1 if init_cy else 0
                     expected = (mem_val + imm + cy) & 0xFF
@@ -1678,6 +1729,7 @@ class TestSaddrAluInstructions(unittest.TestCase):
                     proc.write_memory_bytes(0, [0xb8, 0x20, imm])
                     proc.pc = 0
                     proc.step()
+                    self.assertEqual(proc.run_state, RunState.RUNNING)
 
                     cy = 1 if init_cy else 0
                     expected = (mem_val - imm - cy) & 0xFF
@@ -1699,6 +1751,7 @@ class TestSaddrAluInstructions(unittest.TestCase):
                 proc.write_memory_bytes(0, [0xc8, 0x20, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 # Memory should NOT change (CMP is compare-only)
                 self.assertEqual(proc.read_memory(0xFE20), mem_val,
@@ -1733,6 +1786,7 @@ class TestSaddrAluInstructions(unittest.TestCase):
                 proc.write_memory_bytes(0, [0xd8, 0x20, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected = mem_val & imm
                 self.assertEqual(proc.read_memory(0xFE20), expected)
@@ -1753,6 +1807,7 @@ class TestSaddrAluInstructions(unittest.TestCase):
                 proc.write_memory_bytes(0, [0xe8, 0x20, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected = mem_val | imm
                 self.assertEqual(proc.read_memory(0xFE20), expected)
@@ -1773,6 +1828,7 @@ class TestSaddrAluInstructions(unittest.TestCase):
                 proc.write_memory_bytes(0, [0xf8, 0x20, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected = mem_val ^ imm
                 self.assertEqual(proc.read_memory(0xFE20), expected)
@@ -1802,6 +1858,7 @@ class TestRol4Exhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x80])  # ROL4 [HL]
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 a_low = a_val & 0x0F
                 a_high = a_val >> 4
@@ -1844,6 +1901,7 @@ class TestRor4Exhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x90])  # ROR4 [HL]
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 a_low = a_val & 0x0F
                 a_high = a_val >> 4
@@ -1880,6 +1938,7 @@ class TestMuluExhaustive(unittest.TestCase):
 
                 before = _snapshot(proc)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 after = _snapshot(proc)
 
                 expected = a_val * x_val
@@ -1914,6 +1973,7 @@ class TestDivuwExhaustive(unittest.TestCase):
 
                 before_psw = proc.read_psw()
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected_q = ax_val // c_val
                 expected_r = ax_val % c_val
@@ -1941,6 +2001,7 @@ class TestDivuwExhaustive(unittest.TestCase):
             proc.write_memory_bytes(0, [0x31, 0x82])  # DIVUW C
             proc.pc = 0
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
 
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xFFFF,
                 "DIVUW by 0: AX should be 0xFFFF")
@@ -1959,6 +2020,7 @@ class TestDivuwExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x82])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected_q = ax_val // c_val
                 expected_r = ax_val % c_val
@@ -1983,6 +2045,7 @@ class TestSelRb(unittest.TestCase):
 
                 before = _snapshot(proc)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 after = _snapshot(proc)
 
                 # Only RBS0/RBS1 should change
@@ -2004,6 +2067,7 @@ class TestSelRb(unittest.TestCase):
             proc.write_memory_bytes(0, [0x61, 0xD8])  # SEL RB1
             proc.pc = 0
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
 
             after_psw = proc.read_psw()
             # All bits except RBS0/RBS1 must be preserved
@@ -2026,6 +2090,7 @@ class TestAddSubImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x0d, imm])  # ADD A,#imm
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected = (a_val + imm) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
@@ -2061,6 +2126,7 @@ class TestAddSubImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x1d, imm])  # SUB A,#imm
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 expected = (a_val - imm) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
@@ -2100,6 +2166,7 @@ class TestCmpImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x4d, imm])  # CMP A,#imm
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
 
                 # A must NOT change
                 self.assertEqual(proc.read_gp_reg(Registers.A), a_val,
@@ -2134,6 +2201,7 @@ class TestNop(unittest.TestCase):
 
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
 
         self.assertEqual(after['pc'], 1)
@@ -2159,6 +2227,7 @@ class TestAluAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode, 0x34, 0x12])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         changed = {Registers.A} if changes_a else set()
         _assert_unchanged(self, before, after,
@@ -2177,6 +2246,7 @@ class TestAluAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode, offset])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         changed = {Registers.A} if changes_a else set()
         _assert_unchanged(self, before, after,
@@ -2193,6 +2263,7 @@ class TestAluAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode, 0x20])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         changed = {Registers.A} if changes_a else set()
         _assert_unchanged(self, before, after,
@@ -2211,6 +2282,7 @@ class TestAluAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         changed = {Registers.A} if changes_a else set()
         _assert_unchanged(self, before, after,
@@ -2432,6 +2504,7 @@ class TestMovAddrModes(unittest.TestCase):
             proc.pc = 0
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
             self.assertEqual(proc.read_memory(0xFE20), imm)
             _assert_unchanged(self, before, after,
@@ -2448,6 +2521,7 @@ class TestMovAddrModes(unittest.TestCase):
             proc.pc = 0
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
             self.assertEqual(proc.read_memory(0xFF80), imm)
             _assert_unchanged(self, before, after,
@@ -2464,6 +2538,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x85])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         _assert_unchanged(self, before, after,
@@ -2480,6 +2555,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x87])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x55)
         _assert_unchanged(self, before, after,
@@ -2496,6 +2572,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x95])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0x1000), 0xAB)
         _assert_unchanged(self, before, after,
@@ -2512,6 +2589,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x97])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0x1000), 0xCD)
         _assert_unchanged(self, before, after,
@@ -2528,6 +2606,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xAE, 0x10])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x77)
         _assert_unchanged(self, before, after,
@@ -2545,6 +2624,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xAA])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x88)
         _assert_unchanged(self, before, after,
@@ -2562,6 +2642,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xAB])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x99)
         _assert_unchanged(self, before, after,
@@ -2579,6 +2660,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xBA])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0x1005), 0xAA)
         _assert_unchanged(self, before, after,
@@ -2596,6 +2678,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xBB])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0x1007), 0xBB)
         _assert_unchanged(self, before, after,
@@ -2612,6 +2695,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xBE, 0x10])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0x1010), 0xCC)
         _assert_unchanged(self, before, after,
@@ -2627,6 +2711,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x8E, 0x34, 0x12])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xDD)
         _assert_unchanged(self, before, after,
@@ -2642,6 +2727,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x9E, 0x34, 0x12])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0x1234), 0xEE)
         _assert_unchanged(self, before, after,
@@ -2657,6 +2743,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xF0, 0x20])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         _assert_unchanged(self, before, after,
@@ -2672,6 +2759,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xF2, 0x20])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0xFE20), 0x55)
         _assert_unchanged(self, before, after,
@@ -2687,6 +2775,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xF4, 0x80])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x77)
         _assert_unchanged(self, before, after,
@@ -2702,6 +2791,7 @@ class TestMovAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xF6, 0x80])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0xFF80), 0x88)
         _assert_unchanged(self, before, after,
@@ -2719,6 +2809,7 @@ class TestMovAddrModes(unittest.TestCase):
                 proc.write_memory_bytes(0, [opcode, imm])
                 before = _snapshot(proc)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 after = _snapshot(proc)
                 self.assertEqual(proc.read_gp_reg(reg), imm)
                 _assert_unchanged(self, before, after,
@@ -2739,6 +2830,7 @@ class TestMovwAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x02, 0x00, 0x10])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xABCD)
         _assert_unchanged(self, before, after,
@@ -2754,6 +2846,7 @@ class TestMovwAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x03, 0x00, 0x10])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0x1000), 0xCD)
         self.assertEqual(proc.read_memory(0x1001), 0xAB)
@@ -2771,6 +2864,7 @@ class TestMovwAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x89, 0x20])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xABCD)
         _assert_unchanged(self, before, after,
@@ -2786,6 +2880,7 @@ class TestMovwAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0x99, 0x20])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0xFE20), 0xCD)
         self.assertEqual(proc.read_memory(0xFE21), 0xAB)
@@ -2803,6 +2898,7 @@ class TestMovwAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xA9, 0x80])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xABCD)
         _assert_unchanged(self, before, after,
@@ -2818,6 +2914,7 @@ class TestMovwAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xB9, 0x80])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0xFF80), 0xCD)
         self.assertEqual(proc.read_memory(0xFF81), 0xAB)
@@ -2836,6 +2933,7 @@ class TestMovwAddrModes(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
             self.assertEqual(proc.read_gp_regpair(rp), 0xABCD)
             changed = {rp * 2, rp * 2 + 1}
@@ -2854,6 +2952,7 @@ class TestMovwAddrModes(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x1234)
             _assert_unchanged(self, before, after,
@@ -2872,6 +2971,7 @@ class TestMovwAddrModes(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x3344)
             self.assertEqual(proc.read_gp_regpair(rp), 0x1122)
@@ -2889,6 +2989,7 @@ class TestMovwAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xEE, 0x1C, 0x00, 0xFD])
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_sp(), 0xFD00)
         _assert_unchanged(self, before, after,
@@ -2904,6 +3005,7 @@ class TestMovwAddrModes(unittest.TestCase):
         proc.write_memory_bytes(0, [0xFE, 0x80, 0xCD, 0xAB])  # sfrp 0xFF80
         before = _snapshot(proc)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         after = _snapshot(proc)
         self.assertEqual(proc.read_memory(0xFF80), 0xCD)
         self.assertEqual(proc.read_memory(0xFF81), 0xAB)
@@ -2928,6 +3030,7 @@ class TestIncDecSaddr(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x81, 0x20])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (mem_val + 1) & 0xFF
                 self.assertEqual(proc.read_memory(0xFE20), expected,
                     "INC saddr: mem=0x%02x expected 0x%02x" % (mem_val, expected))
@@ -2949,6 +3052,7 @@ class TestIncDecSaddr(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x91, 0x20])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (mem_val - 1) & 0xFF
                 self.assertEqual(proc.read_memory(0xFE20), expected,
                     "DEC saddr: mem=0x%02x expected 0x%02x" % (mem_val, expected))
@@ -2971,6 +3075,7 @@ class TestXchAddrModes(unittest.TestCase):
         proc.write_psw(Flags.CY | Flags.Z)
         proc.write_memory_bytes(0, [0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_memory(0x1000), 0x55)
 
@@ -2984,6 +3089,7 @@ class TestXchAddrModes(unittest.TestCase):
         proc.write_psw(Flags.CY | Flags.Z)
         proc.write_memory_bytes(0, [0x07])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_memory(0x1000), 0x11)
 
@@ -2996,6 +3102,7 @@ class TestXchAddrModes(unittest.TestCase):
         proc.write_psw(Flags.CY | Flags.Z)
         proc.write_memory_bytes(0, [0x83, 0x20])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x44)
         self.assertEqual(proc.read_memory(0xFE20), 0x33)
 
@@ -3008,6 +3115,7 @@ class TestXchAddrModes(unittest.TestCase):
         proc.write_psw(Flags.CY | Flags.Z)
         proc.write_memory_bytes(0, [0x93, 0x80])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x66)
         self.assertEqual(proc.read_memory(0xFF80), 0x55)
 
@@ -3020,6 +3128,7 @@ class TestXchAddrModes(unittest.TestCase):
         proc.write_psw(Flags.CY | Flags.Z)
         proc.write_memory_bytes(0, [0xCE, 0x34, 0x12])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x88)
         self.assertEqual(proc.read_memory(0x1234), 0x77)
 
@@ -3033,6 +3142,7 @@ class TestXchAddrModes(unittest.TestCase):
         proc.write_psw(Flags.CY | Flags.Z)
         proc.write_memory_bytes(0, [0xDE, 0x10])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xBB)
         self.assertEqual(proc.read_memory(0x1010), 0x99)
 
@@ -3051,6 +3161,7 @@ class TestSet1Clr1Saddr(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode, 0x20])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_memory(0xFE20), 1 << bit,
                 "SET1 saddr.%d: expected 0x%02x got 0x%02x" %
                 (bit, 1 << bit, proc.read_memory(0xFE20)))
@@ -3069,6 +3180,7 @@ class TestSet1Clr1Saddr(unittest.TestCase):
             proc.write_memory(0xFE20, init_val)
             proc.write_memory_bytes(0, [opcode, 0x20])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_memory(0xFE20), 0xFF,
                 "SET1 saddr.%d: other bits should not change" % bit)
 
@@ -3083,6 +3195,7 @@ class TestSet1Clr1Saddr(unittest.TestCase):
             proc.write_memory_bytes(0, [opcode, 0x20])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = 0xFF & ~(1 << bit)
             self.assertEqual(proc.read_memory(0xFE20), expected,
                 "CLR1 saddr.%d: expected 0x%02x got 0x%02x" %
@@ -3102,6 +3215,7 @@ class TestSet1Clr1Saddr(unittest.TestCase):
             proc.write_memory(0xFE20, init_val)
             proc.write_memory_bytes(0, [opcode, 0x20])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_memory(0xFE20), 0x00,
                 "CLR1 saddr.%d: other bits should not change" % bit)
 
@@ -3117,6 +3231,7 @@ class TestBtSaddrAllBits(unittest.TestCase):
             proc.write_memory(0xFE20, 1 << bit)
             proc.write_memory_bytes(0, [opcode, 0x20, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5,
                 "BT saddr.%d taken: PC should be %d got %d" % (bit, 8, proc.pc))
 
@@ -3128,6 +3243,7 @@ class TestBtSaddrAllBits(unittest.TestCase):
             proc.write_memory(0xFE20, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [opcode, 0x20, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3,
                 "BT saddr.%d not taken: PC should be 3 got %d" % (bit, proc.pc))
 
@@ -3142,6 +3258,7 @@ class TestDbnz(unittest.TestCase):
         proc.write_memory(0xFE20, 5)  # count = 5
         proc.write_memory_bytes(0, [0x04, 0x20, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_memory(0xFE20), 4)
         self.assertEqual(proc.pc, 3 + 5)
 
@@ -3152,6 +3269,7 @@ class TestDbnz(unittest.TestCase):
         proc.write_memory(0xFE20, 1)  # count = 1
         proc.write_memory_bytes(0, [0x04, 0x20, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_memory(0xFE20), 0)
         self.assertEqual(proc.pc, 3)
 
@@ -3162,6 +3280,7 @@ class TestDbnz(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 3)
         proc.write_memory_bytes(0, [0x8A, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.C), 2)
         self.assertEqual(proc.pc, 2 + 5)
 
@@ -3172,6 +3291,7 @@ class TestDbnz(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 1)
         proc.write_memory_bytes(0, [0x8A, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0)
         self.assertEqual(proc.pc, 2)
 
@@ -3182,6 +3302,7 @@ class TestDbnz(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 10)
         proc.write_memory_bytes(0, [0x8B, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.B), 9)
         self.assertEqual(proc.pc, 2 + 5)
 
@@ -3192,6 +3313,7 @@ class TestDbnz(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 1)
         proc.write_memory_bytes(0, [0x8B, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0)
         self.assertEqual(proc.pc, 2)
 
@@ -3202,6 +3324,7 @@ class TestDbnz(unittest.TestCase):
         proc.write_memory(0xFE20, 0)
         proc.write_memory_bytes(0, [0x04, 0x20, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_memory(0xFE20), 0xFF)
         self.assertEqual(proc.pc, 3 + 5)
 
@@ -3215,6 +3338,7 @@ class TestCallRetInstructions(unittest.TestCase):
         proc.write_sp(0xFE00)
         proc.write_memory_bytes(0, [0x9A, 0x00, 0x50])  # CALL !0x5000
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x5000)
         self.assertEqual(proc.read_sp(), 0xFE00 - 2)
         # Return address on stack (after the 3-byte instruction)
@@ -3231,6 +3355,7 @@ class TestCallRetInstructions(unittest.TestCase):
             proc.write_sp(0xFE00)
             proc.write_memory_bytes(0, [opcode, 0x42])  # CALLF base+0x42
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, base + 0x42,
                 "CALLF opcode 0x%02x: expected PC=0x%04x got 0x%04x" %
                 (opcode, base + 0x42, proc.pc))
@@ -3245,6 +3370,7 @@ class TestCallRetInstructions(unittest.TestCase):
         proc.write_memory(0x41, 0x12)
         proc.write_memory_bytes(0, [0xC1])  # CALLT [0040h]
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1234)
         self.assertEqual(proc.read_sp(), 0xFE00 - 2)
 
@@ -3260,6 +3386,7 @@ class TestCallRetInstructions(unittest.TestCase):
             proc.write_memory(vector_addr + 1, target >> 8)
             proc.write_memory_bytes(0, [opcode])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, target,
                 "CALLT 0x%02x: expected 0x%04x got 0x%04x" % (opcode, target, proc.pc))
 
@@ -3272,6 +3399,7 @@ class TestCallRetInstructions(unittest.TestCase):
         proc.write_memory(sp + 1, 0x12)  # high byte
         proc.write_memory_bytes(0, [0xAF])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1234)
         self.assertEqual(proc.read_sp(), sp + 2)
 
@@ -3287,6 +3415,7 @@ class TestCallRetInstructions(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory_bytes(0, [0x8F])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1234)
         self.assertEqual(proc.read_sp(), sp + 3)
         self.assertEqual(proc.read_psw(), (Flags.CY | Flags.Z | Flags.IE) & PSW_MASK)
@@ -3302,6 +3431,7 @@ class TestCallRetInstructions(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory_bytes(0, [0x9F])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x5678)
         self.assertEqual(proc.read_sp(), sp + 3)
         self.assertEqual(proc.read_psw(), (Flags.CY | Flags.AC) & PSW_MASK)
@@ -3316,6 +3446,7 @@ class TestCallRetInstructions(unittest.TestCase):
         proc.write_memory(0x003F, 0x80)  # vector high
         proc.write_memory_bytes(0, [0xBF])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x8000)
         # PSW pushed, then PC pushed
         # SP decremented by 3 (1 byte PSW + 2 bytes PC)
@@ -3333,6 +3464,7 @@ class TestBrInstructions(unittest.TestCase):
         proc.write_sp(0xFE00)
         proc.write_memory_bytes(0, [0xFA, 0x05])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 2 + 5)
 
     def test_br_relative_backward(self):
@@ -3342,6 +3474,7 @@ class TestBrInstructions(unittest.TestCase):
         proc.pc = 0x100
         proc.write_memory_bytes(0x100, [0xFA, 0xFC])  # -4
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, (0x102 - 4) & 0xFFFF)
 
     def test_br_addr16(self):
@@ -3350,6 +3483,7 @@ class TestBrInstructions(unittest.TestCase):
         proc.write_sp(0xFE00)
         proc.write_memory_bytes(0, [0x9B, 0x00, 0x50])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x5000)
 
 
@@ -3372,6 +3506,7 @@ class TestAddwSubwCmpwInstruction(unittest.TestCase):
             proc.write_memory_bytes(0, [0xCA, imm & 0xFF, imm >> 8])
             proc.pc = 0
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = (ax_val + imm) & 0xFFFF
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), expected,
                 "ADDW AX=0x%04x + 0x%04x" % (ax_val, imm))
@@ -3397,6 +3532,7 @@ class TestAddwSubwCmpwInstruction(unittest.TestCase):
                 proc.write_memory_bytes(0, [0xDA, imm & 0xFF, imm >> 8])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (ax_val - imm) & 0xFFFF
                 self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), expected,
                     "SUBW AX=0x%04x - 0x%04x" % (ax_val, imm))
@@ -3422,6 +3558,7 @@ class TestAddwSubwCmpwInstruction(unittest.TestCase):
                 proc.write_memory_bytes(0, [0xEA, imm & 0xFF, imm >> 8])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 # AX must NOT change
                 self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), ax_val,
                     "CMPW AX=0x%04x, 0x%04x: AX was modified" % (ax_val, imm))
@@ -3462,6 +3599,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x0A])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_gp_reg(Registers.A), (a_val + mem_val) & 0xFF)
 
     def test_add_a_hl_b(self):
@@ -3476,6 +3614,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x0B])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_gp_reg(Registers.A), (a_val + mem_val) & 0xFF)
 
     def test_sub_a_hl_c(self):
@@ -3489,6 +3628,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x1A])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_gp_reg(Registers.A), (a_val - mem_val) & 0xFF)
 
     def test_sub_a_hl_b(self):
@@ -3502,6 +3642,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x1B])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_gp_reg(Registers.A), (a_val - mem_val) & 0xFF)
 
     def test_addc_a_hl_c(self):
@@ -3513,6 +3654,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x2A])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x80)
 
     def test_addc_a_hl_b(self):
@@ -3524,6 +3666,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x2B])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x80)
 
     def test_subc_a_hl_c(self):
@@ -3535,6 +3678,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x3A])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x20)
 
     def test_subc_a_hl_b(self):
@@ -3546,6 +3690,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x3B])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x20)
 
     def test_cmp_a_hl_c(self):
@@ -3557,6 +3702,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x4A])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x50)  # not modified
         self.assertTrue(proc.read_psw() & Flags.Z)
 
@@ -3569,6 +3715,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x4B])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x50)
         self.assertTrue(proc.read_psw() & Flags.Z)
 
@@ -3581,6 +3728,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x5A])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x00)
 
     def test_and_a_hl_b(self):
@@ -3592,6 +3740,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x5B])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x0F)
 
     def test_or_a_hl_c(self):
@@ -3603,6 +3752,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x6A])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
 
     def test_or_a_hl_b(self):
@@ -3614,6 +3764,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x6B])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
 
     def test_xor_a_hl_c(self):
@@ -3625,6 +3776,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x7A])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x00)
 
     def test_xor_a_hl_b(self):
@@ -3636,6 +3788,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, 0x7B])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
 
     def test_xch_a_hl_c(self):
@@ -3648,6 +3801,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory(0x1005, 0x22)
         proc.write_memory_bytes(0, [0x31, 0x8A])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
         self.assertEqual(proc.read_memory(0x1005), 0x11)
 
@@ -3661,6 +3815,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_memory(0x1007, 0x44)
         proc.write_memory_bytes(0, [0x31, 0x8B])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x44)
         self.assertEqual(proc.read_memory(0x1007), 0x33)
 
@@ -3671,6 +3826,7 @@ class TestPrefix31AluHlCB(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0x5678)
         proc.write_memory_bytes(0, [0x31, 0x98])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x5678)
 
 
@@ -3687,6 +3843,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_gp_reg(Registers.A, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5)
             # not taken
             proc, _ = _make_processor()
@@ -3694,6 +3851,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_gp_reg(Registers.A, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3)
 
     def test_bf_a_all_bits(self):
@@ -3706,6 +3864,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_gp_reg(Registers.A, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5)
             # not taken (bit set)
             proc, _ = _make_processor()
@@ -3713,6 +3872,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_gp_reg(Registers.A, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3)
 
     def test_btclr_a_all_bits(self):
@@ -3725,6 +3885,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_gp_reg(Registers.A, 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5)
             self.assertFalse(proc.read_gp_reg(Registers.A) & (1 << bit),
                 "BTCLR A.%d: bit should be cleared" % bit)
@@ -3734,6 +3895,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_gp_reg(Registers.A, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3)
 
     def test_bt_sfr_all_bits(self):
@@ -3746,6 +3908,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFF80, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x80, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4 + 5,
                 "BT sfr.%d taken" % bit)
             # not taken
@@ -3754,6 +3917,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFF80, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x80, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4,
                 "BT sfr.%d not taken" % bit)
 
@@ -3767,6 +3931,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFF80, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x80, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4 + 5)
             # not taken (bit set)
             proc, _ = _make_processor()
@@ -3774,6 +3939,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFF80, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x80, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4)
 
     def test_btclr_sfr_all_bits(self):
@@ -3786,6 +3952,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFF80, 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x80, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4 + 5)
             self.assertFalse(proc.read_memory(0xFF80) & (1 << bit))
             # bit clear -> no branch
@@ -3794,6 +3961,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFF80, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x80, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4)
 
     def test_bt_hl_all_bits(self):
@@ -3807,6 +3975,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0x1000, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5)
             # not taken
             proc, _ = _make_processor()
@@ -3815,6 +3984,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0x1000, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3)
 
     def test_bf_hl_all_bits(self):
@@ -3828,6 +3998,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0x1000, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5)
             # not taken
             proc, _ = _make_processor()
@@ -3836,6 +4007,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0x1000, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3)
 
     def test_btclr_hl_all_bits(self):
@@ -3848,6 +4020,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0x1000, 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 3 + 5)
             self.assertFalse(proc.read_memory(0x1000) & (1 << bit))
 
@@ -3861,6 +4034,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFE20, (~(1 << bit)) & 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x20, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4 + 5)
             # not taken
             proc, _ = _make_processor()
@@ -3868,6 +4042,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFE20, 1 << bit)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x20, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4)
 
     def test_btclr_saddr_all_bits(self):
@@ -3879,6 +4054,7 @@ class TestPrefix31BitBranch(unittest.TestCase):
             proc.write_memory(0xFE20, 0xFF)
             proc.write_memory_bytes(0, [0x31, opcode2, 0x20, 0x05])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, 4 + 5)
             self.assertFalse(proc.read_memory(0xFE20) & (1 << bit))
 
@@ -3898,6 +4074,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x61, 0x00])  # ADD X,A
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (a_val + r_val) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.X), expected,
                     "ADD X,A: A=0x%02x X=0x%02x" % (a_val, r_val))
@@ -3921,6 +4098,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_memory_bytes(0, [0x61, opcode2])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             after = _snapshot(proc)
             if reg == Registers.A:
                 # ADD A,A: both operands are A=0x05
@@ -3943,6 +4121,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 0x30)
 
     def test_sub_a_r_exhaustive(self):
@@ -3957,6 +4136,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x61, 0x18])  # SUB A,X
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (a_val - r_val) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "SUB A,X: A=0x%02x X=0x%02x" % (a_val, r_val))
@@ -3974,6 +4154,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if reg == Registers.A:
                 self.assertEqual(proc.read_gp_reg(reg), 0x00)  # A - A = 0
             else:
@@ -3991,6 +4172,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)  # CY=0
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if reg == Registers.A:
                 self.assertEqual(proc.read_gp_reg(reg), 0x0A)  # A+A+0
             else:
@@ -4008,6 +4190,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE | Flags.CY)  # CY=1
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 0x31)
 
     def test_subc_r_a_all_regs(self):
@@ -4022,6 +4205,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)  # CY=0
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if reg == Registers.A:
                 self.assertEqual(proc.read_gp_reg(reg), 0x00)  # A-A-0
             else:
@@ -4039,6 +4223,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)  # CY=0
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
 
     def test_cmp_r_a_all_regs(self):
@@ -4053,6 +4238,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_memory_bytes(0, [0x61, opcode2])
             before = _snapshot(proc)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             # Neither register should change
             self.assertEqual(proc.read_gp_reg(reg), 0x10)
             self.assertTrue(proc.read_psw() & Flags.Z)
@@ -4069,6 +4255,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 0x20)
             self.assertFalse(proc.read_psw() & Flags.Z)
             self.assertFalse(proc.read_psw() & Flags.CY)
@@ -4086,6 +4273,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if reg == Registers.A:
                 self.assertEqual(proc.read_gp_reg(reg), 0x0F)  # A AND A
             else:
@@ -4103,6 +4291,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 0xF0)
 
     def test_or_r_a_all_regs(self):
@@ -4117,6 +4306,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if reg == Registers.A:
                 self.assertEqual(proc.read_gp_reg(reg), 0x0F)  # A OR A
             else:
@@ -4134,6 +4324,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
 
     def test_xor_r_a_all_regs(self):
@@ -4147,6 +4338,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(reg), 0x00)
 
     def test_xor_a_r_all_regs(self):
@@ -4161,6 +4353,7 @@ class TestPrefix61RegRegAlu(unittest.TestCase):
             proc.write_psw(Flags.IE)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
 
 
@@ -4176,6 +4369,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_gp_reg(Registers.A, 0x00)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 1 << bit)
 
     def test_clr1_a_all_bits(self):
@@ -4187,6 +4381,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_gp_reg(Registers.A, 0xFF)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF & ~(1 << bit))
 
     def test_mov1_cy_a_bit(self):
@@ -4200,6 +4395,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY,
                 "MOV1 CY,A.%d: CY should be set" % bit)
             # bit clear -> CY=0
@@ -4209,6 +4405,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertFalse(proc.read_psw() & Flags.CY,
                 "MOV1 CY,A.%d: CY should be clear" % bit)
 
@@ -4223,6 +4420,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_gp_reg(Registers.A) & (1 << bit),
                 "MOV1 A.%d,CY=1: bit should be set" % bit)
             # CY=0 -> bit clear
@@ -4232,6 +4430,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertFalse(proc.read_gp_reg(Registers.A) & (1 << bit),
                 "MOV1 A.%d,CY=0: bit should be clear" % bit)
 
@@ -4246,6 +4445,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
             # CY=1, A.bit=0 -> CY=0
             proc, _ = _make_processor()
@@ -4254,6 +4454,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertFalse(proc.read_psw() & Flags.CY)
 
     def test_or1_cy_a_bit(self):
@@ -4267,6 +4468,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
             # CY=0, A.bit=0 -> CY=0
             proc, _ = _make_processor()
@@ -4275,6 +4477,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertFalse(proc.read_psw() & Flags.CY)
 
     def test_xor1_cy_a_bit(self):
@@ -4288,6 +4491,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
             # CY=1, A.bit=1 -> CY=0
             proc, _ = _make_processor()
@@ -4296,6 +4500,7 @@ class TestPrefix61BitOpsA(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x61, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertFalse(proc.read_psw() & Flags.CY)
 
 
@@ -4314,6 +4519,7 @@ class TestAdjba(unittest.TestCase):
         proc.write_psw(psw)
         proc.write_memory_bytes(0, [0x61, 0x80])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         return proc.read_gp_reg(Registers.A), proc.read_psw()
 
     def test_adjba_no_adjust(self):
@@ -4372,6 +4578,7 @@ class TestAdjbs(unittest.TestCase):
         proc.write_psw(psw)
         proc.write_memory_bytes(0, [0x61, 0x90])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         return proc.read_gp_reg(Registers.A), proc.read_psw()
 
     def test_adjbs_no_adjust(self):
@@ -4411,6 +4618,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_memory(0xFF80, 0x00)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x80])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_memory(0xFF80), 1 << bit)
 
     def test_clr1_sfr_all_bits(self):
@@ -4422,6 +4630,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_memory(0xFF80, 0xFF)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x80])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_memory(0xFF80), 0xFF & ~(1 << bit))
 
     def test_set1_hl_all_bits(self):
@@ -4434,6 +4643,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_memory(0x1000, 0x00)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_memory(0x1000), 1 << bit)
 
     def test_clr1_hl_all_bits(self):
@@ -4446,6 +4656,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_memory(0x1000, 0xFF)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_memory(0x1000), 0xFF & ~(1 << bit))
 
     def test_mov1_saddr_bit_cy(self):
@@ -4459,6 +4670,7 @@ class TestPrefix71BitOps(unittest.TestCase):
                 proc.write_psw(cy)
                 proc.write_memory_bytes(0, [0x71, opcode2, 0x20])
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 if cy:
                     self.assertTrue(proc.read_memory(0xFE20) & (1 << bit))
                 else:
@@ -4475,6 +4687,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x80])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
             # bit clear -> CY=0
             proc, _ = _make_processor()
@@ -4483,6 +4696,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x80])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertFalse(proc.read_psw() & Flags.CY)
 
     def test_mov1_sfr_bit_cy(self):
@@ -4496,6 +4710,7 @@ class TestPrefix71BitOps(unittest.TestCase):
                 proc.write_psw(cy)
                 proc.write_memory_bytes(0, [0x71, opcode2, 0x80])
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 if cy:
                     self.assertTrue(proc.read_memory(0xFF80) & (1 << bit))
                 else:
@@ -4511,6 +4726,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x20])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
     def test_mov1_cy_hl_bit(self):
@@ -4524,6 +4740,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
     def test_mov1_hl_bit_cy(self):
@@ -4537,6 +4754,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_memory(0x1000) & (1 << bit))
 
     def test_and1_cy_hl_bit(self):
@@ -4551,6 +4769,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
             # CY=1, bit=0 -> CY=0
             proc, _ = _make_processor()
@@ -4560,6 +4779,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertFalse(proc.read_psw() & Flags.CY)
 
     def test_and1_cy_sfr_bit(self):
@@ -4572,6 +4792,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x80])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
     def test_and1_cy_saddr_bit(self):
@@ -4584,6 +4805,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x20])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
     def test_or1_cy_hl_bit(self):
@@ -4597,6 +4819,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
     def test_or1_cy_sfr_bit(self):
@@ -4609,6 +4832,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x80])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
     def test_or1_cy_saddr_bit(self):
@@ -4621,6 +4845,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x20])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
     def test_xor1_cy_hl_bit(self):
@@ -4635,6 +4860,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
             # CY=1 XOR bit=1 -> CY=0
             proc, _ = _make_processor()
@@ -4644,6 +4870,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(Flags.CY)
             proc.write_memory_bytes(0, [0x71, opcode2])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertFalse(proc.read_psw() & Flags.CY)
 
     def test_xor1_cy_sfr_bit(self):
@@ -4656,6 +4883,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x80])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
     def test_xor1_cy_saddr_bit(self):
@@ -4668,6 +4896,7 @@ class TestPrefix71BitOps(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x71, opcode2, 0x20])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertTrue(proc.read_psw() & Flags.CY)
 
 
@@ -4683,6 +4912,14 @@ class TestHalt(unittest.TestCase):
         # Should re-execute: PC backs up by 2
         self.assertEqual(proc.pc, 0)
 
+    def test_halt_sets_run_state_halted(self):
+        """HALT is the only instruction that sets run_state to HALTED."""
+        proc, _ = _make_processor()
+        proc.write_sp(0xFE00)
+        proc.write_memory_bytes(0, [0x71, 0x10])
+        proc.step()
+        self.assertEqual(proc.run_state, RunState.HALTED)
+
 
 class TestAddcImmExhaustive(unittest.TestCase):
     def test_addc_a_imm_all_256x256_cy0(self):
@@ -4695,6 +4932,7 @@ class TestAddcImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x2d, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (a_val + imm) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "ADDC(CY=0) A=0x%02x,#0x%02x" % (a_val, imm))
@@ -4718,6 +4956,7 @@ class TestAddcImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x2d, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (a_val + imm + 1) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "ADDC(CY=1) A=0x%02x,#0x%02x" % (a_val, imm))
@@ -4743,6 +4982,7 @@ class TestSubcImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x3d, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (a_val - imm) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "SUBC(CY=0) A=0x%02x,#0x%02x" % (a_val, imm))
@@ -4766,6 +5006,7 @@ class TestSubcImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x3d, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = (a_val - imm - 1) & 0xFF
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "SUBC(CY=1) A=0x%02x,#0x%02x" % (a_val, imm))
@@ -4791,6 +5032,7 @@ class TestAndImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x5d, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = a_val & imm
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "AND A=0x%02x,#0x%02x" % (a_val, imm))
@@ -4814,6 +5056,7 @@ class TestOrImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x6d, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = a_val | imm
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "OR A=0x%02x,#0x%02x" % (a_val, imm))
@@ -4837,6 +5080,7 @@ class TestXorImmExhaustive(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x7d, imm])
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = a_val ^ imm
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "XOR A=0x%02x,#0x%02x" % (a_val, imm))
@@ -4863,6 +5107,7 @@ class TestAluAddrModeResults(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode, addr & 0xFF, addr >> 8])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         if verify_a:
             self.assertEqual(proc.read_gp_reg(Registers.A), expected_a,
                 "opcode 0x%02x: A=0x%02x, [0x%04x]=0x%02x -> expected 0x%02x got 0x%02x" %
@@ -4878,6 +5123,7 @@ class TestAluAddrModeResults(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode, offset])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         if verify_a:
             self.assertEqual(proc.read_gp_reg(Registers.A), expected_a)
 
@@ -4890,6 +5136,7 @@ class TestAluAddrModeResults(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode, 0x30])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         if verify_a:
             self.assertEqual(proc.read_gp_reg(Registers.A), expected_a,
                 "opcode 0x%02x saddr: A=0x%02x, [0x%04x]=0x%02x -> expected 0x%02x got 0x%02x" %
@@ -4905,6 +5152,7 @@ class TestAluAddrModeResults(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         if verify_a:
             self.assertEqual(proc.read_gp_reg(Registers.A), expected_a)
 
@@ -4969,6 +5217,7 @@ class TestAluAddrModeResults(unittest.TestCase):
         proc.write_memory_bytes(0, [0x48, 0x00, 0x10])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x50)
 
     def test_cmp_hl_imm_a_preserved(self):
@@ -4980,6 +5229,7 @@ class TestAluAddrModeResults(unittest.TestCase):
         proc.write_memory_bytes(0, [0x49, 0x20])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x50)
 
     def test_cmp_saddr_a_preserved(self):
@@ -4990,6 +5240,7 @@ class TestAluAddrModeResults(unittest.TestCase):
         proc.write_memory_bytes(0, [0x4e, 0x30])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x50)
 
     def test_cmp_hl_a_preserved(self):
@@ -5001,6 +5252,7 @@ class TestAluAddrModeResults(unittest.TestCase):
         proc.write_memory_bytes(0, [0x4f])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x50)
 
     # AND A,<addr>
@@ -5056,6 +5308,7 @@ class TestSaddrAluResults(unittest.TestCase):
         proc.write_memory_bytes(0, [opcode, 0x30, imm])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_memory(saddr), expected_mem,
             "opcode 0x%02x: [saddr]=0x%02x, #0x%02x -> expected 0x%02x got 0x%02x" %
             (opcode, init_mem, imm, expected_mem, proc.read_memory(saddr)))
@@ -5083,6 +5336,7 @@ class TestSaddrAluResults(unittest.TestCase):
         proc.write_memory_bytes(0, [0xc8, 0x30, 0x15])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_memory(saddr), 0x50)
 
     def test_and_saddr_result(self):
@@ -5109,6 +5363,7 @@ class TestPrefix31AluResults(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, op_byte])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         if verify_a:
             self.assertEqual(proc.read_gp_reg(Registers.A), expected_a,
                 "0x31 0x%02x [HL+C]: expected A=0x%02x got 0x%02x" %
@@ -5124,6 +5379,7 @@ class TestPrefix31AluResults(unittest.TestCase):
         proc.write_memory_bytes(0, [0x31, op_byte])
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         if verify_a:
             self.assertEqual(proc.read_gp_reg(Registers.A), expected_a,
                 "0x31 0x%02x [HL+B]: expected A=0x%02x got 0x%02x" %
@@ -5206,6 +5462,7 @@ class TestPrefix61AluResults(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, r])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = (reg_vals[r] + a_val) & 0xFF
             self.assertEqual(proc.read_gp_reg(r), expected,
                 "ADD r%d,A: expected 0x%02x got 0x%02x" % (r, expected, proc.read_gp_reg(r)))
@@ -5221,6 +5478,7 @@ class TestPrefix61AluResults(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, 0x08 + r])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = (a_val + val) & 0xFF
             self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                 "ADD A,r%d: expected 0x%02x got 0x%02x" % (r, expected, proc.read_gp_reg(Registers.A)))
@@ -5236,6 +5494,7 @@ class TestPrefix61AluResults(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, 0x10 + r])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = (reg_vals[r] - a_val) & 0xFF
             self.assertEqual(proc.read_gp_reg(r), expected,
                 "SUB r%d,A: expected 0x%02x got 0x%02x" % (r, expected, proc.read_gp_reg(r)))
@@ -5251,6 +5510,7 @@ class TestPrefix61AluResults(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, 0x18 + r])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = (a_val - val) & 0xFF
             self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                 "SUB A,r%d: expected 0x%02x got 0x%02x" % (r, expected, proc.read_gp_reg(Registers.A)))
@@ -5266,6 +5526,7 @@ class TestPrefix61AluResults(unittest.TestCase):
             proc.write_psw(0)
             proc.write_memory_bytes(0, [0x61, 0x40 + r])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_gp_reg(r), reg_vals[r],
                 "CMP r%d,A: r%d was modified" % (r, r))
             diff = reg_vals[r] - a_val
@@ -5291,6 +5552,7 @@ class TestPrefix61AluResults(unittest.TestCase):
                 proc.write_psw(0)
                 proc.write_memory_bytes(0, [0x61, base_op + r])
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = fn(0x22, val) & 0xFF  # A=0x22
                 self.assertEqual(proc.read_gp_reg(Registers.A), expected,
                     "0x61 0x%02x: expected A=0x%02x got 0x%02x" %
@@ -5312,6 +5574,7 @@ class TestPrefix61AluResults(unittest.TestCase):
                 proc.write_psw(0)
                 proc.write_memory_bytes(0, [0x61, base_op + r])
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 expected = fn(reg_vals[r], 0x22) & 0xFF  # A=0x22
                 self.assertEqual(proc.read_gp_reg(r), expected,
                     "0x61 0x%02x: expected r%d=0x%02x got 0x%02x" %
@@ -5463,6 +5726,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_memory(0xFFFF, 0x00)  # NOP at last address
         proc.pc = 0xFFFF
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x0000)
 
     def test_sp_wraps_on_push(self):
@@ -5470,6 +5734,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_sp(0x0001)
         proc.write_memory_bytes(0, [0x22])  # PUSH PSW
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0x0000)
 
     def test_hl_byte_address_wraps(self):
@@ -5479,6 +5744,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_memory(0x0009, 0x42)  # 0xFFFF + 0x0A = 0x10009 & 0xFFFF = 0x0009
         proc.write_memory_bytes(0, [0xAE, 0x0A])  # MOV A,[HL+0AH]
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
     def test_hl_b_address_wraps(self):
@@ -5489,6 +5755,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_memory(0x0010, 0x55)  # 0xFFF0 + 0x20 = 0x10010 & 0xFFFF = 0x0010
         proc.write_memory_bytes(0, [0xAB])  # MOV A,[HL+B]
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x55)
 
     def test_hl_c_address_wraps(self):
@@ -5499,6 +5766,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_memory(0x0010, 0x66)
         proc.write_memory_bytes(0, [0xAA])  # MOV A,[HL+C]
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x66)
 
     def test_add_0xff_plus_1(self):
@@ -5508,6 +5776,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xFF)
         proc.write_memory_bytes(0, [0x0D, 0x01])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x00)
         psw = proc.read_psw()
         self.assertTrue(psw & Flags.Z)
@@ -5521,6 +5790,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x00)
         proc.write_memory_bytes(0, [0x1D, 0x01])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         psw = proc.read_psw()
         self.assertTrue(psw & Flags.CY)
@@ -5532,6 +5802,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0xFFFF)
         proc.write_memory_bytes(0, [0xCA, 0x01, 0x00])
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x0000)
         psw = proc.read_psw()
         self.assertTrue(psw & Flags.Z)
@@ -5544,6 +5815,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_memory_bytes(0x100, [0x8D, 0x7F])  # BC $+127
         proc.pc = 0x100
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x102 + 0x7F)
 
     def test_branch_max_backward(self):
@@ -5553,6 +5825,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_memory_bytes(0x200, [0x8D, 0x80])  # BC $-128
         proc.pc = 0x200
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x202 - 128)
 
     def test_branch_zero_displacement(self):
@@ -5562,6 +5835,7 @@ class TestEdgeCases(unittest.TestCase):
         proc.write_memory_bytes(0x100, [0x8D, 0x00])  # BC $+0
         proc.pc = 0x100
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x102)
 
     def test_psw_bit2_always_zero(self):
@@ -5586,6 +5860,7 @@ class TestCallfAllPages(unittest.TestCase):
             opcode = 0x0C | (page << 4)
             proc.write_memory_bytes(0, [opcode, 0xFF])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = 0x0800 | (page << 8) | 0xFF
             self.assertEqual(proc.pc, expected,
                 "CALLF page %d: expected 0x%04x got 0x%04x" % (page, expected, proc.pc))
@@ -5601,6 +5876,7 @@ class TestCallfAllPages(unittest.TestCase):
             opcode = 0x0C | (page << 4)
             proc.write_memory_bytes(0, [opcode, 0x00])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = 0x0800 | (page << 8)
             self.assertEqual(proc.pc, expected)
 
@@ -5616,6 +5892,7 @@ class TestCaltAllEntries(unittest.TestCase):
             opcode = 0xC1 | (ta << 1)
             proc.write_memory_bytes(0, [opcode])
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             expected = 0x1000 | ta
             self.assertEqual(proc.pc, expected,
                 "CALLT [%04XH]: expected 0x%04x got 0x%04x" % (table_addr, expected, proc.pc))
@@ -5637,7 +5914,9 @@ class TestNibbleRotateRoundtrip(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x90, 0x31, 0x80])  # ROR4, ROL4
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_gp_reg(Registers.A), a_val,
                     "ROR4+ROL4 A: start=0x%02x mem=0x%02x" % (a_val, mem_val))
                 self.assertEqual(proc.read_memory(0x1000), mem_val,
@@ -5655,7 +5934,9 @@ class TestNibbleRotateRoundtrip(unittest.TestCase):
                 proc.write_memory_bytes(0, [0x31, 0x80, 0x31, 0x90])  # ROL4, ROR4
                 proc.pc = 0
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 proc.step()
+                self.assertEqual(proc.run_state, RunState.RUNNING)
                 self.assertEqual(proc.read_gp_reg(Registers.A), a_val)
                 self.assertEqual(proc.read_memory(0x1000), mem_val)
 
@@ -5669,6 +5950,7 @@ class TestDbnzFullLoop(unittest.TestCase):
         proc.pc = 0x100
         for _ in range(10):
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if proc.read_gp_reg(Registers.B) == 0:
                 break
         self.assertEqual(proc.read_gp_reg(Registers.B), 0)
@@ -5682,6 +5964,7 @@ class TestDbnzFullLoop(unittest.TestCase):
         proc.pc = 0x100
         for _ in range(10):
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if proc.read_gp_reg(Registers.C) == 0:
                 break
         self.assertEqual(proc.read_gp_reg(Registers.C), 0)
@@ -5695,6 +5978,7 @@ class TestDbnzFullLoop(unittest.TestCase):
         proc.pc = 0x100
         for _ in range(10):
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if proc.read_memory(0xFE30) == 0:
                 break
         self.assertEqual(proc.read_memory(0xFE30), 0)
@@ -5718,6 +6002,7 @@ class TestIntegration(unittest.TestCase):
         proc.pc = 0x100
         for _ in range(20):
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if proc.pc == 0x108:
                 break
         self.assertEqual(proc.read_gp_reg(Registers.A), 15)  # 1+2+3+4+5
@@ -5746,6 +6031,7 @@ class TestIntegration(unittest.TestCase):
         proc.pc = 0x100
         for _ in range(50):
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if proc.pc >= 0x10D:
                 break
         for i in range(4):
@@ -5773,6 +6059,7 @@ class TestIntegration(unittest.TestCase):
         proc.pc = 0x100
         for _ in range(10):
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             if proc.pc == 0x105:
                 break
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
@@ -5788,10 +6075,12 @@ class TestIntegration(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0x0B)
         proc.write_memory_bytes(0, [0x31, 0x88])  # MULU X
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x004D)  # 7*11=77
         proc.write_gp_reg(Registers.C, 0x0B)
         proc.write_memory_bytes(2, [0x31, 0x82])  # DIVUW C
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x0007)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x00)
 
@@ -5801,6 +6090,7 @@ class TestIntegration(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0x1234)
         proc.write_memory_bytes(0, [0xCA, 0x78, 0x56])  # ADDW AX, #5678H
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x68AC)
 
 
@@ -5814,7 +6104,9 @@ class TestBCDAdjustIntegration(unittest.TestCase):
         proc.write_memory_bytes(0, [0x0D, 0x37, 0x61, 0x80])  # ADD A,#37; ADJBA
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x62)
         self.assertFalse(proc.read_psw() & Flags.CY)
 
@@ -5827,7 +6119,9 @@ class TestBCDAdjustIntegration(unittest.TestCase):
         proc.write_memory_bytes(0, [0x0D, 0x01, 0x61, 0x80])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x00)
         self.assertTrue(proc.read_psw() & Flags.CY)
 
@@ -5840,7 +6134,9 @@ class TestBCDAdjustIntegration(unittest.TestCase):
         proc.write_memory_bytes(0, [0x1D, 0x37, 0x61, 0x90])  # SUB A,#37; ADJBS
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x25)
         self.assertFalse(proc.read_psw() & Flags.CY)
 
@@ -5853,7 +6149,9 @@ class TestBCDAdjustIntegration(unittest.TestCase):
         proc.write_memory_bytes(0, [0x1D, 0x01, 0x61, 0x90])
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x99)
         self.assertTrue(proc.read_psw() & Flags.CY)
 

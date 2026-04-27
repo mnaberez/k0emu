@@ -1,7 +1,7 @@
 import unittest
 import sys
 from k0emu.devices import MemoryDevice
-from k0emu.processor import Processor, Registers, RegisterPairs, Flags
+from k0emu.processor import Processor, Registers, RegisterPairs, Flags, RunState
 
 
 def _make_processor():
@@ -13,14 +13,22 @@ def _make_processor():
 
 class ProcessorTests(unittest.TestCase):
 
+    # reset
+
+    def test_ctor_defaults_to_running_state(self):
+        proc, _ = _make_processor()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
+
     # step
 
     def test_step_ticks_bus_devices(self):
         proc, mem = _make_processor()
         proc.write_memory_bytes(0, [0x00, 0x00])  # 2x nop
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(mem.ticks, 2)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(mem.ticks, 4)
 
     # register banks
@@ -94,6 +102,7 @@ class ProcessorTests(unittest.TestCase):
         code = [0x00] # nop
         proc.write_memory_bytes(0, code)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
 
     # not1 cy
@@ -103,6 +112,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(proc.read_psw() & ~Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_psw(), Flags.CY)
         self.assertEqual(proc.pc, len(code))
 
@@ -113,6 +123,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(proc.read_psw() | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
         self.assertEqual(proc.pc, len(code))
 
@@ -123,6 +134,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(proc.read_psw() & ~Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
         self.assertEqual(proc.pc, len(code))
 
@@ -133,6 +145,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(proc.read_psw() | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
         self.assertEqual(proc.pc, len(code))
 
@@ -144,6 +157,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.X, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -156,6 +170,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.C, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -168,6 +183,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.B, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -180,6 +196,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.E, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -192,6 +209,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.D, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -204,6 +222,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.L, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -216,6 +235,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_gp_reg(Registers.H, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -228,6 +248,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_memory(0xabcd, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_memory(0xabcd), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -240,6 +261,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_memory(0xfe20, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_memory(0xfe20), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -252,6 +274,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_memory(0xfffe, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_memory(0xfffe), 0x55)
         self.assertEqual(proc.pc, len(code))
@@ -264,6 +287,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0)
         proc.write_psw(0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x42)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0xAA) # unchanged
@@ -276,6 +300,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0)
         proc.write_psw(0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0xAA) # unchanged
@@ -288,6 +313,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0)
         proc.write_psw(0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x42)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0xAA) # unchanged
@@ -300,6 +326,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0)
         proc.write_psw(0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x42)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0xAA) # unchanged
@@ -312,6 +339,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0)
         proc.write_psw(0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x42)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0xAA) # unchanged
@@ -324,6 +352,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0)
         proc.write_psw(0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x42)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0xAA) # unchanged
@@ -336,6 +365,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0)
         proc.write_psw(0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x42)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0xAA) # unchanged
@@ -348,6 +378,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -358,6 +389,7 @@ class ProcessorTests(unittest.TestCase):
         code = [0x9B, 0xCD, 0xAB] # br !0abcdh
         proc.write_memory_bytes(0, code)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0xABCD)
 
     # br ax                       ;31 98
@@ -367,6 +399,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0xabcd)
 
     # adjba                       ;61 80
@@ -390,6 +423,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_reg(Registers.A, a_in)
             proc.write_psw(psw_in)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_reg(Registers.A), a_out)
             self.assertEqual(proc.read_psw(), psw_out)
@@ -413,6 +447,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_reg(Registers.A, a_in)
             proc.write_psw(psw_in)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_reg(Registers.A), a_out)
             self.assertEqual(proc.read_psw(), psw_out)
@@ -424,6 +459,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_rb(1)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_rb(), 0)
 
@@ -434,6 +470,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         self.assertEqual(proc.read_rb(), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_rb(), 1)
 
@@ -444,6 +481,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         self.assertEqual(proc.read_rb(), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_rb(), 2)
 
@@ -454,6 +492,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         self.assertEqual(proc.read_rb(), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_rb(), 3)
 
@@ -465,6 +504,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.X, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
     # mov a,c                   ;62
@@ -475,6 +515,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.C, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -486,6 +527,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.B, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -497,6 +539,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.E, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -508,6 +551,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.D, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -519,6 +563,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.L, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -530,6 +575,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.write_gp_reg(Registers.H, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -541,6 +587,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.X), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x42)
 
@@ -552,6 +599,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.C), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x42)
 
@@ -563,6 +611,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.B), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x42)
 
@@ -574,6 +623,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.E), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x42)
 
@@ -585,6 +635,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.D), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x42)
 
@@ -596,6 +647,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.L), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x42)
 
@@ -607,6 +659,7 @@ class ProcessorTests(unittest.TestCase):
         self.assertEqual(proc.read_gp_reg(Registers.H), 0)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
 
@@ -618,6 +671,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -628,6 +682,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
 
@@ -639,6 +694,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -650,6 +706,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -661,6 +718,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         self.assertEqual(proc.read_memory(0xfe20), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0x42)
 
@@ -672,6 +730,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0x42)
 
@@ -683,6 +742,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -694,6 +754,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         self.assertEqual(proc.read_memory(0xfffe), 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0x42)
 
@@ -704,6 +765,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xab)
 
@@ -714,6 +776,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0x42)
 
@@ -724,6 +787,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xab)
 
@@ -735,6 +799,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -747,6 +812,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(proc.read_psw() & ~Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         self.assertEqual(proc.read_psw() & Flags.Z, Flags.Z)
@@ -760,6 +826,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -773,6 +840,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -786,6 +854,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -799,6 +868,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -812,6 +882,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -825,6 +896,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -838,6 +910,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -851,6 +924,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -864,6 +938,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -876,6 +951,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -889,6 +965,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -902,6 +979,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -915,6 +993,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -928,6 +1007,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -941,6 +1021,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -953,6 +1034,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -966,6 +1048,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -978,6 +1061,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x00)
         proc.write_psw(proc.read_psw() & ~Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         self.assertEqual(proc.read_psw() & Flags.Z, Flags.Z)
@@ -990,6 +1074,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() & ~Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1004,6 +1089,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1017,6 +1103,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1031,6 +1118,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1046,6 +1134,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1061,6 +1150,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1074,6 +1164,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1086,6 +1177,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0xff)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1098,6 +1190,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0)
         self.assertEqual(proc.read_psw(), Flags.Z)
@@ -1110,6 +1203,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.Z)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xffff)
         self.assertEqual(proc.read_psw(), Flags.CY)
@@ -1122,6 +1216,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.Z | Flags.CY)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 1)
         self.assertEqual(proc.read_psw(), 0)
@@ -1134,6 +1229,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
         self.assertEqual(proc.read_psw(), Flags.Z)
@@ -1146,6 +1242,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.Z)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
         self.assertEqual(proc.read_psw(), Flags.CY)
@@ -1158,6 +1255,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.Z | Flags.CY)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
         self.assertEqual(proc.read_psw(), 0)
@@ -1171,6 +1269,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x22)
@@ -1185,6 +1284,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x22)
@@ -1199,6 +1299,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x22)
@@ -1213,6 +1314,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x22)
@@ -1227,6 +1329,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x22)
@@ -1241,6 +1344,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x22)
@@ -1255,6 +1359,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x22)
@@ -1269,6 +1374,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1283,6 +1389,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1297,6 +1404,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1311,6 +1419,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1325,6 +1434,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1339,6 +1449,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1353,6 +1464,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x10)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1368,6 +1480,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
@@ -1384,6 +1497,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_psw(), 0)
@@ -1399,6 +1513,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_psw(), 0)
@@ -1412,6 +1527,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
@@ -1425,6 +1541,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_psw(), 0)
@@ -1438,6 +1555,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_memory(0xfe20), 0x22)
@@ -1453,6 +1571,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
@@ -1467,6 +1586,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x33)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0x10)
         self.assertEqual(proc.read_psw(), 0)
@@ -1480,6 +1600,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x22)
@@ -1494,6 +1615,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x22)
@@ -1508,6 +1630,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x22)
@@ -1522,6 +1645,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x22)
@@ -1536,6 +1660,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x22)
@@ -1550,6 +1675,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x22)
@@ -1564,6 +1690,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x22)
@@ -1578,6 +1705,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1592,6 +1720,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1606,6 +1735,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1620,6 +1750,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1634,6 +1765,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1648,6 +1780,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1662,6 +1795,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x22)
         proc.write_psw(proc.read_psw() | Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x11)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x22)
@@ -1676,6 +1810,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
@@ -1690,6 +1825,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
@@ -1704,6 +1840,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
@@ -1718,6 +1855,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
@@ -1732,6 +1870,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
@@ -1746,6 +1885,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
@@ -1760,6 +1900,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
@@ -1774,6 +1915,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x42)
@@ -1788,6 +1930,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0x42)
@@ -1802,6 +1945,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0x42)
@@ -1816,6 +1960,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.D), 0x42)
@@ -1830,6 +1975,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0x42)
@@ -1844,6 +1990,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_gp_reg(Registers.H), 0x42)
@@ -1859,6 +2006,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
@@ -1872,6 +2020,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_psw(), Flags.Z)
@@ -1885,6 +2034,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_memory(0xfe20), 0x42)
@@ -1900,6 +2050,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
@@ -1916,6 +2067,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
@@ -1932,6 +2084,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
@@ -1947,6 +2100,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
@@ -1961,6 +2115,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x42)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
         self.assertEqual(proc.read_memory(0xfe20), 0x42)
@@ -1975,6 +2130,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -1988,6 +2144,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2001,6 +2158,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2014,6 +2172,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2027,6 +2186,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2040,6 +2200,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2053,6 +2214,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2066,6 +2228,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2078,6 +2241,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xff)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2091,6 +2255,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2104,6 +2269,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2117,6 +2283,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2130,6 +2297,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2143,6 +2311,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2156,6 +2325,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xf0)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 0xf0)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2169,6 +2339,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -2183,6 +2354,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe1d, 0xcd) # stack: return address low
         proc.write_memory(0xfe1e, 0xab) # stack: return address high
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xfe1f)
         self.assertEqual(proc.pc, 0xabcd)
 
@@ -2194,6 +2366,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_sp(0xFE1F)
         proc.write_psw(0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xfe1e)
         self.assertEqual(proc.read_memory(0xfe1e), 0x42)
         self.assertEqual(proc.pc, len(code))
@@ -2207,6 +2380,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xFE1E, 0x42) # stack: psw
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xfe1F)
         self.assertEqual(proc.read_psw(), 0x42)
         self.assertEqual(proc.pc, len(code))
@@ -2220,6 +2394,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2233,6 +2408,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         self.assertEqual(proc.read_psw() & Flags.Z, Flags.Z)
@@ -2246,6 +2422,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2259,6 +2436,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2272,6 +2450,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2285,6 +2464,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2298,6 +2478,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2311,6 +2492,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2324,6 +2506,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2336,6 +2519,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
         self.assertEqual(proc.read_psw() & Flags.Z, Flags.Z)
@@ -2349,6 +2533,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2362,6 +2547,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2375,6 +2561,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2388,6 +2575,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2401,6 +2589,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2414,6 +2603,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2427,6 +2617,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2440,6 +2631,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2453,6 +2645,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2465,6 +2658,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x55)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -2476,6 +2670,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111110)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xff)
 
@@ -2486,6 +2681,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)
 
@@ -2498,6 +2694,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
@@ -2511,6 +2708,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x33)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_psw(), 0)
@@ -2525,6 +2723,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
@@ -2540,6 +2739,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_memory(0xabcd), 0x22)
@@ -2554,6 +2754,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_memory(0xfe20), 0x22)
@@ -2568,6 +2769,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x33)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0x11)
         self.assertEqual(proc.read_psw(), 0)
@@ -2583,6 +2785,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_psw(), 0)
@@ -2598,6 +2801,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x22)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x11)
         self.assertEqual(proc.read_psw(), 0)
@@ -2609,6 +2813,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111101)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xff)
 
@@ -2619,6 +2824,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)
 
@@ -2629,6 +2835,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xff)
 
@@ -2639,6 +2846,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011) # psw bit 2 is always stuck off
 
@@ -2649,6 +2857,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11110111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xff)
 
@@ -2659,6 +2868,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11110011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)
 
@@ -2669,6 +2879,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11101111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xff)
 
@@ -2679,6 +2890,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11101011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)
 
@@ -2689,6 +2901,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11011111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xff)
 
@@ -2699,6 +2912,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11011011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)
 
@@ -2709,6 +2923,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b10111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xff)
 
@@ -2719,6 +2934,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)
 
@@ -2729,6 +2945,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b01111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xff)
 
@@ -2740,6 +2957,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)
 
@@ -2750,6 +2968,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111110)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
 
@@ -2760,6 +2979,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111101)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
 
@@ -2770,6 +2990,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
 
@@ -2780,6 +3001,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11110111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
 
@@ -2790,6 +3012,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11101111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
 
@@ -2800,6 +3023,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11011111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
 
@@ -2810,6 +3034,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b10111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
 
@@ -2820,6 +3045,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b01111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xff)
 
@@ -2830,6 +3056,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111110)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xff)
 
@@ -2840,6 +3067,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111101)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xff)
 
@@ -2850,6 +3078,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xff)
 
@@ -2860,6 +3089,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11110111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xff)
 
@@ -2870,6 +3100,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11101111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xff)
 
@@ -2880,6 +3111,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11011111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xff)
 
@@ -2890,6 +3122,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b10111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xff)
 
@@ -2900,6 +3133,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b01111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0xff)
 
@@ -2910,6 +3144,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0x1000, code)
         proc.pc = 0x1000
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1016)
 
     # bc $label3                  ;8d fe
@@ -2920,6 +3155,7 @@ class ProcessorTests(unittest.TestCase):
         proc.pc = 0x1000
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1036)
 
     # bc $label3                  ;8d fe
@@ -2930,6 +3166,7 @@ class ProcessorTests(unittest.TestCase):
         proc.pc = 0x1000
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1000 + len(code))
 
     # bnc $label3                  ;9d fe
@@ -2940,6 +3177,7 @@ class ProcessorTests(unittest.TestCase):
         proc.pc = 0x1000
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1036)
 
     # bnc $label3                  ;9d fe
@@ -2950,6 +3188,7 @@ class ProcessorTests(unittest.TestCase):
         proc.pc = 0x1000
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1000 + len(code))
 
     # bz $label5                  ;ad fe
@@ -2960,6 +3199,7 @@ class ProcessorTests(unittest.TestCase):
         proc.pc = 0x1000
         proc.write_psw(Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1036)
 
     # bz $label5                  ;ad fe
@@ -2970,6 +3210,7 @@ class ProcessorTests(unittest.TestCase):
         proc.pc = 0x1000
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1000 + len(code))
 
     # bnz $label5                 ;bd fe
@@ -2980,6 +3221,7 @@ class ProcessorTests(unittest.TestCase):
         proc.pc = 0x1000
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1036)
 
     # bnz $label5                 ;bd fe
@@ -2990,6 +3232,7 @@ class ProcessorTests(unittest.TestCase):
         proc.pc = 0x1000
         proc.write_psw(Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1000 + len(code))
 
     # clr1 a.0                    ;61 8b
@@ -2999,6 +3242,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111110)
 
@@ -3009,6 +3253,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111101)
 
@@ -3019,6 +3264,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111011)
 
@@ -3029,6 +3275,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11110111)
 
@@ -3039,6 +3286,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11101111)
 
@@ -3049,6 +3297,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11011111)
 
@@ -3059,6 +3308,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b10111111)
 
@@ -3069,6 +3319,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b01111111)
 
@@ -3079,6 +3330,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b11111110)
 
@@ -3089,6 +3341,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b11111101)
 
@@ -3099,6 +3352,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b11111011)
 
@@ -3109,6 +3363,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b11110111)
 
@@ -3119,6 +3374,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b11101111)
 
@@ -3129,6 +3385,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b11011111)
 
@@ -3139,6 +3396,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b10111111)
 
@@ -3149,6 +3407,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfffe, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b01111111)
 
@@ -3159,6 +3418,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b11111110)
 
@@ -3169,6 +3429,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010)
 
@@ -3179,6 +3440,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b11111101)
 
@@ -3189,6 +3451,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111001)
 
@@ -3199,6 +3462,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b11111011)
 
@@ -3209,6 +3473,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)
 
@@ -3219,6 +3484,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b11110111)
 
@@ -3229,6 +3495,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11110011)
 
@@ -3239,6 +3506,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b11101111)
 
@@ -3249,6 +3517,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11101011)
 
@@ -3259,6 +3528,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b11011111)
 
@@ -3269,6 +3539,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11011011)
 
@@ -3279,6 +3550,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b10111111)
 
@@ -3289,6 +3561,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10111011)
 
@@ -3299,6 +3572,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_memory(0xfe20, 0b11111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b01111111)
 
@@ -3310,6 +3584,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b01111011)
 
@@ -3320,6 +3595,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_sp(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xabcd)
 
@@ -3329,6 +3605,7 @@ class ProcessorTests(unittest.TestCase):
         code = [0xee, 0x20, 0xcd, 0xab]
         proc.write_memory_bytes(0, code)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xcd)
         self.assertEqual(proc.read_memory(0xfe21), 0xab)
@@ -3341,6 +3618,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111010)
         proc.write_gp_reg(Registers.A, 0b01010101) # bit 0 = 1
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111011)# bit 0 = 1
 
@@ -3352,6 +3630,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111011)
         proc.write_gp_reg(Registers.A, 0b10101010) # bit 0 = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010) # CY = 0
 
@@ -3363,6 +3642,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111011)
         proc.write_gp_reg(Registers.A, 0b11111101) # bit 1 = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010) # CY = 0
 
@@ -3374,6 +3654,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111011)
         proc.write_gp_reg(Registers.A, 0b11111011) # bit 2 = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010) # CY = 0
 
@@ -3385,6 +3666,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111011)
         proc.write_gp_reg(Registers.A, 0b11110111) # bit 3 = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010) # CY = 0
 
@@ -3396,6 +3678,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111011)
         proc.write_gp_reg(Registers.A, 0b11101111) # bit 4 = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010) # CY = 0
 
@@ -3407,6 +3690,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111011)
         proc.write_gp_reg(Registers.A, 0b11011111) # bit 5 = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010) # CY = 0
 
@@ -3418,6 +3702,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111011)
         proc.write_gp_reg(Registers.A, 0b10111111) # bit 6 = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010) # CY = 0
 
@@ -3429,6 +3714,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b11111011)
         proc.write_gp_reg(Registers.A, 0b01111111) # bit 7 = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b11111010) # CY = 0
 
@@ -3440,6 +3726,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000001) # bit 0 = 1
 
@@ -3451,6 +3738,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000010) # bit 1 = 1
 
@@ -3462,6 +3750,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000100) # bit 2 = 1
 
@@ -3473,6 +3762,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00001000) # bit 3 = 1
 
@@ -3484,6 +3774,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00010000) # bit 4 = 1
 
@@ -3495,6 +3786,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00100000) # bit 5 = 1
 
@@ -3506,6 +3798,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b01000000) # bit 6 = 1
 
@@ -3517,6 +3810,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b10000000) # bit 7 = 1
 
@@ -3528,6 +3822,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00000001)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -3539,6 +3834,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00000010)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -3550,6 +3846,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00000100)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -3561,6 +3858,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00001000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -3572,6 +3870,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00010000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -3583,6 +3882,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00100000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -3594,6 +3894,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b01000000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -3605,6 +3906,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b10000000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -3617,6 +3919,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.IE | Flags.Z)  # set IE and Z
         proc.write_gp_reg(Registers.A, 0x00)  # A=0 (different from PSW)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         # CY should be set, IE and Z should be preserved
         self.assertEqual(proc.read_psw(), Flags.IE | Flags.Z | Flags.CY)
 
@@ -3628,6 +3931,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.IE | Flags.CY)  # IE set, CY set
         proc.write_gp_reg(Registers.A, 0xFF)  # A=FF (different from PSW)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         # CY should be cleared, IE should be preserved, A should not affect PSW
         self.assertEqual(proc.read_psw(), Flags.IE)
 
@@ -3639,6 +3943,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.IE)  # PSW = 0x80
         proc.write_gp_reg(Registers.A, 0x20)  # A = 0x20 (RBS1 bit)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         # Should set CY and preserve IE.  Must NOT set RBS1 from A.
         self.assertEqual(proc.read_psw(), Flags.IE | Flags.CY)
 
@@ -3650,6 +3955,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b00000001)
 
@@ -3661,6 +3967,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b00000010)
 
@@ -3672,6 +3979,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b00000100)
 
@@ -3683,6 +3991,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b00001000)
 
@@ -3694,6 +4003,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b00010000)
 
@@ -3705,6 +4015,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b00100000)
 
@@ -3716,6 +4027,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b01000000)
 
@@ -3727,6 +4039,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfffe), 0b10000000)
 
@@ -3738,6 +4051,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b00000001)
 
@@ -3749,6 +4063,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b00000010)
 
@@ -3760,6 +4075,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b00000100)
 
@@ -3771,6 +4087,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b00001000)
 
@@ -3782,6 +4099,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b00010000)
 
@@ -3793,6 +4111,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b00100000)
 
@@ -3804,6 +4123,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b01000000)
 
@@ -3815,6 +4135,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0b10000000)
 
@@ -3825,6 +4146,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3835,6 +4157,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000011)
 
@@ -3845,6 +4168,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001) # psw bit 2 is always stuck off
 
@@ -3855,6 +4179,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00001001)
 
@@ -3865,6 +4190,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00010001)
 
@@ -3875,6 +4201,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00100001)
 
@@ -3885,6 +4212,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b01000001)
 
@@ -3895,6 +4223,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10000001)
 
@@ -3906,6 +4235,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000001)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3917,6 +4247,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000010)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3928,6 +4259,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000100)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3939,6 +4271,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00001000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3950,6 +4283,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00010000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3961,6 +4295,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00100000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3972,6 +4307,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b01000000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3983,6 +4319,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b10000000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -3993,6 +4330,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -4003,6 +4341,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000011)
 
@@ -4013,6 +4352,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000001) # psw bit 2 is always stuck off, carry on
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0) # carry off
 
@@ -4023,6 +4363,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00001001)
 
@@ -4033,6 +4374,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00010001)
 
@@ -4043,6 +4385,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00100001)
 
@@ -4053,6 +4396,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b01000001)
 
@@ -4063,6 +4407,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10000001)
 
@@ -4074,6 +4419,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.X), 1)
@@ -4086,6 +4432,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0xFF)
         proc.write_psw(Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z | Flags.AC)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0)
@@ -4098,6 +4445,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0b00001111)
         proc.write_psw(Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.AC)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0b00010000)
@@ -4114,6 +4462,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_reg(Registers.X, x)
             proc.write_psw(0)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             if x in ac_setters:
                 self.assertEqual(proc.read_psw() & Flags.AC, Flags.AC)
@@ -4134,6 +4483,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.A), 1)
@@ -4146,6 +4496,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.C), 1)
@@ -4158,6 +4509,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.B), 1)
@@ -4170,6 +4522,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.E), 1)
@@ -4182,6 +4535,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.D), 1)
@@ -4194,6 +4548,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.L), 1)
@@ -4206,6 +4561,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.H), 1)
@@ -4218,6 +4574,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_memory(0xfe20), 1)
@@ -4231,6 +4588,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4245,6 +4603,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4259,6 +4618,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4273,6 +4633,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4287,6 +4648,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4301,6 +4663,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4315,6 +4678,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4329,6 +4693,7 @@ class ProcessorTests(unittest.TestCase):
         return_address = proc.pc + len(code)
         proc.write_sp(0xFE1F)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.read_sp(), 0xFE1d)
         self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
         self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4357,6 +4722,7 @@ class ProcessorTests(unittest.TestCase):
 
             proc.write_sp(0xFE1F)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.read_sp(), 0xFE1d)
             self.assertEqual(proc.read_memory(0xFE1d), (return_address & 0xFF))
             self.assertEqual(proc.read_memory(0xFE1e), (return_address >> 8))
@@ -4376,6 +4742,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_psw(original_psw)
             proc.write_gp_reg(Registers.A, original_a)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
             self.assertEqual(proc.read_psw(), rotated_psw)
@@ -4394,6 +4761,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_psw(original_psw)
             proc.write_gp_reg(Registers.A, original_a)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
             self.assertEqual(proc.read_psw(), rotated_psw)
@@ -4412,6 +4780,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_psw(original_psw)
             proc.write_gp_reg(Registers.A, original_a)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
             self.assertEqual(proc.read_psw(), rotated_psw)
@@ -4430,6 +4799,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_psw(original_psw)
             proc.write_gp_reg(Registers.A, original_a)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_reg(Registers.A), rotated_a)
             self.assertEqual(proc.read_psw(), rotated_psw)
@@ -4442,6 +4812,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0)
         proc.write_psw(Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.AC)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0xFF)
@@ -4454,6 +4825,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0)
@@ -4466,6 +4838,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0x10)
         proc.write_psw(Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.AC)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x0f)
@@ -4478,6 +4851,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0xff)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0xfe)
@@ -4494,6 +4868,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_reg(Registers.X, x)
             proc.write_psw(0)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             if x in ac_setters:
                 self.assertEqual(proc.read_psw() & Flags.AC, Flags.AC)
@@ -4516,6 +4891,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0)
@@ -4528,6 +4904,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0)
@@ -4540,6 +4917,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_gp_reg(Registers.B), 0)
@@ -4552,6 +4930,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0)
@@ -4564,6 +4943,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_gp_reg(Registers.D), 0)
@@ -4576,6 +4956,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0)
@@ -4588,6 +4969,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_gp_reg(Registers.H), 0)
@@ -4600,6 +4982,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.Z)
         self.assertEqual(proc.read_memory(0xfe20), 0)
@@ -4613,6 +4996,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0)
         proc.write_psw(Flags.AC | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x0ff2) # branch taken
         self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
         self.assertEqual(proc.read_gp_reg(Registers.C), 0xFF) # decremented
@@ -4626,6 +5010,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 3)
         proc.write_psw(Flags.AC | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x0ff2) # branch taken
         self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
         self.assertEqual(proc.read_gp_reg(Registers.C), 2) # decremented
@@ -4639,6 +5024,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1000+len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), Flags.AC) # unchanged
         self.assertEqual(proc.read_gp_reg(Registers.C), 0) # decremented
@@ -4652,6 +5038,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0)
         proc.write_psw(Flags.AC | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x0ff2) # branch taken
         self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
         self.assertEqual(proc.read_gp_reg(Registers.B), 0xFF) # decremented
@@ -4665,6 +5052,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 3)
         proc.write_psw(Flags.AC | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x0ff2) # branch taken
         self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
         self.assertEqual(proc.read_gp_reg(Registers.B), 2) # decremented
@@ -4678,6 +5066,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 1)
         proc.write_psw(Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1000+len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), Flags.AC) # unchanged
         self.assertEqual(proc.read_gp_reg(Registers.B), 0) # decremented
@@ -4691,6 +5080,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(Flags.AC | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x0ff3) # branch taken
         self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
         self.assertEqual(proc.read_memory(0xfe20), 0xFF) # decremented
@@ -4704,6 +5094,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 3)
         proc.write_psw(Flags.AC | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x0ff3) # branch taken
         self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
         self.assertEqual(proc.read_memory(0xfe20), 2) # decremented
@@ -4717,6 +5108,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 1)
         proc.write_psw(Flags.AC | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x1000+len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), Flags.AC | Flags.Z) # unchanged
         self.assertEqual(proc.read_memory(0xfe20), 0) # decremented
@@ -4730,6 +5122,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111110)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4742,6 +5135,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000001)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4754,6 +5148,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111101)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4766,6 +5161,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000010)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4778,6 +5174,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111011)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4790,6 +5187,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000100)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4802,6 +5200,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11110111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4814,6 +5213,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00001000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4826,6 +5226,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11101111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4838,6 +5239,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00010000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4850,6 +5252,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11011111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4862,6 +5265,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00100000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4874,6 +5278,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b10111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4886,6 +5291,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b01000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4898,6 +5304,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b01111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4910,6 +5317,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b10000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4921,6 +5329,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000001)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000000) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -4933,6 +5342,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111110) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -4945,6 +5355,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4956,6 +5367,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000010)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4967,6 +5379,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111101) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -4979,6 +5392,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -4990,6 +5404,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000100)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5001,6 +5416,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11111011) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5013,6 +5429,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5024,6 +5441,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00001000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000000) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5036,6 +5454,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11110111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5048,6 +5467,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5059,6 +5479,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00010000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000000) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5071,6 +5492,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11101111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5083,6 +5505,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5094,6 +5517,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00100000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000000) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5106,6 +5530,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b11011111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5118,6 +5543,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5129,6 +5555,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b01000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000000) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5141,6 +5568,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b10111111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5153,6 +5581,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5164,6 +5593,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b10000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b00000000) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5176,6 +5606,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_gp_reg(Registers.A), 0b01111111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -5188,6 +5619,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5200,6 +5632,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b11111110)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5212,6 +5645,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5224,6 +5658,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b11111101)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5236,6 +5671,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5248,6 +5684,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5260,6 +5697,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5272,6 +5710,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b11110111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5284,6 +5723,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5296,6 +5736,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b11101111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5308,6 +5749,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5320,6 +5762,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b11011111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5332,6 +5775,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5344,6 +5788,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b10111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5356,6 +5801,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5368,6 +5814,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b01111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5380,6 +5827,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5391,6 +5839,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b11111110)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5402,6 +5851,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5413,6 +5863,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b11111101)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5424,6 +5875,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5435,6 +5887,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5446,6 +5899,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5457,6 +5911,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b11110111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5468,6 +5923,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5479,6 +5935,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b11101111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5490,6 +5947,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5501,6 +5959,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b11011111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5512,6 +5971,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5523,6 +5983,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b10111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5534,6 +5995,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5545,6 +6007,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b01111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5556,6 +6019,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0x0fffe, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5566,6 +6030,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11111010) # unchanged
 
@@ -5576,6 +6041,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0b00000001) # unchanged
 
@@ -5586,6 +6052,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11111001) # unchanged
 
@@ -5596,6 +6063,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0b00000010) # unchanged
 
@@ -5606,6 +6074,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11111011) # unchanged
 
@@ -5619,6 +6088,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11110011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11110011) # unchanged
 
@@ -5629,6 +6099,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0b00001000) # unchanged
 
@@ -5639,6 +6110,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11101011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11101011) # unchanged
 
@@ -5649,6 +6121,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0b00010000) # unchanged
 
@@ -5659,6 +6132,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11011011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11011011) # unchanged
 
@@ -5669,6 +6143,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0b00100000) # unchanged
 
@@ -5679,6 +6154,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b10111011) # unchanged
 
@@ -5689,6 +6165,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0b01000000) # unchanged
 
@@ -5699,6 +6176,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b01111011) # unchanged
 
@@ -5709,6 +6187,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0b10000000) # unchanged
 
@@ -5720,6 +6199,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b11111110)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5731,6 +6211,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5742,6 +6223,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b11111101)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5753,6 +6235,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5764,6 +6247,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5775,6 +6259,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5786,6 +6271,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b11110111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5797,6 +6283,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5808,6 +6295,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b11101111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5819,6 +6307,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5830,6 +6319,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b11011111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5841,6 +6331,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5852,6 +6343,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b10111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5863,6 +6355,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5874,6 +6367,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b01111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5885,6 +6379,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_memory(0xfe20, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5896,6 +6391,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b11111110)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5907,6 +6403,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5918,6 +6415,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b11111101)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5929,6 +6427,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5940,6 +6439,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5951,6 +6451,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5962,6 +6463,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b11110111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5973,6 +6475,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5984,6 +6487,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b11101111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -5995,6 +6499,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6006,6 +6511,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b11011111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6017,6 +6523,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6028,6 +6535,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b10111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6039,6 +6547,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6050,6 +6559,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b01111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6061,6 +6571,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0x51)
         proc.write_gp_reg(Registers.A, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6072,6 +6583,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000001)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6083,6 +6595,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6094,6 +6607,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000010)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6105,6 +6619,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6116,6 +6631,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000100)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6127,6 +6643,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6138,6 +6655,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00001000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6149,6 +6667,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6160,6 +6679,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00010000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6171,6 +6691,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6182,6 +6703,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00100000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6193,6 +6715,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6204,6 +6727,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b01000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6215,6 +6739,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6226,6 +6751,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b10000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6237,6 +6763,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6249,6 +6776,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000001)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6261,6 +6789,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_memory(0xabcd), 0b11111110) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6274,6 +6803,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6286,6 +6816,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000010)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6298,6 +6829,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_memory(0xabcd), 0b11111101) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6311,6 +6843,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6323,6 +6856,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000100)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6335,6 +6869,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_memory(0xabcd), 0b11111011) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6348,6 +6883,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6360,6 +6896,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00001000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6372,6 +6909,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_memory(0xabcd), 0b11110111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6385,6 +6923,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6397,6 +6936,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00010000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6409,6 +6949,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_memory(0xabcd), 0b11101111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6422,6 +6963,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6434,6 +6976,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00100000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6446,6 +6989,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_memory(0xabcd), 0b11011111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6459,6 +7003,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6471,6 +7016,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b01000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6483,6 +7029,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_memory(0xabcd), 0b10111111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6496,6 +7043,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6508,6 +7056,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b10000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6520,6 +7069,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x23) # branch taken
         self.assertEqual(proc.read_memory(0xabcd), 0b01111111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6533,6 +7083,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6544,6 +7095,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b00000001)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6555,6 +7107,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_memory(0x0fe20), 0b11111110) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6567,6 +7120,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6578,6 +7132,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b00000010)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6589,6 +7144,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_memory(0x0fe20), 0b11111101) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6601,6 +7157,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6612,6 +7169,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b00000100)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6623,6 +7181,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_memory(0x0fe20), 0b11111011) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6635,6 +7194,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6646,6 +7206,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b00001000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6657,6 +7218,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_memory(0x0fe20), 0b11110111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6669,6 +7231,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6680,6 +7243,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b00010000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6691,6 +7255,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_memory(0x0fe20), 0b11101111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6703,6 +7268,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6714,6 +7280,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b00100000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6725,6 +7292,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_memory(0x0fe20), 0b11011111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6737,6 +7305,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6748,6 +7317,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b01000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6759,6 +7329,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_memory(0x0fe20), 0b10111111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -6771,6 +7342,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6782,6 +7354,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b10000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -6792,6 +7365,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
 
     # btclr psw.0,$label112       ;31 01 1e fc
@@ -6801,6 +7375,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11111010) # bit cleared
 
@@ -6811,6 +7386,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
 
     # btclr psw.1,$label112       ;31 11 1e fc
@@ -6820,6 +7396,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
 
     # btclr psw.1,$label112       ;31 11 1e fc
@@ -6829,6 +7406,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11111001) # bit cleared
 
@@ -6839,6 +7417,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
 
     # btclr psw.2,$label112       ;31 21 1e fc
@@ -6854,6 +7433,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
 
     # btclr psw.3,$label112       ;31 31 1e fc
@@ -6863,6 +7443,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
 
     # btclr psw.3,$label112       ;31 31 1e fc
@@ -6872,6 +7453,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11110011) # bit cleared
 
@@ -6882,6 +7464,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
 
     # btclr psw.4,$label112       ;31 41 1e fc
@@ -6891,6 +7474,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
 
     # btclr psw.4,$label112       ;31 41 1e fc
@@ -6900,6 +7484,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11101011) # bit cleared
 
@@ -6910,6 +7495,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
 
     # btclr psw.5,$label112       ;31 51 1e fc
@@ -6919,6 +7505,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
 
     # btclr psw.5,$label112       ;31 51 1e fc
@@ -6928,6 +7515,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b11011011) # bit cleared
 
@@ -6938,6 +7526,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
 
     # btclr psw.6,$label112       ;31 61 1e fc
@@ -6947,6 +7536,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
 
     # btclr psw.6,$label112       ;31 61 1e fc
@@ -6956,6 +7546,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b10111011) # bit cleared
 
@@ -6966,6 +7557,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
 
     # btclr psw.7,$label112       ;31 71 1e fc
@@ -6975,6 +7567,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
 
     # btclr psw.7,$label112       ;31 71 1e fc
@@ -6984,6 +7577,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_psw(), 0b01111011) # bit cleared
 
@@ -6994,6 +7588,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
 
     # btclr 0fe20h.7,$label91     ;31 71 20 fc    saddr
@@ -7004,6 +7599,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x34) # branch taken
         self.assertEqual(proc.read_memory(0x0fe20), 0b01111111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7016,6 +7612,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7027,6 +7624,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00000001)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7038,6 +7636,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_memory(0x0fffe), 0b11111110) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7050,6 +7649,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7061,6 +7661,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00000010)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7072,6 +7673,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_memory(0x0fffe), 0b11111101) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7084,6 +7686,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7095,6 +7698,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00000100)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7106,6 +7710,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_memory(0x0fffe), 0b11111011) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7118,6 +7723,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7129,6 +7735,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00001000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7140,6 +7747,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_memory(0x0fffe), 0b11110111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7152,6 +7760,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7163,6 +7772,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00010000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7174,6 +7784,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_memory(0x0fffe), 0b11101111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7186,6 +7797,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7197,6 +7809,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00100000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7208,6 +7821,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_memory(0x0fffe), 0b11011111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7220,6 +7834,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7231,6 +7846,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b01000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7242,6 +7858,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_memory(0x0fffe), 0b10111111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7254,6 +7871,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7265,6 +7883,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b10000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7276,6 +7895,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_memory(0x0fffe), 0b01111111) # bit cleared
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -7288,6 +7908,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7299,6 +7920,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00000001)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7310,6 +7932,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7321,6 +7944,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00000010)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7332,6 +7956,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7343,6 +7968,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00000100)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7354,6 +7980,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7365,6 +7992,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00001000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7376,6 +8004,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7387,6 +8016,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00010000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7398,6 +8028,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7409,6 +8040,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b00100000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7420,6 +8052,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7431,6 +8064,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b01000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7442,6 +8076,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7453,6 +8088,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0b10000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x24) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7464,6 +8100,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0x0fffe, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7475,6 +8112,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000001)
         proc.write_psw(0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0b00000001) # unchanged
 
@@ -7486,6 +8124,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000001)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7497,6 +8136,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7508,6 +8148,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000010)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7518,6 +8159,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0b00000010) # unchanged
 
@@ -7529,6 +8171,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7540,6 +8183,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000100)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7554,6 +8198,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7565,6 +8210,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00001000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7575,6 +8221,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0b00001000) # unchanged
 
@@ -7586,6 +8233,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7597,6 +8245,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b0010000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7607,6 +8256,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b0010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0b0010000) # unchanged
 
@@ -7618,6 +8268,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7629,6 +8280,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00100000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7639,6 +8291,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0b00100000) # unchanged
 
@@ -7650,6 +8303,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7661,6 +8315,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b01000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7671,6 +8326,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0b01000000) # unchanged
 
@@ -7682,6 +8338,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7693,6 +8350,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b10000000)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7703,6 +8361,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x33) # branch taken
         self.assertEqual(proc.read_psw(), 0b10000000) # unchanged
 
@@ -7714,6 +8373,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code)) # branch not taken
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
 
@@ -7724,6 +8384,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
         self.assertEqual(proc.read_gp_reg(Registers.X), 0xcd)
@@ -7736,6 +8397,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_regpair(RegisterPairs.BC, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), 0xabcd)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0xcd)
@@ -7748,6 +8410,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_regpair(RegisterPairs.DE, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), 0xabcd)
         self.assertEqual(proc.read_gp_reg(Registers.E), 0xcd)
@@ -7760,6 +8423,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_gp_regpair(RegisterPairs.HL, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0xabcd)
         self.assertEqual(proc.read_gp_reg(Registers.L), 0xcd)
@@ -7773,6 +8437,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0x12)
         proc.write_gp_regpair(RegisterPairs.BC, 0x34)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x34)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), 0x12)
@@ -7785,6 +8450,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0x12)
         proc.write_gp_regpair(RegisterPairs.DE, 0x34)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x34)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), 0x12)
@@ -7797,6 +8463,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0x12)
         proc.write_gp_regpair(RegisterPairs.HL, 0x34)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x34)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0x12)
@@ -7810,6 +8477,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
         proc.write_memory(0xabcd, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -7822,6 +8490,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
         proc.write_memory(0xabcd, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
 
@@ -7834,6 +8503,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -7846,6 +8516,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
 
@@ -7858,6 +8529,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
         proc.write_memory(0xabcd, 0x34)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x12)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x34)
@@ -7871,6 +8543,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0x34)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x12)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x34)
@@ -7883,6 +8556,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_sp(0xfe12)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xfe10)
         self.assertEqual(proc.read_memory(0xfe11), 0xab) # A
@@ -7896,6 +8570,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_sp(0xfe12)
         proc.write_gp_regpair(RegisterPairs.BC, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xfe10)
         self.assertEqual(proc.read_memory(0xfe11), 0xab) # B
@@ -7909,6 +8584,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_sp(0xfe12)
         proc.write_gp_regpair(RegisterPairs.DE, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xfe10)
         self.assertEqual(proc.read_memory(0xfe11), 0xab) # D
@@ -7922,6 +8598,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_sp(0xfe12)
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xfe10)
         self.assertEqual(proc.read_memory(0xfe11), 0xab) # H
@@ -7937,6 +8614,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe11, 0xab) # A
         proc.write_memory(0xfe10, 0xcd) # X
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
@@ -7951,6 +8629,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe11, 0xab) # A
         proc.write_memory(0xfe10, 0xcd) # X
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), 0xabcd)
@@ -7965,6 +8644,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe11, 0xab) # A
         proc.write_memory(0xfe10, 0xcd) # X
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), 0xabcd)
@@ -7979,6 +8659,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe11, 0xab) # A
         proc.write_memory(0xfe10, 0xcd) # X
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xfe12)
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0xabcd)
@@ -7993,6 +8674,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe11, 0xab) # pch
         proc.write_memory(0xfe10, 0xcd) # pcl
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0xabcd)
         self.assertEqual(proc.read_psw(), 0x51)
         self.assertEqual(proc.read_sp(), 0xfe13)
@@ -8008,6 +8690,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_sp(0xfe12)
         proc.write_psw(0b10101010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0xabcd)
         self.assertEqual(proc.read_psw(), 0b10101010 & ~Flags.IE)
         self.assertEqual(proc.read_memory(0xfe11), 0b10101010) # psw
@@ -8024,6 +8707,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe11, 0xab) # pch
         proc.write_memory(0xfe10, 0xcd) # pcl
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0xabcd)
         self.assertEqual(proc.read_psw(), 0x51)
         self.assertEqual(proc.read_sp(), 0xfe13)
@@ -8037,6 +8721,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00000001)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8050,6 +8735,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00000010)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8063,6 +8749,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00000100)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8076,6 +8763,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00001000)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8089,6 +8777,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00010000)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8102,6 +8791,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00100000)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8115,6 +8805,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b01000000)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8128,6 +8819,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b10000000)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8141,6 +8833,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b11111110)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8154,6 +8847,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b11111101)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8167,6 +8861,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b11111011)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8180,6 +8875,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b11110111)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8193,6 +8889,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b11101111)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8206,6 +8903,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b11011111)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8219,6 +8917,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b10111111)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8232,6 +8931,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111111)
         proc.write_psw(0x51)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b01111111)
         self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8246,6 +8946,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_regpair(RegisterPairs.AX, before)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), after)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8260,6 +8961,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_regpair(RegisterPairs.BC, before)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), after)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8274,6 +8976,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_regpair(RegisterPairs.DE, before)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), after)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8288,6 +8991,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_regpair(RegisterPairs.HL, before)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), after)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8302,6 +9006,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_regpair(RegisterPairs.AX, before)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), after)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8316,6 +9021,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_regpair(RegisterPairs.BC, before)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), after)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8330,6 +9036,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_regpair(RegisterPairs.DE, before)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), after)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8344,6 +9051,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_regpair(RegisterPairs.HL, before)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), after)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8359,6 +9067,7 @@ class ProcessorTests(unittest.TestCase):
             proc.write_gp_reg(Registers.X, x)
             proc.write_psw(0x51)
             proc.step()
+            self.assertEqual(proc.run_state, RunState.RUNNING)
             self.assertEqual(proc.pc, len(code))
             self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), expected)
             self.assertEqual(proc.read_psw(), 0x51) # unchanged
@@ -8372,6 +9081,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabad)
         proc.write_memory(0xabcd, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -8385,6 +9095,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xffff)
         proc.write_memory(0x0001, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, 0x100 + len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -8398,6 +9109,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
         proc.write_memory(0xabcd, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
 
@@ -8411,6 +9123,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
         proc.write_memory(0xabcd, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
 
@@ -8423,6 +9136,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xab00)
         proc.write_memory(0xabcd, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x42)
 
@@ -8435,6 +9149,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabad)
         proc.write_memory(0xabcd, 0x34)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0x12)
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x34)
@@ -8449,6 +9164,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0xcd)
         proc.write_memory(0xabcd, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -8462,6 +9178,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0xcd)
         proc.write_memory(0xabcd, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x42)
 
@@ -8475,6 +9192,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0xCD)
         proc.write_memory(0xabcd, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_memory(0xABCD), 0x55)
@@ -8489,6 +9207,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 0xCD)
         proc.write_memory(0xabcd, 0xAA)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_memory(0xABCD), 0x55)
@@ -8501,6 +9220,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.write_gp_regpair(RegisterPairs.BC, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x42)
 
@@ -8512,6 +9232,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.write_gp_regpair(RegisterPairs.DE, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x42)
 
@@ -8523,6 +9244,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.write_gp_regpair(RegisterPairs.HL, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x42)
 
@@ -8534,6 +9256,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.BC, 0)
         proc.write_gp_regpair(RegisterPairs.AX, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.BC), 0x42)
 
@@ -8545,6 +9268,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.DE, 0)
         proc.write_gp_regpair(RegisterPairs.AX, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.DE), 0x42)
 
@@ -8556,6 +9280,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0)
         proc.write_gp_regpair(RegisterPairs.AX, 0x42)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.HL), 0x42)
 
@@ -8569,6 +9294,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -8583,6 +9309,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -8598,6 +9325,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -8613,6 +9341,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xAA)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xFF)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -8627,6 +9356,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -8641,6 +9371,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -8656,6 +9387,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -8671,6 +9403,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0xFF)
         proc.write_psw(proc.read_psw() | Flags.Z)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xAA)
         self.assertEqual(proc.read_psw() & Flags.Z, 0)
@@ -8684,6 +9417,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000001)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -8696,6 +9430,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000010)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -8708,6 +9443,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000100)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -8720,6 +9456,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00001000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -8732,6 +9469,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00010000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -8744,6 +9482,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00100000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -8756,6 +9495,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b01000000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -8768,6 +9508,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b10000000)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -8780,6 +9521,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00000001)
 
@@ -8792,6 +9534,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00000010)
 
@@ -8804,6 +9547,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00000100)
 
@@ -8816,6 +9560,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00001000)
 
@@ -8828,6 +9573,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00010000)
 
@@ -8840,6 +9586,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b00100000)
 
@@ -8852,6 +9599,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b01000000)
 
@@ -8864,6 +9612,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabcd), 0b10000000)
 
@@ -8875,6 +9624,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b11111110)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -8886,6 +9636,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -8897,6 +9648,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b11111101)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -8908,6 +9660,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -8919,6 +9672,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b11111011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -8930,6 +9684,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -8941,6 +9696,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b11110111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -8952,6 +9708,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -8963,6 +9720,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b11101111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -8974,6 +9732,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -8985,6 +9744,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b11011111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -8996,6 +9756,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9007,6 +9768,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0xFF)
         proc.write_gp_reg(Registers.A, 0b10111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9018,6 +9780,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9029,6 +9792,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b01111111)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9040,6 +9804,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9052,6 +9817,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111110)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9064,6 +9830,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9076,6 +9843,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111101)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9088,6 +9856,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9100,6 +9869,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11111011)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9112,6 +9882,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9124,6 +9895,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11110111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9136,6 +9908,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9148,6 +9921,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11101111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9160,6 +9934,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9172,6 +9947,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b11011111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9184,6 +9960,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9196,6 +9973,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b10111111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9208,6 +9986,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9220,6 +9999,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b01111111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9232,6 +10012,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9243,6 +10024,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b11111110)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9254,6 +10036,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfffe, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9265,6 +10048,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b11111101)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9276,6 +10060,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfffe, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9287,6 +10072,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b11111011)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9298,6 +10084,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfffe, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9309,6 +10096,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b11110111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9320,6 +10108,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfffe, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9331,6 +10120,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b11101111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9342,6 +10132,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfffe, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9353,6 +10144,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b11011111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9364,6 +10156,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfffe, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9375,6 +10168,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b10111111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9386,6 +10180,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfffe, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9397,6 +10192,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b01111111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9408,6 +10204,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfffe, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9419,6 +10216,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b11111110)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9430,6 +10228,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfe20, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9441,6 +10240,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b11111101)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9452,6 +10252,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfe20, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9463,6 +10264,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b11111011)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9474,6 +10276,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfe20, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9485,6 +10288,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b11110111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9496,6 +10300,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfe20, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9507,6 +10312,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b11101111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9518,6 +10324,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfe20, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9529,6 +10336,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b11011111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9540,6 +10348,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfe20, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9551,6 +10360,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b10111111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9562,6 +10372,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfe20, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9573,6 +10384,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b01111111)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, 0)
 
@@ -9584,6 +10396,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0xfe20, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw() & Flags.CY, Flags.CY)
 
@@ -9594,6 +10407,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9604,6 +10418,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -9614,6 +10429,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY) # carry on, bit 1 off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -9624,6 +10440,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000011) # carry on, bit 1 on
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000011)
 
@@ -9634,6 +10451,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY) # carry on, bit 2 off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -9647,6 +10465,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY) # carry on, bit 3 off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -9657,6 +10476,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00001001) # carry on, bit 3 on
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00001001)
 
@@ -9667,6 +10487,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY) # carry on, bit 4 off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -9677,6 +10498,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00010001) # carry on, bit 4 on
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00010001)
 
@@ -9687,6 +10509,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY) # carry on, bit 5 off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -9697,6 +10520,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00100001) # carry on, bit 5 on
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00100001)
 
@@ -9707,6 +10531,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY) # carry on, bit 6 off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -9717,6 +10542,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01000001) # carry on, bit 6 on
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b01000001)
 
@@ -9727,6 +10553,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY) # carry on, bit 7 off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -9737,6 +10564,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10000001) # carry on, bit 7 on
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10000001)
 
@@ -9748,6 +10576,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0) # unchanged
 
@@ -9759,6 +10588,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000000)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY) # unchanged
 
@@ -9770,6 +10600,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000001)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9781,6 +10612,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0b10101010) # carry off
         proc.write_gp_reg(Registers.A, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10101011) # carry on
 
@@ -9792,6 +10624,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000010)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9803,6 +10636,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00000100)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9814,6 +10648,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00001000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9825,6 +10660,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00010000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9836,6 +10672,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b00100000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9847,6 +10684,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b01000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9858,6 +10696,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0b10000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9869,6 +10708,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00000001)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9880,6 +10720,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00000010)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9891,6 +10732,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00000100)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9902,6 +10744,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00001000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9913,6 +10756,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00010000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9924,6 +10768,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b00100000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9935,6 +10780,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b01000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9946,6 +10792,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfffe, 0b10000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9958,6 +10805,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000001)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9970,6 +10818,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000010)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9982,6 +10831,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00000100)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -9994,6 +10844,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00001000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10006,6 +10857,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00010000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10018,6 +10870,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b00100000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10030,6 +10883,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b01000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10042,6 +10896,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0b10000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10053,6 +10908,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000001)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10064,6 +10920,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000010)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10075,6 +10932,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00000100)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10086,6 +10944,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00001000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10097,6 +10956,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00010000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10108,6 +10968,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b00100000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10119,6 +10980,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b01000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10130,6 +10992,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0b10000000)
         proc.write_psw(0) # carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10140,6 +11003,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10150,6 +11014,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000001)
 
@@ -10160,6 +11025,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000010) # bit 1 on, carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000011) # bit 1 on, carry on
 
@@ -10173,6 +11039,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00001000) # bit 3 on, carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00001001) # bit 3 on, carry on
 
@@ -10183,6 +11050,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00010000) # bit 4 on, carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00010001) # bit 4 on, carry on
 
@@ -10193,6 +11061,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00100000) # bit 5 on, carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00100001) # bit 5 on, carry on
 
@@ -10203,6 +11072,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01000000) # bit 6 on, carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b01000001) # bit 6 on, carry on
 
@@ -10213,6 +11083,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10000000) # bit 7 on, carry off
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10000001) # bit 7 on, carry on
 
@@ -10224,6 +11095,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0xfe20, [0, 0])
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 0xcd)
         self.assertEqual(proc.read_memory(0xfe21), 0xab)
@@ -10236,6 +11108,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_sp(0)
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xabcd)
 
@@ -10247,6 +11120,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0xfe20, [0xcd, 0xab])
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
 
@@ -10258,6 +11132,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_sp(0xabcd)
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_sp(), 0xabcd)
 
@@ -10269,6 +11144,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0x0fffe, [0xcd, 0xab])
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
 
@@ -10280,6 +11156,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0x0fffe, [0, 0])
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0x0fffe), 0xcd)
         self.assertEqual(proc.read_memory(0x0ffff), 0xab)
@@ -10290,6 +11167,7 @@ class ProcessorTests(unittest.TestCase):
         code = [0xfe, 0xfe, 0xcd, 0xab]
         proc.write_memory_bytes(0, code)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0x0fffe), 0xcd)
         self.assertEqual(proc.read_memory(0x0ffff), 0xab)
@@ -10302,6 +11180,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0xabce, [0xcd, 0xab])
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd)
 
@@ -10313,6 +11192,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0xabce, [0, 0])
         proc.write_gp_regpair(RegisterPairs.AX, 0xabcd)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xabce), 0xcd)
         self.assertEqual(proc.read_memory(0xabcf), 0xab)
@@ -10325,6 +11205,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10336,6 +11217,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10347,6 +11229,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10358,6 +11241,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10369,6 +11253,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10380,6 +11265,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10391,6 +11277,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10402,6 +11289,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10413,6 +11301,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10424,6 +11313,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10435,6 +11325,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10446,6 +11337,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10457,6 +11349,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10468,6 +11361,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10479,6 +11373,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10490,6 +11385,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10501,6 +11397,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_gp_reg(Registers.A, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10512,6 +11409,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_gp_reg(Registers.A, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10524,6 +11422,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10536,6 +11435,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10548,6 +11448,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10560,6 +11461,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10572,6 +11474,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10584,6 +11487,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10596,6 +11500,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10608,6 +11513,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10620,6 +11526,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10632,6 +11539,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10644,6 +11552,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10656,6 +11565,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10668,6 +11578,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10680,6 +11591,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10692,6 +11604,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10704,6 +11617,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.HL, 0xabcd)
         proc.write_memory(0xabcd, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10715,6 +11629,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fffe, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10726,6 +11641,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fffe, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10737,6 +11653,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fffe, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10748,6 +11665,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fffe, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10759,6 +11677,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fffe, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10770,6 +11689,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fffe, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10781,6 +11701,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fffe, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10792,6 +11713,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fffe, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10803,6 +11725,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fffe, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10814,6 +11737,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fffe, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10825,6 +11749,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fffe, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10836,6 +11761,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fffe, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10847,6 +11773,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fffe, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10858,6 +11785,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fffe, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10869,6 +11797,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fffe, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10880,6 +11809,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fffe, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10891,6 +11821,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fe20, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10902,6 +11833,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fe20, 0b00000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10913,6 +11845,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fe20, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10924,6 +11857,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fe20, 0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10935,6 +11869,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fe20, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10946,6 +11881,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fe20, 0b00000100)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10957,6 +11893,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fe20, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10968,6 +11905,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fe20, 0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -10979,6 +11917,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fe20, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -10990,6 +11929,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fe20, 0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -11001,6 +11941,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fe20, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -11012,6 +11953,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fe20, 0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -11023,6 +11965,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fe20, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -11034,6 +11977,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fe20, 0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -11045,6 +11989,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(0)
         proc.write_memory(0x0fe20, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), Flags.CY)
 
@@ -11056,6 +12001,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_psw(Flags.CY)
         proc.write_memory(0x0fe20, 0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -11066,6 +12012,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -11076,6 +12023,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0)
 
@@ -11086,6 +12034,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000010)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000011)
 
@@ -11096,6 +12045,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00000011)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00000010)
 
@@ -11109,6 +12059,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00001000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00001001)
 
@@ -11119,6 +12070,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00001001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00001000)
 
@@ -11129,6 +12081,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00010000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00010001)
 
@@ -11139,6 +12092,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00010001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00010000)
 
@@ -11149,6 +12103,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00100000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00100001)
 
@@ -11159,6 +12114,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b00100001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b00100000)
 
@@ -11169,6 +12125,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b01000001)
 
@@ -11179,6 +12136,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b01000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b01000000)
 
@@ -11189,6 +12147,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10000000)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10000001)
 
@@ -11199,6 +12158,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory_bytes(0, code)
         proc.write_psw(0b10000001)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_psw(), 0b10000000)
 
@@ -11211,6 +12171,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 1)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0) # wrapped
         self.assertEqual(proc.read_gp_reg(Registers.X), 1) # unchanged
@@ -11225,6 +12186,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 3)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 2) # wrapped
         self.assertEqual(proc.read_gp_reg(Registers.X), 3) # unchanged
@@ -11239,6 +12201,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.X), 3) # unchanged
@@ -11253,6 +12216,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 0x01)
         proc.write_psw(Flags.Z | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0x10) # sum
         self.assertEqual(proc.read_gp_reg(Registers.X), 0x01) # unchanged
@@ -11267,6 +12231,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.C), 3) # unchanged
@@ -11281,6 +12246,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.B), 3) # unchanged
@@ -11295,6 +12261,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.E), 3) # unchanged
@@ -11309,6 +12276,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.D), 3) # unchanged
@@ -11323,6 +12291,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.L), 3) # unchanged
@@ -11337,6 +12306,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.H), 3) # unchanged
@@ -11351,6 +12321,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11364,6 +12335,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 2)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 4) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11377,6 +12349,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11391,6 +12364,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11405,6 +12379,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11419,6 +12394,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11433,6 +12409,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11447,6 +12424,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11460,6 +12438,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 2)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11473,6 +12452,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x03)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11487,6 +12467,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x03)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11500,6 +12481,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x03)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11515,6 +12497,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x03)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11530,6 +12513,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x03)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11544,6 +12528,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xabcd, 0x03)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11556,6 +12541,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11568,6 +12554,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 4) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11581,6 +12568,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 4) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11594,6 +12582,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 4) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11608,6 +12597,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 4) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11623,6 +12613,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 4) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11638,6 +12629,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 4) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11652,6 +12644,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 4) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11664,6 +12657,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xfe20, 0x02)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_memory(0xfe20), 6) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11677,6 +12671,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 3)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_gp_reg(Registers.X), 3) # unchanged
@@ -11691,6 +12686,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.X, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.X), 3) # unchanged
@@ -11705,6 +12701,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.C), 3) # unchanged
@@ -11719,6 +12716,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.B, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.B), 3) # unchanged
@@ -11733,6 +12731,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.E, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.E), 3) # unchanged
@@ -11747,6 +12746,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.D, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.D), 3) # unchanged
@@ -11761,6 +12761,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.L, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.L), 3) # unchanged
@@ -11775,6 +12776,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.H, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.H), 3) # unchanged
@@ -11789,6 +12791,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.X), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11802,6 +12805,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 2)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 5) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11815,6 +12819,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.C), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11829,6 +12834,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.B), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11843,6 +12849,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.E), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11857,6 +12864,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.D), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11871,6 +12879,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.L), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11885,6 +12894,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 3)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.H), 6) # sum
         self.assertEqual(proc.read_gp_reg(Registers.A), 3) # unchanged
@@ -11898,6 +12908,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0) # sum
         self.assertEqual(proc.read_psw(), Flags.Z)
@@ -11910,6 +12921,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0xFFFF)
         proc.write_psw(Flags.Z | Flags.AC)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 1) # sum
         self.assertEqual(proc.read_psw(), Flags.CY)
@@ -11922,6 +12934,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_regpair(RegisterPairs.AX, 0xa0c0)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xabcd) # sum
         self.assertEqual(proc.read_psw(), 0)
@@ -11944,6 +12957,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_memory(0xFE00, 0x23)
         proc.pc = 0
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xA2)
         self.assertEqual(proc.read_memory(0xFE00), 0x31)
@@ -11965,6 +12979,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.A, 0xA1)
         proc.write_memory(0xFE00, 0x23)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_reg(Registers.A), 0xA3)
         self.assertEqual(proc.read_memory(0xFE00), 0x12)
@@ -11978,6 +12993,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0x02)
         proc.write_psw(0)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0x55e6)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0x01)
@@ -11992,6 +13008,7 @@ class ProcessorTests(unittest.TestCase):
         proc.write_gp_reg(Registers.C, 0)
         proc.write_psw(Flags.Z | Flags.AC | Flags.CY)
         proc.step()
+        self.assertEqual(proc.run_state, RunState.RUNNING)
         self.assertEqual(proc.pc, len(code))
         self.assertEqual(proc.read_gp_regpair(RegisterPairs.AX), 0xffff)
         self.assertEqual(proc.read_gp_reg(Registers.C), 0xcd)
