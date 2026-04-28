@@ -3,8 +3,7 @@ from k0emu.devices import (MemoryDevice, RegisterFileDevice,
                            ADCDevice, I2CControllerDevice, SPIControllerDevice,
                            InterruptControllerDevice,
                            WatchdogDevice, WatchTimerDevice)
-from k0emu.i2c import StubI2CTarget, M24C04
-from k0emu.spi import UPD16432B
+from k0emu.i2c import StubI2CTarget
 from k0emu.processor import Processor
 
 
@@ -38,15 +37,8 @@ def make_processor():
     i2c = I2CControllerDevice("iic0")
     proc.bus.add_device(i2c, (0xFF1F, 0xFF1F), (0xFFA8, 0xFFAA))
     intc.connect(i2c, i2c.INT_TRANSFER, intc.INTIIC0)
-    eeprom_data = bytearray(b'\xFF' * 512)
-    i2c.add_target(0x50, M24C04(eeprom_data, page_offset=0))
-    i2c.add_target(0x51, M24C04(eeprom_data, page_offset=256))
-    i2c.add_target(0x1C, StubI2CTarget())  # SAA7705H audio DSP
-    i2c.add_target(0x22, StubI2CTarget())  # TDA7476 audio
 
-    upd = UPD16432B()
     csi30 = SPIControllerDevice("csi30")
-    csi30.target = upd
     proc.bus.add_device(csi30, (0xFF1A, 0xFF1A), (0xFFB0, 0xFFB0))
     intc.connect(csi30, csi30.INT_TRANSFER, intc.INTCSI30)
 
