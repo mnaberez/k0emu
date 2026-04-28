@@ -10,7 +10,7 @@ if sys.version_info[:2] < (3, 4):
 DESC = "Renesas (NEC) 78K0 emulator"
 here = os.path.abspath(os.path.dirname(__file__))
 try:
-    LONG_DESC = open(os.path.join(here, 'README.rst')).read()
+    LONG_DESC = open(os.path.join(here, 'README.md')).read()
 except:
     LONG_DESC = DESC
 
