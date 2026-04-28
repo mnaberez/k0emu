@@ -2,7 +2,7 @@ import unittest
 from k0emu.bus import Bus
 from k0emu.devices import (MemoryDevice, RegisterFileDevice,
                            ProcessorStatusDevice, InterruptControllerDevice,
-                           I2CControllerDevice,
+                           I2CControllerDevice, Port0Device,
                            WatchdogDevice, WatchTimerDevice)
 from k0emu.i2c import BaseI2CTarget, StubI2CTarget
 
@@ -1245,3 +1245,156 @@ class I2CControllerTests(unittest.TestCase):
         i2c.write(i2c.IIC0, 0xFF)
         self.assertEqual(i2c.read(i2c.IIC0), 0x42)
         self.assertTrue(self._iicif0_set(intc))
+
+
+def _make_port0_on_bus():
+    proc = _FakeProcessor()
+    bus = Bus(proc)
+    intc = InterruptControllerDevice("intc")
+    bus.add_device(intc, (0xFFE0, 0xFFEB))
+    bus.set_interrupt_controller(intc)
+    p0 = Port0Device()
+    bus.add_device(p0, (0xFF00, 0xFF00), (0xFF20, 0xFF20), (0xFF30, 0xFF30),
+                       (0xFF48, 0xFF48), (0xFF49, 0xFF49))
+    for bit in range(8):
+        intc.connect(p0, bit, getattr(intc, 'INTP%d' % bit))
+    return p0, intc, bus
+
+
+class Port0EdgeDetectionTests(unittest.TestCase):
+
+    def _intp_pending(self, intc, n):
+        """Return True if INTPn interrupt flag is set."""
+        return bool(intc.read(intc.IF0L) & (1 << (n + 1)))
+
+    def _clear_intp(self, intc, n):
+        intc.write(intc.IF0L, intc.read(intc.IF0L) & ~(1 << (n + 1)))
+
+    # EGP/EGN register access
+
+    def test_egp_write_read(self):
+        p0, intc, bus = _make_port0_on_bus()
+        bus.write(0xFF48, 0xAB)
+        self.assertEqual(bus.read(0xFF48), 0xAB)
+
+    def test_egn_write_read(self):
+        p0, intc, bus = _make_port0_on_bus()
+        bus.write(0xFF49, 0xCD)
+        self.assertEqual(bus.read(0xFF49), 0xCD)
+
+    def test_egp_egn_initial_zero(self):
+        p0, intc, bus = _make_port0_on_bus()
+        self.assertEqual(bus.read(0xFF48), 0x00)
+        self.assertEqual(bus.read(0xFF49), 0x00)
+
+    # Note: external_inputs defaults to 0xFF (all pins high).
+
+    # Rising edge detection
+
+    def test_rising_edge_fires_when_egp_enabled(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0._egp = 0x01
+        p0.set_external_input(0, False)  # start low
+        p0.set_external_input(0, True)   # rising edge
+        self.assertTrue(self._intp_pending(intc, 0))
+
+    def test_rising_edge_ignored_when_egp_disabled(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0.set_external_input(0, False)
+        p0.set_external_input(0, True)
+        self.assertFalse(self._intp_pending(intc, 0))
+
+    # Falling edge detection
+
+    def test_falling_edge_fires_when_egn_enabled(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0._egn = 0x01
+        p0.set_external_input(0, False)  # falling edge (from default high)
+        self.assertTrue(self._intp_pending(intc, 0))
+
+    def test_falling_edge_ignored_when_egn_disabled(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0.set_external_input(0, False)  # falling but EGN=0
+        self.assertFalse(self._intp_pending(intc, 0))
+
+    # No edge (same state)
+
+    def test_no_interrupt_on_same_state_high(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0._egp = 0xFF
+        p0._egn = 0xFF
+        p0.set_external_input(0, True)  # already high
+        self.assertFalse(self._intp_pending(intc, 0))
+
+    def test_no_interrupt_on_same_state_low(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0.set_external_input(0, False)  # go low
+        p0._egp = 0xFF
+        p0._egn = 0xFF
+        p0.set_external_input(0, False)  # already low
+        self.assertFalse(self._intp_pending(intc, 0))
+
+    # Both edges enabled
+
+    def test_both_edges_fire_when_both_enabled(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0._egp = 0x01
+        p0._egn = 0x01
+        p0.set_external_input(0, False)  # falling edge
+        self.assertTrue(self._intp_pending(intc, 0))
+        self._clear_intp(intc, 0)
+        p0.set_external_input(0, True)   # rising edge
+        self.assertTrue(self._intp_pending(intc, 0))
+
+    # Multiple pins
+
+    def test_different_pins_fire_independently(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0._egn = 0x12  # falling edge on pins 1 and 4
+        p0.set_external_input(1, False)  # falling edge
+        self.assertTrue(self._intp_pending(intc, 1))
+        self.assertFalse(self._intp_pending(intc, 4))
+        p0.set_external_input(4, False)
+        self.assertTrue(self._intp_pending(intc, 4))
+
+    def test_pin_change_does_not_affect_other_pins(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0._egn = 0xFF
+        p0.set_external_input(3, False)  # falling edge
+        self.assertTrue(self._intp_pending(intc, 3))
+        self.assertFalse(self._intp_pending(intc, 0))
+        self.assertFalse(self._intp_pending(intc, 7))
+
+    # EGP/EGN toggling (as MFSW ISR does)
+
+    def test_edge_polarity_toggle(self):
+        """Simulate the MFSW start bit sequence."""
+        p0, intc, bus = _make_port0_on_bus()
+        p0._egp = 0x01
+        p0.set_external_input(0, False)  # go low first
+        p0.set_external_input(0, True)   # rising edge fires
+        self.assertTrue(self._intp_pending(intc, 0))
+        self._clear_intp(intc, 0)
+        # Toggle to falling edge (as firmware does)
+        p0._egp = 0x00
+        p0._egn = 0x01
+        p0.set_external_input(0, False)  # falling edge fires
+        self.assertTrue(self._intp_pending(intc, 0))
+
+    # Pin state tracking
+
+    def test_set_external_input_updates_external_inputs(self):
+        p0, intc, bus = _make_port0_on_bus()
+        self.assertEqual(p0.external_inputs & 0x01, 1)  # default high
+        p0.set_external_input(0, False)
+        self.assertEqual(p0.external_inputs & 0x01, 0)
+        p0.set_external_input(0, True)
+        self.assertEqual(p0.external_inputs & 0x01, 1)
+
+    def test_set_external_input_preserves_other_pins(self):
+        p0, intc, bus = _make_port0_on_bus()
+        p0.set_external_input(0, False)
+        p0.set_external_input(4, False)
+        self.assertEqual(p0.external_inputs & 0x11, 0x00)
+        p0.set_external_input(0, True)
+        self.assertEqual(p0.external_inputs & 0x11, 0x01)
