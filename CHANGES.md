@@ -1,3 +1,5 @@
+## 2.0.1.dev0 (Next Release)
+
 ## 2.0.0 (2026-04-30)
 
 - Dropped support for Python versions below 3.8.

@@ -7,7 +7,7 @@ find = {}
 
 [project]
 name = "k0emu"
-version = "2.0.0"
+version = "2.0.1.dev0"
 description = "Renesas (NEC) 78K0 emulator"
 authors = [
     { name = "Mike Naberezny", email = "mike@naberezny.com" }
