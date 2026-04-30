@@ -4,7 +4,7 @@
 
 k0emu is an instruction set emulator for running Renesas (NEC) 78K0 binaries.  It executes all 78K0 instructions described in the [documentation](https://web.archive.org/web/20200214210657/https://www.renesas.com/us/en/doc/DocumentServer/021/U12326EJ4V0UM00.pdf).  A companion disassembler, [k0dasm](https://github.com/k0dasm), is also available as a separate package.
 
-Originally developed to aid in reverse engineering the [Volkswagen Premium V](https://github.com/mnaberez/vwradio) car radio made by Delco, k0emu emulates the memory map and some of the built-in peripherals of that radio's microcontroller, the undocumented NEC µPD78F0831Y (which turned out to be a subset of the [µPD78F0833Y](https://web.archive.org/web/20180328161019/https://www.renesas.com/en-us/doc/DocumentServer/021/U13892EJ2V0UM00.pdf)).  However, k0emu has a modular design and can be used as a base to implement emulators for various other 78K0 microcontrollers.  
+Originally developed to aid in reverse engineering the [Volkswagen Premium 5](https://github.com/mnaberez/vwradio) car radio made by Delco, k0emu emulates the memory map and some of the built-in peripherals of that radio's microcontroller, the undocumented NEC µPD78F0831Y (which turned out to be a subset of the [µPD78F0833Y](https://web.archive.org/web/20180328161019/https://www.renesas.com/en-us/doc/DocumentServer/021/U13892EJ2V0UM00.pdf)).  However, k0emu has a modular design and can be used as a base to implement emulators for various other 78K0 microcontrollers.  
 
 ## Features
 
@@ -30,7 +30,7 @@ On fast hardware, the emulator will run on Python at around 1 MHz.  For emulatin
 
 ## Usage
 
-k0emu is intended to be used by emulator authors as a library.  As a demonstration, it includes a `k0emu` command that will run a binary file in the terminal.  The file is assumed to be a ROM image that should be aligned to the bottom of memory.  For example, if a 32K file is given, k0emu will assume the image should be located at 0x0000-0x7FFF.  After loading the image, the emulator will start executing from the reset vector and will run until terminated:
+k0emu is intended to be used by emulator authors as a library.  A demo command, `k0emu`, will run a binary indefinitely in the terminal.  The file is assumed to be a ROM image that should be aligned to the bottom of memory.  For example, if a 32K file is given, k0emu will assume the image should be located at 0x0000-0x7FFF.  After loading the image, the emulator will start executing from the reset vector:
 
     $ k0emu rom.bin
 
@@ -49,7 +49,7 @@ k0emu is intended to be used by emulator authors as a library.  As a demonstrati
     0da7: f2 04        mov 0ff04h,a           AX=0000 BC=0000 DE=0000 HL=0000 SP=FE1F [IE:0 RB:0 ISP:0 Z:0 AC:0 CY:0] ffe4=00000000 ffe5=00000000 ffe6=00000000 ffe7=00000000
     ...
 
-k0emu displays tracing information as it runs but it does not currently have any user interface to control the emulation.  Until that exists, you can modify the file `run.py`.  The unit tests can also be used as a reference for how to run the emulator from your own Python programs.
+The `k0emu` command has no controls; it just executes instructions and displays tracing information.  The unit tests can be used as a reference for how to use the emulator's components from your own Python programs.  See the [premium5](https://github.com/mnaberez/premium5) project for an example of a full system emulator based on k0emu.
 
 ## Author
 
