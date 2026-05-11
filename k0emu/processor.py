@@ -65,8 +65,8 @@ class Processor(object):
 
         # remaining code is for dispatching interrupts ------------------------
 
-        # according to the programming manual, after EI or RETI, the
-        # one instruction is executed before acknowledging any interrupt.
+        # according to the programming manual, after EI or RETI, one
+        # instruction is executed before acknowledging any interrupt.
         if self._interrupt_delayed:
             self._interrupt_delayed = False
             return
