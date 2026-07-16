@@ -3,7 +3,7 @@ from k0emu.bus import Bus
 from k0emu.devices import MemoryDevice
 
 
-class _FakeProcessor(object):
+class _FakeProcessor:
     def __init__(self):
         self.reset_count = 0
 

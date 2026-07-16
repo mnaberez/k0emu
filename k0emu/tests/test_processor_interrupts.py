@@ -3,7 +3,7 @@ from k0emu.devices import MemoryDevice, InterruptControllerDevice, WatchTimerDev
 from k0emu.processor import Processor, Flags, Registers, RunState
 
 
-class _TestPeripheral(object):
+class _TestPeripheral:
     """Dummy peripheral for triggering interrupts in tests."""
     INT_0 = 0
 

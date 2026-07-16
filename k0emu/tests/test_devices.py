@@ -185,7 +185,7 @@ class ProcessorStatusDeviceTests(unittest.TestCase):
             ps.read(3)
 
 
-class _DummyDevice(object):
+class _DummyDevice:
     """Minimal device for testing interrupt connections."""
     INT_0 = 0
     INT_1 = 1
@@ -469,7 +469,7 @@ class InterruptControllerDeviceTests(unittest.TestCase):
             intc.write(12, 0x00)
 
 
-class _FakeProcessor(object):
+class _FakeProcessor:
     def __init__(self):
         self.reset_count = 0
 
@@ -477,7 +477,7 @@ class _FakeProcessor(object):
         self.reset_count += 1
 
 
-class _FakeIntc(object):
+class _FakeIntc:
     """Minimal stub for testing devices that fire interrupts."""
     def __init__(self):
         self.name = "intc"
@@ -1009,7 +1009,7 @@ class WatchTimerDeviceTests(unittest.TestCase):
             wt.write(1, 0x00)
 
 
-class _FakeProcessor(object):
+class _FakeProcessor:
     def __init__(self):
         self.reset_count = 0
 

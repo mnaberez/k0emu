@@ -1,4 +1,4 @@
-class BaseSPITarget(object):
+class BaseSPITarget:
     """Base class for SPI target devices."""
 
     def spi_select(self, selected):

@@ -1,7 +1,7 @@
 import itertools
 from k0emu.bus import Bus
 
-class Processor(object):
+class Processor:
     RESET_VECTOR_ADDRESS = 0x0000
     BRK_VECTOR_ADDRESS = 0x003E
     REGISTERS_BASE_ADDRESS = 0xFEF8
@@ -2913,7 +2913,7 @@ def _resolve_rel(pc, displacement):
         displacement = -((displacement ^ 0xFF) + 1)
     return (pc + displacement) & 0xffff
 
-class Registers(object):
+class Registers:
     X = 0
     A = 1
     C = 2
@@ -2923,13 +2923,13 @@ class Registers(object):
     L = 6
     H = 7
 
-class RegisterPairs(object):
+class RegisterPairs:
     AX = 0
     BC = 1
     DE = 2
     HL = 3
 
-class Flags(object):
+class Flags:
     CY     = 2**0
     ISP    = 2**1
     UNUSED = 2**2
@@ -2940,6 +2940,6 @@ class Flags(object):
     IE     = 2**7
 
 
-class RunState(object):
+class RunState:
     RUNNING = 0
     HALTED = 1

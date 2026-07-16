@@ -1,7 +1,7 @@
 from k0emu.devices import BaseDevice
 
 
-class Bus(object):
+class Bus:
     ADDRESS_SPACE_SIZE = 2**16  # 64K address space
 
     def __init__(self, processor):
@@ -116,7 +116,7 @@ class Bus(object):
         self.pending_interrupt = None
 
 
-class PendingInterrupt(object):
+class PendingInterrupt:
     """Interrupt waiting to be serviced.
 
     Created by the interrupt controller during tick() and placed

@@ -11,7 +11,7 @@ from k0emu.processor import RegisterPairs, Flags
 from k0emu.system import make_processor
 
 
-class Runner(object):
+class Runner:
     def __init__(self, proc=None, output=None):
         self.proc = proc or make_processor()
         self.output = output or sys.stdout

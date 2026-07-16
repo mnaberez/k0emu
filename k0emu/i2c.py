@@ -1,4 +1,4 @@
-class BaseI2CTarget(object):
+class BaseI2CTarget:
     """Base class for I2C target devices."""
 
     ACK = True

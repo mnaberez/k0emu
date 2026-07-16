@@ -1,4 +1,4 @@
-class BaseDevice(object):
+class BaseDevice:
     def __init__(self, name, high_speed=False):
         """
         high_speed: if True, the processor does not add an extra wait
